@@ -32,8 +32,8 @@ export async function getLabs(): Promise<Lab[]> {
       package: packageByName.get(name) ?? '',
     }));
   } catch (error) {
-    console.error('Failed to fetch labs:', error);
-    throw new Error('Failed to fetch labs');
+    console.error('获取实验室失败：', error);
+    throw new Error('获取实验室失败');
   }
 }
 
@@ -50,11 +50,11 @@ export async function loadLabs(labTypes: string[]): Promise<ActionResult> {
     revalidatePath('/management');
     return { success: true };
   } catch (error) {
-    console.error('Failed to load labs:', error);
+    console.error('加载实验室失败：', error);
     revalidatePath('/management');
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to load labs',
+      error: error instanceof Error ? error.message : '加载实验室失败',
     };
   }
 }
@@ -72,11 +72,11 @@ export async function unloadLabs(labTypes: string[]): Promise<ActionResult> {
     revalidatePath('/management');
     return { success: true };
   } catch (error) {
-    console.error('Failed to unload labs:', error);
+    console.error('卸载实验室失败：', error);
     revalidatePath('/management');
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to unload labs',
+      error: error instanceof Error ? error.message : '卸载实验室失败',
     };
   }
 }
@@ -94,11 +94,11 @@ export async function reloadLabs(labTypes: string[]): Promise<ActionResult> {
     revalidatePath('/management');
     return { success: true };
   } catch (error) {
-    console.error('Failed to reload labs:', error);
+    console.error('重新加载实验室失败：', error);
     revalidatePath('/management');
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reload labs',
+      error: error instanceof Error ? error.message : '重新加载实验室失败',
     };
   }
 }

@@ -23,11 +23,10 @@ const ConflictDialogComponent = ({ isOpen, onClose, onOverwrite, onReload }: Con
             </div>
             <div className="flex-1">
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                File Changed Externally
+                文件已被外部修改
               </Dialog.Title>
               <Dialog.Description className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                The file on disk has been modified since you loaded it. You can overwrite with your changes or reload
-                the latest version from disk.
+                文件加载后已在磁盘上被修改。您可以用当前更改覆盖文件，或从磁盘重新加载最新版本。
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -42,7 +41,7 @@ const ConflictDialogComponent = ({ isOpen, onClose, onOverwrite, onReload }: Con
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
             >
-              Cancel
+              取消
             </button>
             <button
               onClick={() => {
@@ -51,7 +50,7 @@ const ConflictDialogComponent = ({ isOpen, onClose, onOverwrite, onReload }: Con
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
             >
-              Reload from Disk
+              从磁盘重新加载
             </button>
             <button
               onClick={() => {
@@ -60,7 +59,7 @@ const ConflictDialogComponent = ({ isOpen, onClose, onOverwrite, onReload }: Con
               }}
               className="px-4 py-2 text-sm font-medium rounded-md transition-colors bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white"
             >
-              Overwrite
+              覆盖
             </button>
           </div>
         </Dialog.Content>

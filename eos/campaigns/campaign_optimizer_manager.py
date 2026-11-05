@@ -42,6 +42,25 @@ def _serialize_config_snapshot(constructor_args: dict[str, Any]) -> dict[str, An
     return {k: serialize_value(v) for k, v in constructor_args.items() if k not in _SNAPSHOT_SKIP_KEYS}
 
 
+def _apply_ai_connection(constructor_args: dict[str, Any], optimizer_overrides: dict[str, Any] | None) -> None:
+    """Fill Beacon's default model and provider-scoped credentials from the current server settings."""
+    if "ai_model" not in constructor_args:
+        return
+    overridden_model = "ai_model" in (optimizer_overrides or {})
+    if overridden_model and str(constructor_args["ai_model"]).partition(":")[0] not in {"openai", "anthropic"}:
+        return
+    from eos.optimization.openai_connection import OpenAIConnection  # noqa: PLC0415
+
+    connection = OpenAIConnection()
+    if connection.configured and not overridden_model:
+        constructor_args["ai_model"] = connection.model_ref
+    ai_model = str(constructor_args.get("ai_model", ""))
+    ai_protocol = ai_model.partition(":")[0]
+    if ai_protocol in {"openai", "anthropic"} and connection.configured and connection.protocol == ai_protocol:
+        constructor_args["ai_base_url"] = constructor_args.get("ai_base_url") or connection.base_url
+        constructor_args["ai_api_key"] = constructor_args.get("ai_api_key") or connection.api_key.get_secret_value()
+
+
 class CampaignOptimizerManager:
     """
     Responsible for managing the optimizers associated with campaign optimization.
@@ -129,6 +148,8 @@ class CampaignOptimizerManager:
                 constructor_args["p_ai"] = 1.0 - float(constructor_args["p_bayesian"])
             elif "p_ai" in optimizer_overrides and "p_bayesian" not in optimizer_overrides:
                 constructor_args["p_bayesian"] = 1.0 - float(constructor_args["p_ai"])
+
+        _apply_ai_connection(constructor_args, optimizer_overrides)
 
         protocol_yaml = self._read_protocol_yaml(protocol)
         if protocol_yaml:

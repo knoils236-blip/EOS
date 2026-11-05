@@ -32,12 +32,30 @@ Campaign Settings
      - Total number of runs, including completed runs when resuming.
    * - ``max_concurrent_protocol_runs``
      - Maximum simultaneous runs. Defaults to 1.
+   * - ``max_failed_protocol_runs``
+     - Failed runs to tolerate before the campaign fails. Defaults to 0 (the first failure fails the campaign).
+       See `Failed Runs`_.
    * - ``optimizer_ip``
      - Ray worker for optimization. Defaults to ``127.0.0.1``.
    * - ``meta.optimizer_overrides``
      - Optimizer settings to override at submission or resume.
    * - ``resume``
      - Resume an existing campaign using the same name.
+
+Failed Runs
+-----------
+By default, a failed protocol run fails the whole campaign. For unattended operation, set
+``max_failed_protocol_runs`` so that the campaign continues past individual failures:
+
+* A tolerated failure uses up one run of ``max_protocol_runs``, so a parameter sweep moves on to the next
+  parameter set instead of repeating one.
+* With optimization, the failed run's inputs are reported to the optimizer with NaN outputs. BoFire
+  ignores them when fitting; Atlas uses them to learn infeasible regions. They never enter the Pareto front.
+* The next failure beyond the limit fails the campaign.
+* On resume, tolerated failures are kept and reported to the optimizer again.
+
+For transient errors within a single task, use the task's ``retries`` and ``timeout`` fields instead
+(see :doc:`protocols`).
 
 Resuming
 --------

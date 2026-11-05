@@ -66,7 +66,7 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
     return {
       datasets: [
         {
-          label: 'Other Samples',
+          label: '其他样本',
           data: nonParetoPoints,
           backgroundColor: 'rgba(156, 163, 175, 0.5)',
           borderColor: 'rgba(156, 163, 175, 0.8)',
@@ -76,7 +76,7 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
         ...(paretoPoints.length > 0
           ? [
               {
-                label: 'Pareto Front',
+                label: '帕累托前沿',
                 data: paretoPoints,
                 backgroundColor: paretoColor.bg,
                 borderColor: paretoColor.border,
@@ -148,17 +148,14 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
   );
 
   if (samples.length === 0) {
-    return (
-      <p className="text-gray-500 dark:text-gray-400 text-center py-8">No data available for Pareto visualization.</p>
-    );
+    return <p className="text-gray-500 dark:text-gray-400 text-center py-8">暂无可用于帕累托可视化的数据。</p>;
   }
 
   // Pareto front requires at least 2 objectives to visualize trade-offs
   if (outputNames.length < 2) {
     return (
       <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-        Pareto front visualization requires at least 2 objectives. Use the &quot;Progress Over Time&quot; tab for
-        single-objective optimization.
+        帕累托前沿可视化至少需要两个目标。单目标优化请查看“随时间变化”选项卡。
       </p>
     );
   }
@@ -169,7 +166,7 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
       {outputNames.length >= 2 && (
         <div className="flex gap-4 mb-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">X-Axis:</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">X 轴：</label>
             <select
               value={xAxis}
               onChange={(e) => setXAxis(e.target.value)}
@@ -183,7 +180,7 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400">Y-Axis:</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Y 轴：</label>
             <select
               value={yAxis}
               onChange={(e) => setYAxis(e.target.value)}
@@ -205,7 +202,7 @@ export function ParetoFrontChart({ samples, paretoSolutions, outputNames }: Pare
 
       {paretoSolutions.length === 0 && (
         <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
-          Pareto front will be highlighted when the campaign completes.
+          实验计划完成后将高亮显示帕累托前沿。
         </p>
       )}
     </div>

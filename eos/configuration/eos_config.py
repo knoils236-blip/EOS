@@ -159,6 +159,8 @@ class SchedulerConfig(BaseModel):
 
     type: SchedulerType = SchedulerType.GREEDY
     parameters: dict = Field(default_factory=dict)
+    # Plan with the median of recently measured task durations instead of the protocols' `duration` guesses
+    learn_durations: bool = False
 
 
 class OrchestratorHzConfig(BaseModel):

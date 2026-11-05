@@ -1,5 +1,7 @@
 'use client';
 
+import { roleLabel, statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { ShieldCheck, Trash2, UserCog, UserPlus, UserX, UserCheck } from 'lucide-react';
 import { DataTable, DataTableColumnDef } from '@/components/data-table/DataTable';
@@ -29,28 +31,28 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
   const columns: DataTableColumnDef<ManagedUser>[] = [
     {
       accessorKey: 'username',
-      header: 'Username',
+      header: '用户名',
       cell: ({ row }) => <div className="font-medium">{row.getValue('username')}</div>,
     },
     {
       accessorKey: 'displayName',
-      header: 'Name',
+      header: '名称',
     },
     {
       accessorKey: 'email',
-      header: 'Email',
+      header: '邮箱',
     },
     {
       accessorKey: 'state',
-      header: 'State',
+      header: '状态',
       cell: ({ row }) => {
         const state = row.getValue('state') as string;
-        return <Badge variant={state === 'ACTIVE' ? 'success' : 'default'}>{state.toLowerCase()}</Badge>;
+        return <Badge variant={state === 'ACTIVE' ? 'success' : 'default'}>{statusLabel(state)}</Badge>;
       },
     },
     {
       id: 'roles',
-      header: 'Roles',
+      header: '角色',
       cell: ({ row }) => {
         const user = row.original;
         return (
@@ -58,17 +60,17 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
             {user.superuser && (
               <Badge variant="warning">
                 <ShieldCheck className="w-3 h-3 mr-1" />
-                superuser
+                超级用户
               </Badge>
             )}
             {user.roles.map((role) => (
               <Badge key={role.id} variant="info">
-                {role.role.toLowerCase()}
+                {roleLabel(role.role)}
                 {role.labName ? `: ${role.labName}` : ''}
               </Badge>
             ))}
             {!user.superuser && user.roles.length === 0 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">no access</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">无访问权限</span>
             )}
           </div>
         );
@@ -76,7 +78,7 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const user = row.original;
         const active = user.state === 'ACTIVE';
@@ -84,15 +86,15 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setRolesUser(user)}>
               <UserCog className="h-4 w-4 mr-1" />
-              Roles
+              角色
             </Button>
             <Button variant="outline" size="sm" onClick={() => setUserActive(user.userId, !active)}>
               {active ? <UserX className="h-4 w-4 mr-1" /> : <UserCheck className="h-4 w-4 mr-1" />}
-              {active ? 'Deactivate' : 'Reactivate'}
+              {active ? '停用' : '重新启用'}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setDeleteTarget(user)}>
               <Trash2 className="h-4 w-4 mr-1" />
-              Delete
+              删除
             </Button>
           </div>
         );
@@ -105,11 +107,11 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
       <div className="flex justify-end">
         <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
           <UserPlus className="h-4 w-4 mr-1" />
-          Create user
+          创建用户
         </Button>
       </div>
 
-      <DataTable columns={columns} data={initialUsers} searchPlaceholder="Search users..." />
+      <DataTable columns={columns} data={initialUsers} searchPlaceholder="搜索用户…" />
 
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} labNames={labNames} />
 
@@ -118,9 +120,9 @@ export function UsersTab({ initialUsers, labNames }: UsersTabProps) {
       <ConfirmationDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete user"
-        description="Are you sure? This permanently deletes the account in Zitadel."
-        confirmLabel="Delete"
+        title="删除用户"
+        description="确定要删除吗？这将永久删除 Zitadel 中的账户。"
+        confirmLabel="删除"
         variant="destructive"
         items={deleteTarget ? [deleteTarget.username] : []}
         onConfirm={async () => {

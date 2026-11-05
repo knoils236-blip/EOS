@@ -98,6 +98,8 @@ export interface TaskNode {
   desc?: string;
   duration?: number;
   group?: string;
+  timeout?: number | null;
+  retries?: number;
   device_holds?: Record<string, boolean>;
   resource_holds?: Record<string, boolean>;
   run_if?: string | null;
@@ -111,6 +113,7 @@ export interface ProtocolDefinition {
 }
 
 export interface TaskNodeData extends Record<string, unknown> {
+  displayLabel?: string;
   taskNode: TaskNode;
   taskSpec: TaskSpec;
   isMissingSpec?: boolean;

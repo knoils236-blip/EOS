@@ -1,0 +1,178 @@
+type: ai_pip_c
+desc: >-
+  Atomic-skill syringe transfer of liquid from the eight-position reactor into the 500 mL big bottle on the Matterix
+  workstation.
+
+labs:
+  - matterix_pipetting_lab
+
+tasks:
+  - name: begin_experiment
+    type: Matterix Begin Experiment
+    desc: Reset and verify the Matterix fixture, acquiring exclusive workstation ownership.
+    duration: 60
+    dependencies: []
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: pick_big_bottle
+    type: Matterix Capability
+    desc: Grasp the 500 mL big bottle and move it to the large open-cap area.
+    duration: 120
+    dependencies:
+      - begin_experiment
+    parameters:
+      capability_id: station_skill_big_bottle_pick
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: decap_big_bottle
+    type: Matterix Capability
+    desc: Remove the big bottle cap to open it for dispensing.
+    duration: 120
+    dependencies:
+      - pick_big_bottle
+    parameters:
+      capability_id: station_skill_big_bottle_decap
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: pick_syringe
+    type: Matterix Capability
+    desc: Pick up the filter syringe assembly.
+    duration: 120
+    dependencies:
+      - decap_big_bottle
+    parameters:
+      capability_id: station_skill_syringe_pick
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: syringe_aspirate
+    type: Matterix Capability
+    desc: Aspirate 100 uL from the eight-position reactor using the bare syringe before the filter head is mounted.
+    duration: 120
+    dependencies:
+      - pick_syringe
+    parameters:
+      capability_id: station_skill_syringe_aspirate
+      parameters:
+        timeout_s: 120
+        volume_ul: 100
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: mount_filter_head
+    type: Matterix Capability
+    desc: Mount the filter head onto the syringe after aspiration.
+    duration: 120
+    dependencies:
+      - syringe_aspirate
+    parameters:
+      capability_id: station_skill_filter_head_mount
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: syringe_dispense_to_big_bottle
+    type: Matterix Capability
+    desc: Dispense 100 uL into the opened big bottle in the large open-cap area.
+    duration: 120
+    dependencies:
+      - mount_filter_head
+    parameters:
+      capability_id: station_skill_syringe_dispense
+      parameters:
+        timeout_s: 120
+        recipient: 大开盖区
+        volume_ul: 100
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: discard_syringe
+    type: Matterix Capability
+    desc: Discard the syringe and filter head to free the gripper.
+    duration: 120
+    dependencies:
+      - syringe_dispense_to_big_bottle
+    parameters:
+      capability_id: station_skill_syringe_discard
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: recap_big_bottle
+    type: Matterix Capability
+    desc: Replace the big bottle cap and close it.
+    duration: 120
+    dependencies:
+      - discard_syringe
+    parameters:
+      capability_id: station_skill_big_bottle_recap
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: place_big_bottle
+    type: Matterix Capability
+    desc: Return the closed big bottle to its storage area.
+    duration: 120
+    dependencies:
+      - recap_big_bottle
+    parameters:
+      capability_id: station_skill_big_bottle_place
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: end_experiment
+    type: Matterix End Experiment
+    desc: Verify atomic-operation lifecycle and release the workstation.
+    duration: 60
+    dependencies:
+      - place_big_bottle
+    parameters:
+      expected_phase: 0
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix

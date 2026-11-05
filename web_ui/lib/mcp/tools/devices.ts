@@ -125,48 +125,4 @@ export function registerDeviceTools(server: McpServer) {
       }
     }
   );
-
-  server.registerTool(
-    'load_devices',
-    {
-      title: 'Load Devices',
-      description: 'Load specific devices in a lab.',
-      inputSchema: {
-        lab_name: z.string().describe('Lab name'),
-        device_names: z.array(z.string()).describe('Device names to load'),
-      },
-    },
-    async ({ lab_name, device_names }) => {
-      try {
-        const result = await orchestratorPost(`/labs/${encodeURIComponent(lab_name)}/devices/load/`, { device_names });
-        const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-        return textResult(`Load devices in ${lab_name}: Success\n${text}`);
-      } catch (e) {
-        return errorResult(`Failed to load devices: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-  );
-
-  server.registerTool(
-    'unload_devices',
-    {
-      title: 'Unload Devices',
-      description: 'Unload specific devices in a lab.',
-      inputSchema: {
-        lab_name: z.string().describe('Lab name'),
-        device_names: z.array(z.string()).describe('Device names to unload'),
-      },
-    },
-    async ({ lab_name, device_names }) => {
-      try {
-        const result = await orchestratorPost(`/labs/${encodeURIComponent(lab_name)}/devices/unload/`, {
-          device_names,
-        });
-        const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-        return textResult(`Unload devices in ${lab_name}: Success\n${text}`);
-      } catch (e) {
-        return errorResult(`Failed to unload devices: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-  );
 }

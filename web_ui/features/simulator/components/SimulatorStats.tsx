@@ -6,7 +6,7 @@ export function SimulatorStats({ stats }: { stats: SimStats }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">Device Utilization</h3>
+        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">设备利用率</h3>
         <div className="space-y-3">
           {stats.device_util.map((d) => (
             <div key={d.name}>
@@ -30,7 +30,7 @@ export function SimulatorStats({ stats }: { stats: SimStats }) {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">Resource Utilization</h3>
+        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">资源利用率</h3>
         <div className="space-y-3">
           {stats.resource_util.map((r) => (
             <div key={r.name}>
@@ -54,18 +54,18 @@ export function SimulatorStats({ stats }: { stats: SimStats }) {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
-        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">Parallelism</h3>
+        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">并行度</h3>
         <div className="space-y-2">
-          <Row label="Max concurrent" value={String(stats.max_parallel)} />
-          <Row label="Avg concurrent" value={stats.avg_parallel.toFixed(2)} />
-          <Row label="Total task-seconds" value={stats.total_task_time_fmt} />
-          <Row label="Theoretical min" value={stats.theoretical_min_fmt} />
-          <Row label="Efficiency" value={`${stats.efficiency.toFixed(1)}%`} />
+          <Row label="最大并发数" value={String(stats.max_parallel)} />
+          <Row label="平均并发数" value={stats.avg_parallel.toFixed(2)} />
+          <Row label="任务总耗时（秒）" value={stats.total_task_time_fmt} />
+          <Row label="理论最短工期" value={stats.theoretical_min_fmt} />
+          <Row label="效率" value={`${stats.efficiency.toFixed(1)}%`} />
         </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4 max-h-64 overflow-y-auto">
-        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">Run Completion</h3>
+        <h3 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">运行完成情况</h3>
         <div className="space-y-1">
           {stats.run_completions.map(([name, time]) => (
             <Row key={name} label={name} value={time} />

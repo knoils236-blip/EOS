@@ -2,19 +2,23 @@ import re
 from typing import ClassVar
 
 import yaml as pyyaml
-from litestar import get, post, Controller
+from litestar import get, post, Controller, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from eos.auth.authorization import require_role, stamp_owner
+from eos.auth.authorization import get_user_roles, is_auth_disabled, require_role, stamp_owner
 from eos.auth.entities.user_role import AuthenticatedUser, Role
 from eos.configuration.entities.definition import DefinitionModel
+from eos.configuration.exceptions import EosConfigurationError
 from eos.configuration.entities.protocol_def import ProtocolDef
 from eos.configuration.entities.lab_def import LabDef
 from eos.configuration.validation import ProtocolValidator
 from eos.database.abstract_sql_db_interface import AsyncDbSession
+from eos.protocols.drafting import ProtocolDrafter
 from eos.protocols.entities.protocol_run import ProtocolRunSubmission, ProtocolRun
+from eos.orchestration.exceptions import EosProtocolInUseError
 from eos.orchestration.orchestrator import Orchestrator
+from eos.orchestration.services.lab_service import LabService
 from eos.web_api.exception_handling import APIError
 
 # Pattern to extract task names from validation error messages
@@ -52,6 +56,56 @@ class ProtocolTypesResponse(BaseModel):
 
 class ProtocolValidationRequest(BaseModel):
     protocol_yaml: str
+
+
+class ProtocolSaveRequest(BaseModel):
+    package: str
+    protocol_yaml: str
+    overwrite: bool = False
+
+
+class ProtocolDraftRequest(BaseModel):
+    goal: str
+    labs: list[str]
+    protocol_type: str = "draft_protocol"
+    model: str | None = None  # e.g. "claude-agent-sdk:sonnet"; default follows the server AI settings
+
+
+async def _definitions(db: AsyncDbSession, definition_type: str, names: list[str] | None = None) -> dict[str, dict]:
+    query = select(DefinitionModel).where(DefinitionModel.type == definition_type)
+    if names is not None:
+        query = query.where(DefinitionModel.name.in_(names))
+    return {defn.name: defn.data for defn in (await db.execute(query)).scalars()}
+
+
+async def _can_load_protocol_labs(request: Request, db: AsyncDbSession, user: AuthenticatedUser) -> bool:
+    if is_auth_disabled(request):
+        return True
+    return any(role.role == Role.SUPERUSER for role in await get_user_roles(db, user.sub))
+
+
+async def validate_protocol_yaml(protocol_yaml: str, db: AsyncDbSession, labs_service: LabService) -> dict:
+    """
+    Validate protocol YAML against the stored lab and task specs, then let the assigned devices check the order of
+    their steps. Returns per-task errors where possible.
+    """
+    try:
+        protocol_def = ProtocolDef.model_validate(pyyaml.safe_load(protocol_yaml))
+    except Exception as e:
+        return {"valid": False, "errors": [{"task": None, "message": f"YAML parse error: {e}"}]}
+
+    lab_defs = await _definitions(db, "lab", list(protocol_def.labs))
+    missing_labs = [name for name in protocol_def.labs if name not in lab_defs]
+    if missing_labs:
+        return {"valid": False, "errors": [{"task": None, "message": f"Unknown labs: {missing_labs}"}]}
+
+    labs = [LabDef.model_validate(lab_defs[name]) for name in protocol_def.labs]
+    try:
+        ProtocolValidator(protocol_def, labs).validate()
+    except Exception as e:
+        return {"valid": False, "errors": _parse_validation_errors(str(e))}
+    errors = labs_service.check_device_plans(protocol_def)
+    return {"valid": not errors, "errors": errors}
 
 
 class ProtocolController(Controller):
@@ -103,10 +157,17 @@ class ProtocolController(Controller):
 
     @post("/load", guards=[require_role(Role.LAB_ADMIN)])
     async def load_protocols(
-        self, data: ProtocolTypes, db: AsyncDbSession, orchestrator: Orchestrator
+        self,
+        data: ProtocolTypes,
+        db: AsyncDbSession,
+        orchestrator: Orchestrator,
+        request: Request,
+        user: AuthenticatedUser,
     ) -> dict[str, str]:
         """Load protocol configurations."""
-        await orchestrator.loading.load_protocols(db, set(data.protocol_types))
+        await orchestrator.loading.load_protocols(
+            db, set(data.protocol_types), load_dependencies=await _can_load_protocol_labs(request, db, user)
+        )
         return {"message": "Protocol configurations loaded"}
 
     @post("/unload", guards=[require_role(Role.LAB_ADMIN)])
@@ -119,46 +180,63 @@ class ProtocolController(Controller):
 
     @post("/reload", guards=[require_role(Role.LAB_ADMIN)])
     async def reload_protocols(
-        self, data: ReloadProtocolsRequest, db: AsyncDbSession, orchestrator: Orchestrator
+        self,
+        data: ReloadProtocolsRequest,
+        db: AsyncDbSession,
+        orchestrator: Orchestrator,
+        request: Request,
+        user: AuthenticatedUser,
     ) -> ReloadProtocolsResponse:
         """Reload protocol configurations."""
-        reloaded = await orchestrator.loading.reload_protocols(db, set(data.protocol_types), if_unused=data.if_unused)
+        reloaded = await orchestrator.loading.reload_protocols(
+            db,
+            set(data.protocol_types),
+            if_unused=data.if_unused,
+            load_dependencies=await _can_load_protocol_labs(request, db, user),
+        )
         return ReloadProtocolsResponse(reloaded=sorted(reloaded))
 
     @post("/validate", guards=[require_role(Role.EDITOR)])
-    async def validate_protocol_yaml(self, data: ProtocolValidationRequest, db: AsyncDbSession) -> dict:
-        """Validate protocol YAML against lab and task specs.
+    async def validate_protocol_yaml(
+        self, data: ProtocolValidationRequest, db: AsyncDbSession, orchestrator: Orchestrator
+    ) -> dict:
+        """Validate protocol YAML against lab and task specs and the devices' step-order checks.
 
         Returns structured errors with per-task attribution when possible.
         """
-        # Parse YAML
-        try:
-            raw = pyyaml.safe_load(data.protocol_yaml)
-            protocol_def = ProtocolDef.model_validate(raw)
-        except Exception as e:
-            return {"valid": False, "errors": [{"task": None, "message": f"YAML parse error: {e}"}]}
+        return await validate_protocol_yaml(data.protocol_yaml, db, orchestrator.labs)
 
-        lab_names = list(protocol_def.labs)
-        result = await db.execute(
-            select(DefinitionModel).where(
-                DefinitionModel.type == "lab",
-                DefinitionModel.name.in_(lab_names),
+    @post("/save", guards=[require_role(Role.EDITOR)])
+    async def save_protocol(self, data: ProtocolSaveRequest, db: AsyncDbSession, orchestrator: Orchestrator) -> dict:
+        """Validate a protocol, write it into a package and load it when its labs are already loaded."""
+        check = await validate_protocol_yaml(data.protocol_yaml, db, orchestrator.labs)
+        if not check["valid"]:
+            return {"saved": False, "loaded": False, **check}
+        protocol = ProtocolDef.model_validate(pyyaml.safe_load(data.protocol_yaml))
+        try:
+            loaded = await orchestrator.loading.save_protocol(
+                db, data.package, protocol, data.protocol_yaml, overwrite=data.overwrite
             )
+        except (EosConfigurationError, EosProtocolInUseError) as e:
+            raise APIError(status_code=409, detail=str(e)) from e
+        return {"saved": True, "loaded": loaded, "protocol_type": protocol.type, "valid": True, "errors": []}
+
+    @post("/draft", guards=[require_role(Role.EDITOR)])
+    async def draft_protocol(self, data: ProtocolDraftRequest, db: AsyncDbSession, orchestrator: Orchestrator) -> dict:
+        """Draft a protocol for a goal with an AI model, validated (and repaired) against the chosen labs."""
+        labs = await _definitions(db, "lab", data.labs)
+        missing = sorted(set(data.labs) - set(labs))
+        if missing:
+            raise APIError(400, f"Unknown labs: {missing}")
+        task_specs = await _definitions(db, "task")
+        scenes = [scene for scene in await orchestrator.labs.get_editor_scenes() if scene["lab_name"] in labs]
+        drafter = ProtocolDrafter(model=data.model)
+        draft = await drafter.draft(
+            data.goal,
+            data.protocol_type,
+            labs,
+            task_specs,
+            lambda text: validate_protocol_yaml(text, db, orchestrator.labs),
+            scenes,
         )
-        lab_defs = {defn.name: defn for defn in result.scalars()}
-        missing_labs = [name for name in lab_names if name not in lab_defs]
-
-        if missing_labs:
-            return {
-                "valid": False,
-                "errors": [{"task": None, "message": f"Unknown labs: {missing_labs}"}],
-            }
-
-        labs = [LabDef.model_validate(lab_defs[name].data) for name in lab_names]
-
-        # Validate using the authoritative ProtocolValidator
-        try:
-            ProtocolValidator(protocol_def, labs).validate()
-            return {"valid": True, "errors": []}
-        except Exception as e:
-            return {"valid": False, "errors": _parse_validation_errors(str(e))}
+        return draft.model_dump()

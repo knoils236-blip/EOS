@@ -12,10 +12,14 @@ import { DescriptionTooltip } from '@/components/ui/DescriptionTooltip';
 import { DeviceAssignment as DeviceAssignmentComponent } from './DeviceAssignment';
 import { ResourceAssignment as ResourceAssignmentComponent } from './ResourceAssignment';
 import { BooleanParameterField } from '@/features/tasks/components/parameter-fields/BooleanParameterField';
+import { NumericParameterField } from '@/features/tasks/components/parameter-fields/NumericParameterField';
+import { ChoiceParameterField } from '@/features/tasks/components/parameter-fields/ChoiceParameterField';
+import { presetParameterValues, withPresetParameterValues, type BoundPreset } from '../lib/scenePresets';
 import { iterateInputParameters } from '@/lib/utils/paramGroups';
 import { IDENTIFIER_ERROR_MESSAGE, isValidIdentifier } from '@/lib/utils/identifier';
 
 interface TaskPropertiesPanelProps {
+  preset?: BoundPreset;
   isOpen: boolean;
   taskNode: TaskNode | null;
   taskSpec: TaskSpec | null;
@@ -38,9 +42,9 @@ interface InputFieldProps {
 const InputField = memo(({ name, spec, value, placeholder, onChange, onBlur }: InputFieldProps) => {
   const constraints =
     [
-      spec.unit && `unit: ${spec.unit}`,
-      typeof spec.min === 'number' && `min: ${spec.min}`,
-      typeof spec.max === 'number' && `max: ${spec.max}`,
+      spec.unit && `单位：${spec.unit}`,
+      typeof spec.min === 'number' && `最小值：${spec.min}`,
+      typeof spec.max === 'number' && `最大值：${spec.max}`,
     ]
       .filter(Boolean)
       .join(', ') || undefined;
@@ -98,9 +102,7 @@ function TaskValidationAlert({ taskName }: { taskName: string }) {
     <div className="rounded-md bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 p-3">
       <div className="flex items-center gap-1.5 mb-1.5">
         <AlertTriangle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-        <p className="text-xs font-medium text-red-800 dark:text-red-300">
-          {errors.length} validation {errors.length === 1 ? 'error' : 'errors'}
-        </p>
+        <p className="text-xs font-medium text-red-800 dark:text-red-300">{errors.length} 个验证错误</p>
       </div>
       <ul className="space-y-1">
         {errors.map((error, i) => (
@@ -127,6 +129,7 @@ export function TaskPropertiesPanel({
   isOpen,
   taskNode,
   taskSpec,
+  preset,
   isMissingSpec,
   labSpecs,
   selectedLabs,
@@ -188,14 +191,13 @@ export function TaskPropertiesPanel({
         </div>
         <div className="p-4">
           <div className="rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 p-3">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Task spec not available</p>
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">任务定义不可用</p>
             <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-              The spec for task type{' '}
-              <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">{taskSpec.type}</code> was not
-              found in the database. The package containing this task may not be loaded in the orchestrator.
+              任务类型 <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">{taskSpec.type}</code>{' '}
+              的定义未在数据库中找到。包含此任务的软件包可能尚未在编排器中加载。
             </p>
             <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
-              Load the package in the Management page to restore full editing capabilities.
+              请在系统管理页面加载软件包，以恢复完整编辑功能。
             </p>
           </div>
         </div>
@@ -287,7 +289,7 @@ export function TaskPropertiesPanel({
     <div className="h-full flex flex-col bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 min-w-0 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Task Properties</h2>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">任务属性</h2>
         <button
           onClick={onClose}
           className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -305,7 +307,7 @@ export function TaskPropertiesPanel({
             {/* Basic Info */}
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Name</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
                 <input
                   type="text"
                   value={localName}
@@ -322,7 +324,7 @@ export function TaskPropertiesPanel({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">类型</label>
                 <input
                   type="text"
                   value={taskSpec.type}
@@ -332,7 +334,7 @@ export function TaskPropertiesPanel({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">说明</label>
                 <textarea
                   value={taskNode.desc || ''}
                   onChange={(e) => onUpdate(taskNode.name, { desc: e.target.value })}
@@ -344,14 +346,14 @@ export function TaskPropertiesPanel({
               {/* Run If */}
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Run If (optional)
-                  <DescriptionTooltip description="Task runs only if this expression evaluates true." />
+                  运行条件（可选）
+                  <DescriptionTooltip description="仅当此表达式结果为 true 时运行任务。" />
                 </label>
                 <textarea
                   rows={2}
                   value={taskNode.run_if || ''}
                   onChange={(e) => onUpdate(taskNode.name, { run_if: e.target.value || null })}
-                  placeholder="e.g. prep.product > 10"
+                  placeholder="例如 prep.product > 10"
                   className="w-full resize-y px-2.5 py-1.5 text-sm font-mono break-words border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-yellow-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
@@ -359,13 +361,13 @@ export function TaskPropertiesPanel({
               {/* Group */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Group (optional)
+                  分组（可选）
                 </label>
                 <input
                   type="text"
                   value={taskNode.group || ''}
                   onChange={(e) => onUpdate(taskNode.name, { group: e.target.value || undefined })}
-                  placeholder="Group ID for back-to-back scheduling"
+                  placeholder="用于连续调度的分组 ID"
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-yellow-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
@@ -373,7 +375,7 @@ export function TaskPropertiesPanel({
               {/* Duration */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Duration (optional)
+                  耗时（可选）
                 </label>
                 <input
                   type="number"
@@ -382,16 +384,14 @@ export function TaskPropertiesPanel({
                     onUpdate(taskNode.name, { duration: e.target.value ? Number(e.target.value) : undefined })
                   }
                   onWheel={(e) => e.currentTarget.blur()}
-                  placeholder="Task duration in seconds"
+                  placeholder="任务耗时，单位为秒"
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-yellow-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
 
               {/* Header Color */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Header Color
-                </label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题颜色</label>
                 <div className="relative">
                   <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
@@ -422,7 +422,7 @@ export function TaskPropertiesPanel({
             {/* Input Devices */}
             {taskSpec.input_devices && Object.keys(taskSpec.input_devices).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Input Devices</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输入设备</h3>
                 <div className="space-y-3">
                   {Object.entries(taskSpec.input_devices).map(([name, spec]) => (
                     <div key={name} data-field-kind="device" data-field-name={name}>
@@ -445,7 +445,7 @@ export function TaskPropertiesPanel({
             {/* Input Resources */}
             {taskSpec.input_resources && Object.keys(taskSpec.input_resources).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Input Resources</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输入资源</h3>
                 <div className="space-y-3">
                   {Object.entries(taskSpec.input_resources).map(([name, spec]) => (
                     <div key={name} data-field-kind="resource" data-field-name={name}>
@@ -466,11 +466,53 @@ export function TaskPropertiesPanel({
             )}
 
             {/* Input Parameters */}
+            {preset?.parameter_specs && (
+              <div className="space-y-3" data-field-kind="parameter" data-field-name="parameters">
+                <h3 className="text-sm font-semibold">{preset.label} · 操作参数</h3>
+                <p className="text-xs text-gray-500 break-all">{preset.id}</p>
+                {Object.entries(preset.parameter_specs).map(([key, parameter]) => {
+                  const values = presetParameterValues(taskNode);
+                  const spec: ParameterSpec = {
+                    type: parameter.type === 'boolean' ? 'bool' : parameter.type === 'integer' ? 'int' : parameter.type === 'string' ? 'choice' : 'float',
+                    value: parameter.default,
+                    choices: parameter.type === 'string' ? parameter.choices?.map(String) : undefined,
+                    min: parameter.min ?? undefined,
+                    max: parameter.max ?? undefined,
+                    unit: parameter.unit,
+                  };
+                  const change = (value: unknown) => {
+                    const next = { ...values };
+                    if (value === undefined || value === '') delete next[key];
+                    else next[key] = ['boolean', 'string'].includes(parameter.type) || Number.isNaN(Number(value)) ? value : Number(value);
+                    onUpdate(taskNode.name, { parameters: withPresetParameterValues(taskNode, next) });
+                  };
+                  const label = `${parameter.label}${parameter.unit ? `（${parameter.unit}）` : ''}`;
+                  const current = values?.[key];
+                  // A connected reference or eos_dynamic is text that a number input would show as empty
+                  if (typeof current === 'string' && parameter.type !== 'string')
+                    return (
+                      <InputField key={key} name={label} spec={spec} value={current} placeholder="" onChange={change} />
+                    );
+                  const Field = parameter.type === 'boolean' ? BooleanParameterField : parameter.type === 'string' ? ChoiceParameterField : NumericParameterField;
+                  return (
+                    <Field
+                      key={key}
+                      name={label}
+                      spec={spec}
+                      value={current ?? parameter.default}
+                      onChange={change}
+                    />
+                  );
+                })}
+              </div>
+            )}
             {taskSpec.input_parameters &&
               Object.keys(taskSpec.input_parameters).length > 0 &&
               (() => {
                 const structure = iterateInputParameters(taskSpec.input_parameters);
                 const renderParam = (name: string, spec: ParameterSpec) => {
+                  if (preset?.parameter_specs && (name === 'capability_id' || name === 'parameters' || name in preset.parameter_specs))
+                    return null;
                   // User override falls back to the task spec default; serializer strips equal-to-default values
                   const effectiveValue = taskNode.parameters?.[name] ?? spec.value;
                   const field =
@@ -537,11 +579,11 @@ export function TaskPropertiesPanel({
 
                 return (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Input Parameters</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输入参数</h3>
                     <div className="space-y-4">
                       {topRequired.map(({ name, spec }) => renderParam(name, spec))}
                       {topOptional.length > 0 && topRequired.length > 0 && (
-                        <div className="text-xs text-gray-400 dark:text-gray-500 pt-1">Optional</div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 pt-1">可选</div>
                       )}
                       {topOptional.map(({ name, spec }) => renderParam(name, spec))}
                       {groups.map((group) => (
@@ -565,14 +607,14 @@ export function TaskPropertiesPanel({
             {/* Input Files */}
             {taskSpec.input_files && Object.keys(taskSpec.input_files).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Input Files</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输入文件</h3>
                 <div className="space-y-3">
                   {Object.entries(taskSpec.input_files).map(([name, spec]) => (
                     <div key={name} data-field-kind="file" data-field-name={name}>
                       <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {name}
                         <span className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-600 text-[10px] font-medium text-gray-700 dark:text-gray-200">
-                          file
+                          文件
                         </span>
                         {spec.desc && <DescriptionTooltip description={spec.desc} />}
                       </label>
@@ -598,7 +640,7 @@ export function TaskPropertiesPanel({
             {/* Output Devices */}
             {taskSpec.output_devices && Object.keys(taskSpec.output_devices).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Output Devices</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输出设备</h3>
                 <div className="space-y-2">
                   {Object.entries(taskSpec.output_devices).map(([name, spec]) => (
                     <OutputField key={name} name={name} type={spec.type} desc={spec.desc} />
@@ -610,7 +652,7 @@ export function TaskPropertiesPanel({
             {/* Output Resources */}
             {taskSpec.output_resources && Object.keys(taskSpec.output_resources).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Output Resources</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输出资源</h3>
                 <div className="space-y-2">
                   {Object.entries(taskSpec.output_resources).map(([name, spec]) => (
                     <OutputField key={name} name={name} type={spec.type} desc={spec.desc} />
@@ -622,7 +664,7 @@ export function TaskPropertiesPanel({
             {/* Output Parameters */}
             {taskSpec.output_parameters && Object.keys(taskSpec.output_parameters).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Output Parameters</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输出参数</h3>
                 <div className="space-y-2">
                   {Object.entries(taskSpec.output_parameters).map(([name, spec]) => (
                     <OutputField key={name} name={name} type={spec.type} desc={spec.desc} />
@@ -634,7 +676,7 @@ export function TaskPropertiesPanel({
             {/* Output Files */}
             {taskSpec.output_files && Object.keys(taskSpec.output_files).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Output Files</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">输出文件</h3>
                 <div className="space-y-2">
                   {Object.entries(taskSpec.output_files).map(([name, spec]) => (
                     <OutputField key={name} name={name} type="file" desc={spec.desc} />

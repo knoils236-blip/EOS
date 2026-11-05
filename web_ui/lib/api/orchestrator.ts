@@ -8,6 +8,16 @@ import { getAccessToken } from '@/lib/auth/session';
 
 export const ORCHESTRATOR_BASE_URL = process.env.ORCHESTRATOR_API_URL || 'http://localhost:8070/api';
 
+export class OrchestratorApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = 'OrchestratorApiError';
+  }
+}
+
 async function buildHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = await getAccessToken();
@@ -26,7 +36,7 @@ async function handleErrorResponse(response: Response): Promise<never> {
   }
   // Strip ANSI color codes
   detail = detail.replace(/\u001b\[[0-9;]*m/g, '');
-  throw new Error(detail);
+  throw new OrchestratorApiError(detail, response.status);
 }
 
 async function parseResponse(response: Response): Promise<unknown> {

@@ -45,10 +45,10 @@ export function FilePicker({ value, onChange, placeholder }: FilePickerProps) {
       onChange={onChange}
       onSearchChange={search}
       allowCustomValue
-      customValueHint="Custom key"
-      placeholder={placeholder ?? 'Select or type a file key'}
-      searchPlaceholder="Search files..."
-      emptyText="No matching files"
+      customValueHint="自定义文件键"
+      placeholder={placeholder ?? '选择或输入文件键'}
+      searchPlaceholder="搜索文件…"
+      emptyText="没有匹配的文件"
     />
   );
 }

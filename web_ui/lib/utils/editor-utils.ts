@@ -35,7 +35,7 @@ export function parseYaml(content: string): { data: unknown; error: string | nul
     if (error instanceof Error) {
       return { data: null, error: error.message };
     }
-    return { data: null, error: 'Unknown YAML parsing error' };
+    return { data: null, error: '未知 YAML 解析错误' };
   }
 }
 
@@ -169,7 +169,7 @@ export function validateYaml(content: string): ValidationResult {
     errors.push({
       line: err.mark?.line,
       column: err.mark?.column,
-      message: err.message || 'YAML parsing error',
+      message: err.message || 'YAML 解析错误',
       severity: 'error',
     });
   }
@@ -199,20 +199,20 @@ export function entityHasPythonFile(entityType: EntityType): boolean {
  */
 export function validateEntityName(name: string): { valid: boolean; error?: string } {
   if (!name) {
-    return { valid: false, error: 'Name is required' };
+    return { valid: false, error: '请输入名称' };
   }
 
   if (!/^[a-z][a-z0-9_]*$/.test(name)) {
     return {
       valid: false,
-      error: 'Name must be lowercase alphanumeric with underscores only and start with a letter',
+      error: '名称只能包含小写英文字母、数字和下划线，且必须以字母开头',
     };
   }
 
   if (name.startsWith('_') || name.endsWith('_')) {
     return {
       valid: false,
-      error: 'Name cannot start or end with underscore',
+      error: '名称不能以下划线开头或结尾',
     };
   }
 

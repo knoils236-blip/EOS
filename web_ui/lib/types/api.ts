@@ -77,6 +77,7 @@ export interface CampaignDefinition {
   priority?: number;
   max_protocol_runs?: number;
   max_concurrent_protocol_runs?: number;
+  max_failed_protocol_runs?: number;
   optimize: boolean;
   optimizer_ip?: string;
   global_parameters?: Record<string, Record<string, unknown>> | null;

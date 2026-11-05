@@ -71,6 +71,7 @@ class ProtocolExecutor:
 
     async def start_protocol_run(self, db: AsyncDbSession) -> None:
         """Start the protocol run and register the executor with the scheduler."""
+        self._matterix_task_meta()
         protocol_run_created = False
         try:
             protocol_run = await self._protocol_run_manager.get_protocol_run(db, self._protocol_run_name)
@@ -151,6 +152,7 @@ class ProtocolExecutor:
         finally:
             async with self._db_interface.get_async_session() as db:
                 await self.abandon(db)
+                await self._finalize_matterix_evidence(db, ProtocolRunStatus.CANCELLED)
 
         log.warning(f"Cancelled protocol run '{self._protocol_run_name}'.")
 
@@ -221,6 +223,7 @@ class ProtocolExecutor:
         await self._scheduler.unregister_protocol_run(db, self._protocol_run_name)
         await self._protocol_run_manager.complete_protocol_run(db, self._protocol_run_name)
         self._protocol_run_status = ProtocolRunStatus.COMPLETED
+        await self._finalize_matterix_evidence(db, ProtocolRunStatus.COMPLETED)
         log.info(f"Completed protocol run '{self._protocol_run_name}'.")
 
     async def _fail_protocol_run(self, db: AsyncDbSession, error_message: str | None = None) -> None:
@@ -237,7 +240,34 @@ class ProtocolExecutor:
             finally:
                 async with self._db_interface.get_async_session() as cleanup_db:
                     await self.abandon(cleanup_db)  # Tolerates a completion that already unregistered
+                    await self._finalize_matterix_evidence(
+                        cleanup_db, self._protocol_run_status or ProtocolRunStatus.FAILED
+                    )
                 log.warning(f"Failed protocol run '{self._protocol_run_name}'. All running tasks cancelled.")
+
+    async def _finalize_matterix_evidence(
+        self, db: AsyncDbSession, protocol_status: ProtocolRunStatus = ProtocolRunStatus.FAILED
+    ) -> None:
+        """Archive one protocol video after every task has reached a terminal state."""
+        try:
+            from eos.protocols.matterix_evidence import finalize_protocol_recording  # noqa: PLC0415
+            from eos.utils.di.di_deps import get_file_db_interface  # noqa: PLC0415
+
+            file_db = get_file_db_interface()
+            if file_db is None:
+                log.error(f"Cannot archive Matterix evidence for '{self._protocol_run_name}': file storage unavailable")
+                return
+            tasks = await self._task_manager.get_tasks(db, protocol_run_name=self._protocol_run_name)
+            await finalize_protocol_recording(
+                self._protocol_run_name,
+                tasks,
+                file_db,
+                protocol_status=protocol_status.value,
+                user_meta=self._protocol_run_submission.meta,
+                protocol_type=self._protocol,
+            )
+        except Exception as exc:
+            log.error(f"Failed to archive Matterix evidence for '{self._protocol_run_name}': {exc}")
 
     async def _process_completed_tasks(self, db: AsyncDbSession) -> None:
         """Process the output of completed tasks."""
@@ -340,11 +370,27 @@ class ProtocolExecutor:
 
         task_submission = TaskSubmission.from_def(task, self._protocol_run_name)
         task_submission.priority = self._protocol_run_submission.priority
+        task_submission.meta = self._matterix_task_meta()
 
         future = asyncio.create_task(self._task_executor.request_task_execution(task_submission, scheduled_task))
         future.add_done_callback(_retrieve_exception)  # Abandoned futures (e.g. after a cancel) must not warn
         self._task_output_futures[scheduled_task.name] = future
         self._current_task_submissions[scheduled_task.name] = task_submission
+
+    def _matterix_task_meta(self) -> dict[str, Any]:
+        """Forward the protocol recording choice to every actual task execution."""
+        value = (self._protocol_run_submission.meta or {}).get("matterix")
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise EosProtocolRunExecutionError("ProtocolRun meta.matterix must be an object")
+        settings = {}
+        for name in ("record_video", "hide_shell"):
+            if name in value:
+                if type(value[name]) is not bool:
+                    raise EosProtocolRunExecutionError(f"ProtocolRun meta.matterix.{name} must be a boolean")
+                settings[name] = value[name]
+        return {"matterix": settings} if settings else {}
 
     def _validate_parameters(self, parameters: dict[str, dict[str, Any]]) -> None:
         """Validate that all required parameters are provided."""

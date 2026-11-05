@@ -23,7 +23,7 @@ export function TaskDetailPanelSkeleton({ taskName, onClose }: TaskDetailPanelSk
             className="rounded-sm opacity-70 ring-offset-white dark:ring-offset-slate-900 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 text-gray-900 dark:text-gray-400"
           >
             <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">关闭</span>
           </button>
         </div>
       </div>

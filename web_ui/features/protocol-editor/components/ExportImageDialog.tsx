@@ -133,15 +133,13 @@ export function ExportImageDialog({ isOpen, onClose }: ExportImageDialogProps) {
               <Download className="w-6 h-6" />
             </div>
             <div className="flex-1">
-              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                Export as Image
-              </Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">导出图片</Dialog.Title>
               <Dialog.Description className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                Export the canvas as a PNG with transparent background.
+                将画布导出为透明背景的 PNG 图片。
               </Dialog.Description>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zoom Level</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">缩放比例</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
@@ -180,14 +178,14 @@ export function ExportImageDialog({ isOpen, onClose }: ExportImageDialogProps) {
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
             >
-              Cancel
+              取消
             </button>
             <button
               onClick={handleExport}
               disabled={isExporting}
               className="px-4 py-2 text-sm font-medium rounded-md transition-colors bg-blue-600 hover:bg-blue-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white dark:text-slate-900 disabled:opacity-50"
             >
-              {isExporting ? 'Exporting...' : 'Export'}
+              {isExporting ? '正在导出…' : '导出'}
             </button>
           </div>
         </Dialog.Content>

@@ -1,0 +1,5 @@
+{
+  "matterix_root": "/home/ry/projects/Matterix",
+  "matterix_python": "/home/ry/anaconda3/envs/matterix/bin/python",
+  "wall_timeout_s": 600
+}

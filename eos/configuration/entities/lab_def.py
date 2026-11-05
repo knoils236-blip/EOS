@@ -36,6 +36,8 @@ class ResourceDef(_LabModel):
 class LabDef(_LabModel):
     name: str
     desc: str
+    # A digital twin or mock: agents may run protocols here without a person approving each submission
+    simulated: bool = False
     devices: dict[str, LabDeviceDef]
     computers: dict[str, LabComputerDef] = Field(default_factory=dict)
     resource_types: dict[str, ResourceTypeDef] = Field(default_factory=dict)

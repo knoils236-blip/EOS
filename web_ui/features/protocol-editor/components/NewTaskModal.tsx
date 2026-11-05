@@ -81,7 +81,7 @@ const NewTaskModalComponent = ({ isOpen, onClose, templates, onSelectTemplate }:
           {/* Header */}
           <div className="p-6 border-b border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-white">New Task</Dialog.Title>
+              <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-white">高级任务</Dialog.Title>
               <Dialog.Close asChild>
                 <button className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                   <X className="w-5 h-5" />
@@ -94,7 +94,7 @@ const NewTaskModalComponent = ({ isOpen, onClose, templates, onSelectTemplate }:
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
-                placeholder="Search tasks..."
+                placeholder="搜索任务…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-yellow-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
@@ -112,7 +112,7 @@ const NewTaskModalComponent = ({ isOpen, onClose, templates, onSelectTemplate }:
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
                   }`}
                 >
-                  All
+                  全部
                 </button>
                 {packageNames.map((pkg) => (
                   <button
@@ -134,9 +134,7 @@ const NewTaskModalComponent = ({ isOpen, onClose, templates, onSelectTemplate }:
           {/* Task List */}
           <div className="flex-1 overflow-y-auto p-4">
             {filteredTemplates.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No tasks found matching your search.
-              </div>
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">没有匹配的任务。</div>
             ) : (
               <div className="space-y-2">
                 {filteredTemplates.map((template) => (

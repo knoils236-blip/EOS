@@ -32,8 +32,8 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
         const introspection = await getDeviceIntrospection(device.labName, device.deviceName);
         setFunctions(introspection);
       } catch (error) {
-        console.error('Failed to fetch device functions:', error);
-        toast.error('Failed to fetch device functions');
+        console.error('获取设备函数失败：', error);
+        toast.error('获取设备函数失败');
       } finally {
         setIsLoading(false);
       }
@@ -64,7 +64,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
           className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300"
         >
           {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-          Available Functions
+          可用函数
           {functions && (
             <Badge variant="default" className="ml-2">
               {Object.keys(functions).length}
@@ -81,7 +81,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search functions..."
+              placeholder="搜索函数…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -97,7 +97,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
             </div>
           ) : filteredFunctions.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-              {searchQuery ? 'No functions found matching your search' : 'No functions available'}
+              {searchQuery ? '没有匹配的函数' : '暂无可用函数'}
             </div>
           ) : (
             <div className="space-y-2">
@@ -112,7 +112,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
                         </code>
                         {func.is_async && (
                           <Badge variant="default" className="text-xs">
-                            async
+                            异步
                           </Badge>
                         )}
                       </div>
@@ -120,7 +120,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
                       {/* Parameters */}
                       {func.parameters.length > 0 && (
                         <div className="mb-2">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Parameters:</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">参数：</div>
                           <div className="flex flex-wrap gap-1">
                             {func.parameters.map((param) => (
                               <Badge
@@ -138,7 +138,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
 
                       {/* Return type */}
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        Returns: <code className="font-mono">{func.return_type}</code>
+                        返回值： <code className="font-mono">{func.return_type}</code>
                       </div>
 
                       {/* Docstring */}
@@ -156,7 +156,7 @@ export function DeviceFunctionsPanel({ device, onFunctionCall }: DeviceFunctions
                       className="flex-shrink-0"
                     >
                       <Zap className="h-4 w-4 mr-1" />
-                      Call
+                      调用
                     </Button>
                   </div>
                 </div>

@@ -116,14 +116,14 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
           try {
             params[param.name] = JSON.parse(value as string);
           } catch {
-            throw new Error(`Invalid JSON for parameter "${param.name}"`);
+            throw new Error(`参数的 JSON 无效：“${param.name}"`);
           }
         } else if (param.uiType === 'boolean') {
           params[param.name] = value === true || value === 'true';
         } else if (param.uiType === 'number') {
           const num = Number(value);
           if (isNaN(num)) {
-            throw new Error(`Invalid number for parameter "${param.name}"`);
+            throw new Error(`参数的数值无效：“${param.name}"`);
           }
           params[param.name] = num;
         } else {
@@ -138,7 +138,7 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
 
       if (response.success) {
         setResult(response.result);
-        toast.success(`Function ${functionName} called successfully`);
+        toast.success(`函数 ${functionName} 调用成功`);
 
         // Add to history
         const call: FunctionCall = {
@@ -151,11 +151,11 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
         };
         addFunctionCall(call);
       } else {
-        setError(response.error || 'Unknown error');
-        toast.error(response.error || 'Function call failed');
+        setError(response.error || '未知错误');
+        toast.error(response.error || '函数调用失败');
       }
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Failed to call function';
+      const errorMsg = e instanceof Error ? e.message : '调用函数失败';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -168,16 +168,16 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
       <SheetContent className="sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            Call Function: <code className="text-blue-600 dark:text-yellow-400">{functionName}</code>
+            调用函数： <code className="text-blue-600 dark:text-yellow-400">{functionName}</code>
           </SheetTitle>
-          <SheetDescription>{functionDef.docstring || 'No description available'}</SheetDescription>
+          <SheetDescription>{functionDef.docstring || '暂无说明'}</SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
           {/* Parameters */}
           {parsedParameters.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Parameters</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">参数</h3>
 
               {parsedParameters.map((param) => (
                 <div key={param.name} className="space-y-2">
@@ -185,7 +185,7 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
                     {param.name}
                     {!param.required && (
                       <Badge variant="default" className="text-xs">
-                        optional
+                        可选
                       </Badge>
                     )}
                     <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">({param.type})</span>
@@ -209,7 +209,7 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
                       id={param.name}
                       value={(parameterValues[param.name] as string) || ''}
                       onChange={(e) => handleParameterChange(param.name, e.target.value)}
-                      placeholder="Enter JSON..."
+                      placeholder="输入 JSON…"
                       className="font-mono text-sm"
                       rows={4}
                     />
@@ -221,7 +221,7 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
                       onChange={(e) =>
                         handleParameterChange(param.name, param.uiType === 'number' ? e.target.value : e.target.value)
                       }
-                      placeholder={param.default ? `Default: ${param.default}` : ''}
+                      placeholder={param.default ? `默认值：${param.default}` : ''}
                     />
                   )}
                 </div>
@@ -234,10 +234,10 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
             {isCalling ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Calling...
+                正在调用…
               </>
             ) : (
-              'Call Function'
+              '调用函数'
             )}
           </Button>
 
@@ -251,12 +251,12 @@ export function FunctionCallDialog({ device, functionName, functionDef, open, on
                   {error ? (
                     <>
                       <XCircle className="h-5 w-5 text-red-500" />
-                      Error
+                      错误
                     </>
                   ) : (
                     <>
                       <CheckCircle className="h-5 w-5 text-green-500" />
-                      Result
+                      结果
                     </>
                   )}
                 </h3>

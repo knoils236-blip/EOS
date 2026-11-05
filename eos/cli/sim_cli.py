@@ -12,21 +12,17 @@ from eos.scheduling.simulation import compute_sim_stats, run_simulation
 
 
 def simulate(
-    config: Annotated[str, typer.Argument(help="Path to simulation config YAML")],
-    user_dir: Annotated[
-        str, typer.Option("--user-dir", "-u", help="User directory containing EOS packages")
-    ] = "./user",
-    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show scheduling decisions")] = False,
-    jitter: Annotated[float, typer.Option("--jitter", help="Duration jitter fraction (e.g. 0.1 = +/-10%%)")] = 0.0,
-    seed: Annotated[int | None, typer.Option("--seed", help="Random seed for reproducibility")] = None,
+    config: Annotated[str, typer.Argument(help="仿真 YAML 配置文件路径")],
+    user_dir: Annotated[str, typer.Option("--user-dir", "-u", help="包含 EOS 软件包的用户目录")] = "./user",
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="显示调度决策")] = False,
+    jitter: Annotated[float, typer.Option("--jitter", help="耗时抖动比例（例如 0.1 表示 +/-10%%）")] = 0.0,
+    seed: Annotated[int | None, typer.Option("--seed", help="用于复现结果的随机种子")] = None,
     scheduler: Annotated[
-        str, typer.Option("--scheduler", "-s", help="Scheduler type: greedy, heuristic, or cpsat")
+        str, typer.Option("--scheduler", "-s", help="调度器类型：greedy、heuristic 或 cpsat")
     ] = "greedy",
-    output_json: Annotated[
-        bool, typer.Option("--json", help="Output results as JSON (suppresses text output)")
-    ] = False,
+    output_json: Annotated[bool, typer.Option("--json", help="以 JSON 输出结果（不显示文本输出）")] = False,
 ) -> None:
-    """Run a discrete-event simulation of the EOS scheduler."""
+    """运行 EOS 调度器的离散事件仿真。"""
     if output_json:
         logging.getLogger("rich").setLevel(logging.CRITICAL)
 

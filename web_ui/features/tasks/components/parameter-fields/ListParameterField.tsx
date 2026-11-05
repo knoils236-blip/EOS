@@ -58,8 +58,8 @@ export const ListParameterField = memo(({ name, spec, value, onChange }: ListPar
   };
 
   const constraints = [
-    spec.element_type && `element type: ${spec.element_type}`,
-    spec.length !== undefined && `length: ${spec.length}`,
+    spec.element_type && `元素类型：${spec.element_type}`,
+    spec.length !== undefined && `长度：${spec.length}`,
   ]
     .filter(Boolean)
     .join(', ');

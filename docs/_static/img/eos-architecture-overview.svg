@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="1790" viewBox="0 0 1540 1790" role="img" aria-labelledby="title description">
+<title id="title">EOS 如何运行</title>
+<desc id="description">用户通过 Web、MCP 或 REST API 提交实验。Python 编排器加载协议与插件，根据任务依赖分配设备和资源，通过 Ray 任务 Worker 调用设备 Actor。结果返回后保存到 SQL 和 S3，编排器继续推进后续任务直到协议完成。Web 可以直接读取 PostgreSQL 状态。REST API 和编排器在同一 Python 进程内。</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 2 2 L 10 6 L 2 10" fill="none" stroke="#39463d" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<style>
+text {font-family:'Noto Sans CJK SC','PingFang SC',sans-serif;fill:#29372d;}
+.title {font-size:27px;font-weight:700;}
+.body {font-size:22px;}
+.small {font-size:19px;fill:#626e55;}
+.label {font-size:20px;paint-order:stroke;stroke:#fff;stroke-width:9px;stroke-linejoin:round;}
+.flow {fill:none;stroke:#39463d;stroke-width:2.5;marker-end:url(#arrow);stroke-linejoin:round;}
+.dependency {stroke-dasharray:8 7;stroke:#7e8c56;}
+</style>
+</defs>
+<rect width="1540" height="1790" fill="#fff"/>
+<text x="50" y="62" font-size="36" font-weight="700">EOS 如何运行</text>
+<rect x="430" y="260" width="1060" height="1240" rx="8" fill="#f5f8e9" stroke="#99ad62" stroke-width="2"/>
+<text x="460" y="302" font-size="24" font-weight="700" fill="#758c3e">EOS 运行时与存储</text>
+<rect x="470" y="590" width="600" height="475" rx="6" fill="#eef3db" stroke="#99ad62" stroke-width="1.6" stroke-dasharray="7 6"/>
+<text x="495" y="622" font-size="21" fill="#647a35">Python 编排器进程</text>
+<text x="1045" y="622" text-anchor="end" font-size="19" fill="#647a35">API 与编排循环同进程</text>
+
+<g><rect x="500" y="110" width="540" height="100" rx="5" fill="#eaf3f9" stroke="#79a4c0" stroke-width="1.7"/>
+<text x="770.0" y="152" text-anchor="middle" class="title">研究人员 / AI 助手</text>
+<text x="770.0" y="192" text-anchor="middle" class="body">浏览器操作 · MCP 工具调用</text>
+</g>
+<g><rect x="500" y="330" width="540" height="155" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="770.0" y="372" text-anchor="middle" class="title">交互入口 · Next.js Web</text>
+<text x="770.0" y="412" text-anchor="middle" class="body">编辑与提交实验，查看进度和结果</text>
+<text x="770.0" y="444" text-anchor="middle" class="body">Web 页面 / Server Actions / MCP</text>
+</g>
+<g><rect x="500" y="650" width="540" height="115" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="770.0" y="692" text-anchor="middle" class="title">REST API · Litestar</text>
+<text x="770.0" y="732" text-anchor="middle" class="body">接收请求，校验参数与权限</text>
+</g>
+<g><rect x="500" y="865" width="540" height="160" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="770.0" y="907" text-anchor="middle" class="title">中央编排器 · Orchestrator</text>
+<text x="770.0" y="947" text-anchor="middle" class="body">按协议 DAG 找出就绪任务</text>
+<text x="770.0" y="979" text-anchor="middle" class="body">调度并分配设备与资源，管理任务生命周期</text>
+</g>
+<g><rect x="500" y="1200" width="540" height="190" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="770.0" y="1242" text-anchor="middle" class="title">分布式执行 · Ray</text>
+<text x="770.0" y="1282" text-anchor="middle" class="body">任务 Worker 执行任务函数</text>
+<text x="770.0" y="1314" text-anchor="middle" class="body">通过设备 Actor 调用驱动</text>
+<text x="770.0" y="1346" text-anchor="middle" class="body">回传输出、状态与文件引用</text>
+</g>
+<g><rect x="50" y="865" width="280" height="160" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="190.0" y="907" text-anchor="middle" class="title">user/ 软件包</text>
+<text x="190.0" y="947" text-anchor="middle" class="body">实验室、设备、任务</text>
+<text x="190.0" y="979" text-anchor="middle" class="body">协议定义与 Python 插件</text>
+<text x="190.0" y="1011" text-anchor="middle" class="body">加载后建立任务 DAG</text>
+</g>
+<g><rect x="1150" y="865" width="280" height="160" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="1290.0" y="907" text-anchor="middle" class="title">SQL 数据库</text>
+<text x="1290.0" y="947" text-anchor="middle" class="body">定义、状态、输入输出</text>
+<text x="1290.0" y="979" text-anchor="middle" class="body">Web 直接读 PostgreSQL</text>
+<text x="1290.0" y="1011" text-anchor="middle" class="body">后端另支持 SQLite</text>
+</g>
+<g><rect x="1150" y="1200" width="280" height="190" rx="5" fill="#f6e7ae" stroke="#b69a42" stroke-width="1.7"/>
+<text x="1290.0" y="1242" text-anchor="middle" class="title">S3 对象存储</text>
+<text x="1290.0" y="1282" text-anchor="middle" class="body">任务输入输出文件</text>
+<text x="1290.0" y="1314" text-anchor="middle" class="body">归档、证据和录像</text>
+<text x="1290.0" y="1346" text-anchor="middle" class="body">默认服务：SeaweedFS</text>
+</g>
+<g><rect x="500" y="1600" width="540" height="130" rx="5" fill="#eaf3f9" stroke="#79a4c0" stroke-width="1.7"/>
+<text x="770.0" y="1642" text-anchor="middle" class="title">仪器设备 / 仿真工作站</text>
+<text x="770.0" y="1682" text-anchor="middle" class="body">设备驱动或 SiLA 2 接入</text>
+<text x="770.0" y="1714" text-anchor="middle" class="body">Matterix 经独立 bridge 连接 Isaac Sim</text>
+</g>
+<path d="M 770 210 V 330" class="flow"/>
+<text x="770" y="274" text-anchor="middle" class="label">提交实验</text>
+<path d="M 770 485 V 650" class="flow"/>
+<text x="770" y="550" text-anchor="middle" class="label">请求与控制</text>
+<path d="M 770 765 V 865" class="flow"/>
+<text x="770" y="822" text-anchor="middle" class="label">交给领域服务处理</text>
+<path d="M 770 1025 V 1200" class="flow" marker-start="url(#arrow)"/>
+<text x="770" y="1130" text-anchor="middle" class="label">下发任务 / 返回结果</text>
+<path d="M 770 1390 V 1600" class="flow" marker-start="url(#arrow)"/>
+<text x="770" y="1555" text-anchor="middle" class="label">设备调用 / 状态反馈</text>
+<path d="M 330 945 H 500" class="flow dependency"/>
+<text x="415" y="925" text-anchor="middle" class="label">加载定义</text>
+<path d="M 1040 945 H 1150" class="flow"/>
+<text x="1095" y="925" text-anchor="middle" class="label">保存记录</text>
+<path d="M 1040 1295 H 1150" class="flow" marker-start="url(#arrow)"/>
+<text x="1095" y="1275" text-anchor="middle" class="label">读写文件</text>
+<path d="M 1040 405 H 1100 V 905 H 1150" class="flow"/>
+<text x="1100" y="750" text-anchor="middle" class="label">读取状态</text>
+<text x="1150" y="1435" font-size="20" font-weight="600">结果回传后继续推进任务</text>
+<text x="1150" y="1470" font-size="20">直到协议完成</text>
+<text x="50" y="1768" class="small">浅黄：EOS 组件与依赖　浅蓝：使用者及设备　浅绿：运行范围　虚线：配置加载</text>
+<g><rect x="50" y="650" width="280" height="115" rx="5" fill="#eaf3f9" stroke="#79a4c0" stroke-width="1.7"/>
+<text x="190" y="692" text-anchor="middle" class="title">REST API 客户端</text>
+<text x="190" y="732" text-anchor="middle" class="body">脚本或外部程序</text></g>
+<path d="M 330 707 H 500" class="flow"/>
+<text x="415" y="687" text-anchor="middle" class="label">直接请求</text>
+</svg>

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "scene_id": "franka_beaker",
+  "max_lift_m": 0.58,
+  "calibration_status": "verified",
+  "method": "当前固定单环境完整抓取/两次抬升/两次放下/松开循环；每次升降 0.29 m，累计上升 0.58 m；这是已验证指令上限，非通用机械极限",
+  "provenance": {
+    "evidence": "evidence/matterix-upgrade-20261103/beaker-camera-acceptance.json",
+    "evidence_sha256": "19c7c9c977499d5d2c09c33600ed6e744a25683982e0724760c9b07e0fc8e26c",
+    "tracking_tolerance_m": 0.02,
+    "support_contact_tolerance_m": 0.0005,
+    "measured_hold": [
+      {
+        "step": "grasp",
+        "requested_height_m": 0.0,
+        "actual_height_m": 6.0986727476119995e-05,
+        "maximum_height_m": 0.00012309104204177856
+      },
+      {
+        "step": "lift1",
+        "requested_height_m": 0.29,
+        "actual_height_m": 0.28913984447717667,
+        "maximum_height_m": 0.2932550087571144
+      },
+      {
+        "step": "lift2",
+        "requested_height_m": 0.58,
+        "actual_height_m": 0.5795957520604134,
+        "maximum_height_m": 0.5796729996800423
+      },
+      {
+        "step": "lower1",
+        "requested_height_m": 0.29,
+        "actual_height_m": 0.2892225757241249,
+        "maximum_height_m": 0.5795957520604134
+      },
+      {
+        "step": "lower2",
+        "requested_height_m": 0.0,
+        "actual_height_m": 0.00047105923295021057,
+        "maximum_height_m": 0.2892225757241249
+      },
+      {
+        "step": "release",
+        "requested_height_m": 0.0,
+        "actual_height_m": -1.7151236534118652e-05,
+        "maximum_height_m": 0.00047935545444488525
+      }
+    ],
+    "decoded_video_evidence": "evidence/matterix-upgrade-20261103/beaker-camera-video-decode.json",
+    "higher_candidate_failure": "evidence/matterix-upgrade-20261103/beaker-boundary.json"
+  }
+}

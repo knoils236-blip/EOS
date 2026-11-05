@@ -1,0 +1,2833 @@
+{
+  "schema_version": 1,
+  "scene_id": "pipetting_realtime",
+  "task_id": "Matterix-PipettingStation-Twin-v1",
+  "control_hz": 250,
+  "mode": "physics",
+  "source_root": "/home/ry/projects/Matterix/PipettingStation_20261031",
+  "export_files": {
+    "workflow": "source/matterix_plc/matterix_plc/actions/workflows.py",
+    "skills": "source/matterix_plc/matterix_plc/actions/skills.py",
+    "semantics": "source/matterix_plc/matterix_plc/semantics/station.py",
+    "task": "source/matterix_tasks/matterix_tasks/pipetting_station/pipetting_realtime.py",
+    "task_base": "source/matterix_tasks/matterix_tasks/pipetting_station/pipetting_twin.py",
+    "task_registration": "source/matterix_tasks/matterix_tasks/pipetting_station/__init__.py",
+    "asset_driver": "assets/PipettingStation_Asset_v4/Asset/pipetting_operations.py",
+    "asset_manifest": "assets/PipettingStation_Asset_v4/Asset/operational_manifest.json",
+    "asset_rig": "assets/PipettingStation_Asset_v4/Asset/rig_manifest.json",
+    "calibration": "configs/plc_calibration.yaml",
+    "plc_program_action": "source/matterix_plc/matterix_plc/actions/program_action.py"
+  },
+  "enabled_capabilities": {
+    "station_take_drop_tip_big_bottle": {
+      "workflow_name": "take_drop_tip_big_bottle",
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      }
+    },
+    "station_small_vial_decap_recap": {
+      "workflow_name": "prepare_small_vial",
+      "workflow_catalog_key": "small_vial_decap_recap",
+      "execution_source": "FULL_STATION.sub_actions[1]",
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      }
+    },
+    "station_pipette_xiaoping_to_zhongping1": {
+      "workflow_name": "pipette_xiaoping_to_zhongping1",
+      "requires_preparation": true,
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        },
+        "volume_ul": {
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL"
+        }
+      },
+      "preconditions": [
+        "_1mlTipBox_222_Tip_85（TIP 1 号位）本会话未使用"
+      ]
+    },
+    "station_pipette_zhongping1": {
+      "workflow_name": "pipette_zhongping1_tip2",
+      "requires_preparation": true,
+      "preconditions": [
+        "DesignC_BottleBody50ml_231 >= 0.1 mL（由 station_pipette_xiaoping_to_zhongping1 提供）",
+        "_1mlTipBox_222_Tip_73（TIP 2 号位）本会话未使用"
+      ],
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        },
+        "volume_ul": {
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL"
+        }
+      },
+      "workflow_catalog_key": "pipette_zhongping1",
+      "execution_source": "WORKFLOWS['pipette_zhongping1'] with PipetteTransferCfg.tip_index 1 -> 2"
+    },
+    "station_filter_take_syringe": {
+      "workflow_name": "filter_take_syringe",
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      }
+    },
+    "station_big_bottle_decap_recap": {
+      "workflow_name": "big_bottle_decap_recap",
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      }
+    },
+    "station_full_station_open_door": {
+      "workflow_name": "full_station_open_door",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_full_station_prepare_vial": {
+      "workflow_name": "full_station_prepare_vial",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_full_station_transfer_small": {
+      "workflow_name": "full_station_transfer_small",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "移液体积"
+        }
+      }
+    },
+    "station_full_station_open_bottle": {
+      "workflow_name": "full_station_open_bottle",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_full_station_transfer_big": {
+      "workflow_name": "full_station_transfer_big",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        }
+      }
+    },
+    "station_full_station_syringe_transfer": {
+      "workflow_name": "full_station_syringe_transfer",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        }
+      }
+    },
+    "station_full_station_close_door": {
+      "workflow_name": "full_station_close_door",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_mixture_stock": {
+      "workflow_name": "mixture_stock",
+      "parameter_ranges": {
+        "volume_ul": {
+          "type": "number",
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "加入母液体积"
+        }
+      }
+    },
+    "station_mixture_diluent": {
+      "workflow_name": "mixture_diluent",
+      "parameter_ranges": {
+        "volume_ul": {
+          "type": "number",
+          "default": 100,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "加入稀释液体积"
+        }
+      }
+    },
+    "station_mixture_close": {
+      "workflow_name": "mixture_close"
+    },
+    "station_skill_mount_tip": {
+      "workflow_name": "skill_mount_tip",
+      "source_symbol": "MountTipCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_eject_tip": {
+      "workflow_name": "skill_eject_tip",
+      "source_symbol": "EjectTipCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "dwell_s": {
+          "type": "number",
+          "default": 1.5,
+          "min": 0.5,
+          "max": 5,
+          "unit": "s",
+          "label": "TIP 脱开等待"
+        }
+      }
+    },
+    "station_skill_aspirate_from": {
+      "workflow_name": "skill_aspirate_from",
+      "source_symbol": "AspirateFromCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_dispense_to": {
+      "workflow_name": "skill_dispense_to",
+      "source_symbol": "DispenseToCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_small_vial_pick": {
+      "workflow_name": "skill_small_vial_pick",
+      "source_symbol": "SmallVialPickCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_small_vial_place": {
+      "workflow_name": "skill_small_vial_place",
+      "source_symbol": "SmallVialPlaceCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_small_vial_decap": {
+      "workflow_name": "skill_small_vial_decap",
+      "source_symbol": "SmallVialDecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_small_vial_recap": {
+      "workflow_name": "skill_small_vial_recap",
+      "source_symbol": "SmallVialRecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_small_cap_home": {
+      "workflow_name": "skill_small_cap_home",
+      "source_symbol": "SmallCapHomeCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_big_bottle_pick": {
+      "workflow_name": "skill_big_bottle_pick",
+      "source_symbol": "BigBottlePickCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_big_bottle_place": {
+      "workflow_name": "skill_big_bottle_place",
+      "source_symbol": "BigBottlePlaceCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_big_bottle_decap": {
+      "workflow_name": "skill_big_bottle_decap",
+      "source_symbol": "BigBottleDecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_big_bottle_recap": {
+      "workflow_name": "skill_big_bottle_recap",
+      "source_symbol": "BigBottleRecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_syringe_pick": {
+      "workflow_name": "skill_syringe_pick",
+      "source_symbol": "SyringePickCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_filter_head_mount": {
+      "workflow_name": "skill_filter_head_mount",
+      "source_symbol": "FilterHeadMountCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_syringe_aspirate": {
+      "workflow_name": "skill_syringe_aspirate",
+      "source_symbol": "SyringeAspirateCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_syringe_dispense": {
+      "workflow_name": "skill_syringe_dispense",
+      "source_symbol": "SyringeDispenseCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_syringe_discard": {
+      "workflow_name": "skill_syringe_discard",
+      "source_symbol": "SyringeDiscardCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_wait": {
+      "workflow_name": "skill_wait",
+      "source_symbol": "SettleCfg(duration=duration_s)",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "duration_s": {
+          "type": "number",
+          "default": 1,
+          "min": 0.1,
+          "max": 30,
+          "unit": "s",
+          "label": "等待时长"
+        }
+      }
+    },
+    "station_skill_pipette_transfer": {
+      "workflow_name": "skill_pipette_transfer",
+      "source_symbol": "PipetteTransferCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_syringe_filter_transfer": {
+      "workflow_name": "skill_syringe_filter_transfer",
+      "source_symbol": "SyringeFilterTransferCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      }
+    },
+    "station_skill_front_door": {
+      "workflow_name": "skill_front_door",
+      "source_symbol": "FrontDoorCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "open_m": {
+          "type": "number",
+          "default": 0.39,
+          "min": 0.0,
+          "max": 0.39,
+          "unit": "m",
+          "label": "前门开度"
+        }
+      }
+    },
+    "station_take_drop_tip": {
+      "workflow_name": "take_drop_tip",
+      "source_symbol": "WORKFLOWS[take_drop_tip]",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_small_cap_pick_place": {
+      "workflow_name": "small_cap_pick_place",
+      "source_symbol": "WORKFLOWS[small_cap_pick_place]",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_big_cap_pick_place": {
+      "workflow_name": "big_cap_pick_place",
+      "source_symbol": "WORKFLOWS[big_cap_pick_place]",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    }
+  },
+  "workflows": {
+    "pipette_zhongping1": {
+      "source_symbol": "pipette_zhongping1",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_pipette_zhongping1",
+      "fixed_parameters": {
+        "source_zone": "中瓶区1",
+        "target_zone": "中瓶区1",
+        "source_asset": "DesignC_BottleBody50ml_231",
+        "target_asset": "DesignC_BottleBody50ml_231",
+        "tip_index": 2
+      },
+      "parameter_ranges": {
+        "volume_ul": {
+          "min": 20.0,
+          "max": 180.0
+        }
+      },
+      "semantic_acceptance": [
+        "提交前中瓶区1 液量不少于请求 volume_ul，且 TIP 2 号位未使用",
+        "本次任务中瓶区1 液量下降与 TIP 峰值均约等于请求体积",
+        "结束时中瓶区1 回到初始液量，账本总量守恒且其他容器不变",
+        "TIP 无残液且已弃置，操作历史无拒绝"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/configs/regression_baseline.json",
+          "marker": "workflows.pipette_zhongping1.success_prints=2",
+          "scope": "fingerprint_only"
+        }
+      ],
+      "disabled_reason": null,
+      "requires_preparation": true,
+      "variant": {
+        "reason": "导出版固定 TIP 1 号位；1 号位已被先行的小瓶→中瓶区1 移液用掉且弃置后不回槽，同一会话内无法再取（evidence/zhongping1-live-20261031-210744）",
+        "change": "仅 PipetteTransferCfg.tip_index 1 -> 2，其他字段取自导出并在运行时校验未漂移",
+        "tip_slot_evidence": "plan_macro('装小TIP头', 2, resolve_operations=True) -> _1mlTipBox_222_Tip_73；out/videos/full_workflow_attempt_20261031-170646 中 tip_index=2 的阶段 state_machine_success"
+      }
+    },
+    "pipette_xiaoping_to_zhongping1": {
+      "source_symbol": "pipette_xiaoping_to_zhongping1",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_pipette_xiaoping_to_zhongping1",
+      "requires_preparation": true,
+      "fixed_parameters": {
+        "source_zone": "小瓶区",
+        "target_zone": "中瓶区1",
+        "source_asset": "TransferBottle10ml_617",
+        "target_asset": "DesignC_BottleBody50ml_231"
+      },
+      "parameter_ranges": {
+        "volume_ul": {
+          "min": 20.0,
+          "max": 180.0
+        }
+      },
+      "semantic_acceptance": [
+        "运行历史出现增加的资产操作事件且没有被拒绝的 operation:status",
+        "TransferBottle10ml_617 的减少量与请求 volume_ul 一致",
+        "DesignC_BottleBody50ml_231 的增加量与请求 volume_ul 一致",
+        "只检查初始液量充足、没有实际增量和历史变化的调用必须失败"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_20261031-182505/result.json",
+          "marker": "phases[name='TIP：小瓶吸液至中瓶吐液'].status=state_machine_success",
+          "steps": 4940,
+          "observed_volume_ml": {
+            "source_initial": 8.0,
+            "source_final": 7.9,
+            "target_initial": 0.0,
+            "target_final": 0.1000000047
+          },
+          "scope": "child_phase"
+        }
+      ],
+      "reference_evidence": [],
+      "disabled_reason": null
+    },
+    "take_drop_tip": {
+      "source_symbol": "take_drop_tip",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_take_drop_tip",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 1 号位 TIP 的 grasp/release 与 eject_tip 命令",
+        "最终 TipOn=false 且没有 attached/seated TIP"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/workflow_validation_20261031/registered.json",
+          "sha256": "1ce0147669c3e95f283d5609647d8ca637ba859d15cf8c9e9839b59b94b52ff6",
+          "marker": "phases[name='take_drop_tip'].status=state_machine_success",
+          "steps": 3020,
+          "scope": "kinematic_registered_workflow"
+        }
+      ],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/workflows.py",
+          "sha256": "37ce058ee1e603a2cbc2a7319a3d110de26e64741d5584ff0c0fcd879de2ee3e",
+          "marker": "WORKFLOWS['take_drop_tip']",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "take_drop_tip_big_bottle": {
+      "source_symbol": "take_drop_tip_big_bottle",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_take_drop_tip_big_bottle",
+      "fixed_parameters": {
+        "front_door_open_m": 0.39,
+        "small_vial_index": 1,
+        "small_vial_cap": "DesignD_DesignC_ChromatographyVial2ml_190_Cap",
+        "tip": "_1mlTipBox_222_Tip_85",
+        "big_bottle_cap": "DesignD_DesignC_BottleCap_237_Cap"
+      },
+      "parameter_ranges": {},
+      "semantic_acceptance": [
+        "本次资产历史出现小瓶盖抓取/释放、TIP grasp/release 和大瓶盖抓取/释放",
+        "本次命令历史出现 _1mlTipBox_222_Tip_85 的 eject_tip，且没有 rejected operation:status",
+        "本次任务 history 的同一快照中 observed attached=true、seated_tips[_1mlTipBox_222_Tip_85]=true 且 TipOn=true，作为运动学 TIP 装座语义",
+        "最终 attached 与 seated_tips 两个 map 均存在且 _1mlTipBox_222_Tip_85 对应值为 false 或键缺失、TipOn=false，grips 为空且 operation:status 接受，作为运动学 TIP 抛头语义；初始静态状态或前次任务事件不能替代本次装座与抛头"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/pipetting_workflow_kinematic_20261031.result.json",
+          "marker": "status=success",
+          "simulation_steps": 10986,
+          "simulation_seconds": 43.944,
+          "scope": "complete_kinematic_workflow",
+          "hardware_validation": false
+        }
+      ],
+      "reference_evidence": [],
+      "disabled_reason": null
+    },
+    "small_cap_pick_place": {
+      "source_symbol": "small_cap_pick_place",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_small_cap_pick_place",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现小瓶盖 grasp 与 release 事件",
+        "最终小瓶盖不再 attached 且小瓶盖爪张开"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/workflow_validation_20261031/registered.json",
+          "sha256": "1ce0147669c3e95f283d5609647d8ca637ba859d15cf8c9e9839b59b94b52ff6",
+          "marker": "phases[name='small_cap_pick_place'].status=state_machine_success",
+          "steps": 2160,
+          "scope": "kinematic_registered_workflow"
+        }
+      ],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/workflows.py",
+          "sha256": "37ce058ee1e603a2cbc2a7319a3d110de26e64741d5584ff0c0fcd879de2ee3e",
+          "marker": "WORKFLOWS['small_cap_pick_place']",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "big_cap_pick_place": {
+      "source_symbol": "big_cap_pick_place",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_big_cap_pick_place",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现大瓶盖 grasp 与 release 事件",
+        "最终大瓶盖不再 attached"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/workflow_validation_20261031/registered.json",
+          "sha256": "1ce0147669c3e95f283d5609647d8ca637ba859d15cf8c9e9839b59b94b52ff6",
+          "marker": "phases[name='big_cap_pick_place'].status=state_machine_success",
+          "steps": 2962,
+          "scope": "kinematic_registered_workflow"
+        }
+      ],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/workflows.py",
+          "sha256": "37ce058ee1e603a2cbc2a7319a3d110de26e64741d5584ff0c0fcd879de2ee3e",
+          "marker": "WORKFLOWS['big_cap_pick_place']",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "filter_take_syringe": {
+      "source_symbol": "filter_take_syringe",
+      "kind": "WORKFLOWS",
+      "enabled_capability": "station_filter_take_syringe",
+      "fixed_parameters": {
+        "barrel": "SyringeComponent1_676",
+        "piston": "SyringeComponent2_677"
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      },
+      "semantic_acceptance": [
+        "本次资产历史出现 SyringeComponent1_676 与 SyringeComponent2_677 的 grasp",
+        "最终 attached mapping 中两个组件均为 true，SyringeOn 为 true",
+        "operation:status 接受，历史没有 rejected operation:status",
+        "初始或前次任务中的针筒抓取事件不能替代本次抓取事件"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_attempt_20261031-170646/result.json",
+          "marker": "phases[name='注射器：取针筒'].status=state_machine_success",
+          "steps": 1941,
+          "scope": "complete_phase_6"
+        }
+      ],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/configs/regression_baseline.json",
+          "marker": "workflows.filter_take_syringe.success_prints=2",
+          "scope": "fingerprint_only"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "small_vial_decap_recap": {
+      "source_symbol": "small_vial_decap_recap",
+      "kind": "named_complete_workflow",
+      "enabled_capability": "station_small_vial_decap_recap",
+      "prepared_execution_name": "prepare_small_vial",
+      "execution_source": "FULL_STATION.sub_actions[1]",
+      "execution_actions": [
+        "SettleCfg()",
+        "SmallVialPickCfg(index=1, hold=0.5)",
+        "SmallVialDecapCfg(hold=0.5)",
+        "SmallVialRecapCfg(safe_lift=False, hold=2.0)",
+        "SmallVialPlaceCfg(index=1, safe_lift=False)",
+        "SmallCapHomeCfg()"
+      ],
+      "fixed_parameters": {
+        "small_vial_index": 1,
+        "small_vial_cap": "DesignD_DesignC_ChromatographyVial2ml_190_Cap"
+      },
+      "parameter_ranges": {},
+      "semantic_acceptance": [
+        "历史中出现小瓶盖 cap_detached 与 cap_engaged",
+        "历史中出现盖的 grasp/release，且没有 rejected operation:status",
+        "最终 SmallCapOpen 为 false、grips 为空，小瓶盖处于闭合状态",
+        "仅初始状态是假或仅最终状态是真，而历史没有开合事件时必须失败"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_20261031-182505/result.json",
+          "marker": "phases[name='小瓶取放与开盖合盖'].status=state_machine_success",
+          "steps": 12219,
+          "scope": "complete_phase_2"
+        }
+      ],
+      "reference_evidence": [],
+      "disabled_reason": null
+    },
+    "big_bottle_decap_recap": {
+      "source_symbol": "big_bottle_decap_recap",
+      "kind": "named_complete_workflow",
+      "enabled_capability": "station_big_bottle_decap_recap",
+      "fixed_parameters": {
+        "big_bottle_index": 1,
+        "pick_hold_s": 0.5,
+        "decap_hold_s": 0.5,
+        "recap_hold_s": 2.0,
+        "place_hold_s": 0.5,
+        "big_bottle": "DesignD_DesignC_BottleBody500ml_238",
+        "big_bottle_cap": "DesignD_DesignC_BottleCap_237_Cap"
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s"
+        }
+      },
+      "semantic_acceptance": [
+        "本次资产历史出现大瓶盖 DesignD_DesignC_BottleCap_237_Cap 的 grasp/release 与 cap_detached/cap_engaged",
+        "本次任务 history 中 BigCapOpen 曾为 true，最终为 false",
+        "最终 DesignD_DesignC_BottleBody500ml_238 的 cap_closed=true、grips 为空",
+        "operation:status 接受，历史没有 rejected operation:status；初始或前次任务事件不能作证"
+      ],
+      "verified_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_attempt_20261031-170646/result.json",
+          "marker": "phases[name='大瓶取放与开盖合盖'].status=state_machine_success",
+          "scope": "complete_phase_4"
+        }
+      ],
+      "reference_evidence": [],
+      "disabled_reason": null
+    },
+    "syringe_filter_full": {
+      "source_symbol": "syringe_filter_full",
+      "kind": "named_complete_workflow",
+      "enabled_capability": null,
+      "fixed_parameters": {
+        "volume_ul": 50.0
+      },
+      "parameter_ranges": {
+        "volume_ul": {
+          "min": 50.0,
+          "max": 50.0
+        }
+      },
+      "semantic_acceptance": [
+        "装针筒、装过滤头、吸液、吐液、弃置各阶段均有成功运行证据",
+        "最终无残留针筒/过滤头 grips，且操作历史无拒绝"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [],
+      "disabled_reason": "与七阶段第 6 阶段相同（Settle + SyringeFilterTransferCfg(50)），由 station_full_station_syringe_transfer 和 station_skill_syringe_filter_transfer 提供"
+    },
+    "syringe_filter_partial": {
+      "source_symbol": "syringe_filter_partial",
+      "kind": "named_complete_workflow",
+      "enabled_capability": null,
+      "fixed_parameters": {
+        "volume_ul": 50.0,
+        "aspirate": false,
+        "discard": false
+      },
+      "parameter_ranges": {
+        "volume_ul": {
+          "min": 50.0,
+          "max": 50.0
+        }
+      },
+      "semantic_acceptance": [
+        "取针筒和装过滤头均成功",
+        "此流程明确不验证吸液、吐液和弃置"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [],
+      "disabled_reason": "只有相邻子阶段证据，没有该命名流程的完整原始运行结果"
+    },
+    "pipette_big_bottle": {
+      "source_symbol": "pipette_big_bottle",
+      "kind": "function_workflow",
+      "enabled_capability": null,
+      "fixed_parameters": {
+        "source_zone": "大瓶区",
+        "target_zone": "大瓶区",
+        "volume_ul": 100.0,
+        "tip_index_in_full_station": 2
+      },
+      "parameter_ranges": {
+        "volume_ul": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "tip_index": {
+          "min": 1,
+          "max": 96
+        }
+      },
+      "semantic_acceptance": [
+        "TIP 已 seated，目标大瓶开盖且吸吐均未返回拒绝",
+        "资产液量账本完成可核对的自吸自吐变化"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_attempt_20261031-170646/result.json",
+          "marker": "phases[name='TIP：大瓶吸液与吐液'].status=state_machine_success with later operation errors",
+          "scope": "conflicted"
+        }
+      ],
+      "disabled_reason": "同一大瓶移液阶段出现对齐失败、No tip attached 和盖未打开冲突，不能按成功登记"
+    },
+    "FULL_STATION": {
+      "source_symbol": "FULL_STATION",
+      "kind": "named_complete_workflow",
+      "enabled_capability": null,
+      "fixed_parameters": {
+        "phase_count": 11,
+        "pipette_volume_ul": 100.0,
+        "syringe_volume_ul": 50.0
+      },
+      "parameter_ranges": {},
+      "semantic_acceptance": [
+        "11 个阶段全部 state_machine_success",
+        "所有资产操作 status 均 accepted，液量、grips、TIP、盖和门终态满足各阶段语义条件"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_20261031-182358/result.json",
+          "marker": "status=failed; failed_phase=小瓶取放与开盖合盖",
+          "scope": "failure"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_20261031-182505/result.json",
+          "marker": "status=failed; failed_phase=TIP：大瓶吸液与吐液",
+          "scope": "failure"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/out/videos/full_workflow_attempt_20261031-170646/result.json",
+          "marker": "status=blocked; failed_phase=注射器：吸液 50 µL",
+          "scope": "blocked"
+        }
+      ],
+      "disabled_reason": "源包运动学整站七阶段已通过（out/workflow_validation_20261031/continuous.json）；EOS 以七个阶段能力分别提供，单任务墙钟上限无法容纳整站物理运行"
+    },
+    "full_station_open_door": {
+      "source_symbol": "full_station().sub_actions[0]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_open_door",
+      "fixed_parameters": {
+        "phase": 1
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_prepare_vial": {
+      "source_symbol": "full_station().sub_actions[1]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_prepare_vial",
+      "fixed_parameters": {
+        "phase": 2
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_transfer_small": {
+      "source_symbol": "full_station().sub_actions[2]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_transfer_small",
+      "fixed_parameters": {
+        "phase": 3
+      },
+      "parameters": {
+        "volume_ul": {
+          "min": 20.0,
+          "max": 180.0
+        }
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_open_bottle": {
+      "source_symbol": "full_station().sub_actions[3]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_open_bottle",
+      "fixed_parameters": {
+        "phase": 4
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_transfer_big": {
+      "source_symbol": "full_station().sub_actions[4]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_transfer_big",
+      "fixed_parameters": {
+        "phase": 5
+      },
+      "parameters": {
+        "volume_ul": {
+          "min": 20.0,
+          "max": 180.0
+        }
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_syringe_transfer": {
+      "source_symbol": "full_station().sub_actions[5]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_syringe_transfer",
+      "fixed_parameters": {
+        "phase": 6
+      },
+      "parameters": {
+        "volume_ul": {
+          "min": 20.0,
+          "max": 180.0
+        }
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "full_station_close_door": {
+      "source_symbol": "full_station().sub_actions[6]",
+      "kind": "FULL_STATION_PHASE",
+      "enabled_capability": "station_full_station_close_door",
+      "fixed_parameters": {
+        "phase": 7
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ]
+    },
+    "mixture_stock": {
+      "source_symbol": "PipetteTransferCfg(source=小瓶区,target=中瓶区1)",
+      "kind": "MIXTURE_PHASE",
+      "enabled_capability": "station_mixture_stock",
+      "fixed_parameters": {
+        "phase": 3,
+        "total_volume_ul": 200.0
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ],
+      "description": "Parameterised simulated mixture stock",
+      "parameters": {
+        "volume_ul": {
+          "min": 20,
+          "max": 180
+        }
+      }
+    },
+    "mixture_diluent": {
+      "source_symbol": "PipetteTransferCfg + BigBottleRecapCfg/BigBottlePlaceCfg",
+      "kind": "MIXTURE_PHASE",
+      "enabled_capability": "station_mixture_diluent",
+      "fixed_parameters": {
+        "phase": 5,
+        "total_volume_ul": 200.0
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ],
+      "description": "Parameterised simulated mixture diluent",
+      "parameters": {
+        "volume_ul": {
+          "min": 20,
+          "max": 180
+        }
+      }
+    },
+    "mixture_close": {
+      "source_symbol": "FrontDoorCfg(open_m=0)",
+      "kind": "MIXTURE_PHASE",
+      "enabled_capability": "station_mixture_close",
+      "fixed_parameters": {
+        "phase": 6,
+        "total_volume_ul": 200.0
+      },
+      "semantic_acceptance": [
+        "连续阶段及耗材前置条件通过",
+        "操作事件和实际关节/液量后置条件通过",
+        "操作无拒绝"
+      ],
+      "description": "Parameterised simulated mixture close",
+      "parameters": {}
+    },
+    "skill_mount_tip": {
+      "source_symbol": "MountTipCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_mount_tip",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现所选 TIP 的真实 grasp/tip_seated 记录",
+        "最终 TipOn=true 且该 TIP attached、seated"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "MountTipCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_eject_tip": {
+      "source_symbol": "EjectTipCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_eject_tip",
+      "fixed_parameters": {
+        "drop_target": "TIP 固定弃置位"
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "dwell_s": {
+          "type": "number",
+          "default": 1.5,
+          "min": 0.5,
+          "max": 5,
+          "unit": "s",
+          "label": "TIP 脱开等待"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 eject_tip 命令和当前已装 TIP 的 release 事件",
+        "最终 TipOn=false 且没有 attached/seated TIP"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "EjectTipCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_aspirate_from": {
+      "source_symbol": "AspirateFromCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_aspirate_from",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "zone": {
+          "type": "string",
+          "default": "中瓶区1",
+          "choices": [
+            "中瓶区1",
+            "大开盖区",
+            "大瓶区",
+            "小开盖区",
+            "小瓶区"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "吸液区"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 aspirate 命令",
+        "所选源容器液量下降、TIP 液量上升且总量守恒"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "AspirateFromCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_dispense_to": {
+      "source_symbol": "DispenseToCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_dispense_to",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "zone": {
+          "type": "string",
+          "default": "中瓶区1",
+          "choices": [
+            "中瓶区1",
+            "大开盖区",
+            "大瓶区",
+            "小开盖区",
+            "小瓶区"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "吐液区"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 dispense 命令",
+        "TIP 液量下降、目标容器液量上升且总量守恒"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "DispenseToCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_small_vial_pick": {
+      "source_symbol": "SmallVialPickCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_small_vial_pick",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现小瓶盖 grasp 事件",
+        "最终小瓶盖 attached 且小瓶盖爪闭合"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialPickCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_small_vial_place": {
+      "source_symbol": "SmallVialPlaceCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_small_vial_place",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现小瓶盖 release 事件",
+        "最终小瓶盖不再 attached 且小瓶盖爪张开"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialPlaceCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_small_vial_decap": {
+      "source_symbol": "SmallVialDecapCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_small_vial_decap",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 cap_detached 事件",
+        "本次状态进入 SmallCapOpen=true 且最终保持打开"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialDecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_small_vial_recap": {
+      "source_symbol": "SmallVialRecapCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_small_vial_recap",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 cap_engaged 事件",
+        "本次状态回到 SmallCapOpen=false 且瓶盖闭合"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialRecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_small_cap_home": {
+      "source_symbol": "SmallCapHomeCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_small_cap_home",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务 small_cap_lift 实际向 0 移动",
+        "最终 small_cap_lift 位于 0 附近"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallCapHomeCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_big_bottle_pick": {
+      "source_symbol": "BigBottlePickCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_big_bottle_pick",
+      "fixed_parameters": {
+        "safe_lift": true,
+        "jaws": {
+          "big_cap_grip": 0.012,
+          "pg1": 0.018
+        }
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现大瓶盖 grasp 事件",
+        "最终大瓶盖 attached 且相关夹爪闭合"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottlePickCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_big_bottle_place": {
+      "source_symbol": "BigBottlePlaceCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_big_bottle_place",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现大瓶盖 release 事件",
+        "最终大瓶盖不再 attached 且大瓶盖爪张开"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottlePlaceCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_big_bottle_decap": {
+      "source_symbol": "BigBottleDecapCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_big_bottle_decap",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 cap_detached 事件",
+        "本次状态进入 BigCapOpen=true 且最终保持打开"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottleDecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_big_bottle_recap": {
+      "source_symbol": "BigBottleRecapCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_big_bottle_recap",
+      "fixed_parameters": {
+        "safe_lift": true
+      },
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 cap_engaged 事件",
+        "本次状态回到 BigCapOpen=false 且瓶盖闭合"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottleRecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_syringe_pick": {
+      "source_symbol": "SyringePickCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_syringe_pick",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务同时出现筒身和活塞 grasp 事件",
+        "最终两者 attached、SyringeOn=true 且 pg3/pg4 闭合"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringePickCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_filter_head_mount": {
+      "source_symbol": "FilterHeadMountCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_filter_head_mount",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现 filter_installed 事件",
+        "最终 FilterHeadOn=true 且针筒筒身仍 attached"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "FilterHeadMountCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_syringe_aspirate": {
+      "source_symbol": "SyringeAspirateCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_syringe_aspirate",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "针筒筒身和活塞均 mounted",
+        "本次任务出现 syringe aspirate 命令且源容器液量下降"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeAspirateCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_syringe_dispense": {
+      "source_symbol": "SyringeDispenseCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_syringe_dispense",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 1,
+          "choices": [
+            1
+          ],
+          "unit": "",
+          "label": "固定槽位"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "针筒和过滤头均 mounted",
+        "本次任务出现 syringe dispense 命令且转移瓶液量上升"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeDispenseCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_syringe_discard": {
+      "source_symbol": "SyringeDiscardCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_syringe_discard",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现针筒 release 事件",
+        "最终 SyringeOn=false、FilterHeadOn=false 且两者不再 attached"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeDiscardCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_wait": {
+      "source_symbol": "SettleCfg(duration=duration_s)",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_wait",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "duration_s": {
+          "type": "number",
+          "default": 1,
+          "min": 0.1,
+          "max": 30,
+          "unit": "s",
+          "label": "等待时长"
+        }
+      },
+      "semantic_acceptance": [
+        "仿真时间实际推进到请求时长",
+        "等待期间液量和设备语义不变"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SettleCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_pipette_transfer": {
+      "source_symbol": "PipetteTransferCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_pipette_transfer",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "source": {
+          "type": "string",
+          "default": "小瓶区",
+          "choices": [
+            "中瓶区1",
+            "大开盖区",
+            "大瓶区",
+            "小开盖区",
+            "小瓶区"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "吸液区"
+        },
+        "target": {
+          "type": "string",
+          "default": "中瓶区1",
+          "choices": [
+            "中瓶区1",
+            "大开盖区",
+            "大瓶区",
+            "小开盖区",
+            "小瓶区"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "吐液区"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+        "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "PipetteTransferCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_syringe_filter_transfer": {
+      "source_symbol": "SyringeFilterTransferCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_syringe_filter_transfer",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "hold_s": {
+          "type": "number",
+          "default": 0.5,
+          "min": 0,
+          "max": 5,
+          "unit": "s",
+          "label": "动作末尾停顿"
+        }
+      },
+      "semantic_acceptance": [
+        "本次任务出现筒身、活塞 grasp/release 与 filter_installed 事件",
+        "反应器到小瓶区的液量变化与请求体积相差不超过 5 µL，最终 SyringeOn=false、FilterHeadOn=false"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeFilterTransferCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_front_door": {
+      "source_symbol": "FrontDoorCfg",
+      "kind": "native_skill",
+      "enabled_capability": "station_skill_front_door",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "open_m": {
+          "type": "number",
+          "default": 0.39,
+          "min": 0.0,
+          "max": 0.39,
+          "unit": "m",
+          "label": "前门开度"
+        }
+      },
+      "semantic_acceptance": [
+        "最终 front_door 与请求开度相差不超过 1.5 mm",
+        "操作历史无拒绝"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "FrontDoorCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
+          "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
+          "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    }
+  },
+  "scene_inventory": [
+    {
+      "task_id": "Matterix-PipettingStation-Realtime-v1",
+      "enabled": true,
+      "mode": "kinematic",
+      "control_hz": 250,
+      "acceptance_scope": "语义账本和设备操作状态，不代表接触物理或真机验证"
+    },
+    {
+      "task_id": "Matterix-PipettingStation-Twin-v1",
+      "enabled": false,
+      "mode": "physics",
+      "control_hz": 250,
+      "disabled_reason": "当前导出的物理执行记录在门板跟踪处停止，没有可验收的完整物理流程"
+    },
+    {
+      "task_id": "Matterix-PipettingStation-Demo-v1",
+      "enabled": false,
+      "mode": "physics",
+      "control_hz": 15,
+      "disabled_reason": "导出明确标记已弃用，不用于本次能力执行"
+    }
+  ],
+  "structure_inventory": {
+    "source/matterix": "仿真与语义引擎；使用导出版本",
+    "source/matterix_assets": "场景、耗材和资产运行接口；公共data由本机Matterix基础目录提供",
+    "source/matterix_plc": "既有PLC原语、技能及13项命名工作流；执行由Matterix状态机负责",
+    "source/matterix_tasks": "Twin、Realtime和已弃用Demo场景配置",
+    "configs/plc_calibration.yaml": "标定记录；27项未验证，不开放真机执行",
+    "configs/regression_baseline.json": "离线回归指纹；独立列为参考，不代替原始执行证据",
+    "assets/PipettingStation_Asset_v4/Asset": "运行资产、语义体积及夹持状态；只读加载",
+    "scripts": "原有运行、检查与录制入口；不接受客户端指定脚本",
+    "out/videos": "已有运行结果与视频证据；完整整站失败项保持禁用"
+  }
+}

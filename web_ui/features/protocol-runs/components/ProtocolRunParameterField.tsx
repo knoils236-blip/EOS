@@ -104,12 +104,12 @@ export function ProtocolRunParameterField({
           <span className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-600 text-[10px] font-medium text-gray-700 dark:text-gray-200">
             {paramSpec.type}
           </span>
-          {hasOverride && <span className="text-xs text-blue-600 dark:text-blue-400">(override)</span>}
+          {hasOverride && <span className="text-xs text-blue-600 dark:text-blue-400">（覆盖）</span>}
           {(() => {
             const constraints = [
-              paramSpec.unit && `unit: ${paramSpec.unit}`,
-              typeof paramSpec.min === 'number' && `min: ${paramSpec.min}`,
-              typeof paramSpec.max === 'number' && `max: ${paramSpec.max}`,
+              paramSpec.unit && `单位：${paramSpec.unit}`,
+              typeof paramSpec.min === 'number' && `最小值：${paramSpec.min}`,
+              typeof paramSpec.max === 'number' && `最大值：${paramSpec.max}`,
             ]
               .filter(Boolean)
               .join(', ');
@@ -125,7 +125,7 @@ export function ProtocolRunParameterField({
               tabIndex={-1}
               onClick={onClear}
               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              title="Reset to default"
+              title="恢复默认值"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
@@ -180,7 +180,7 @@ function renderStaticField(
           onChange={(e) => onChange(e.target.value === '' ? undefined : e.target.value)}
           onBlur={onBlur}
           step={spec.type === 'int' ? '1' : 'any'}
-          placeholder={`Enter ${spec.type}`}
+          placeholder={`输入 ${spec.type}`}
         />
       );
 
@@ -192,7 +192,7 @@ function renderStaticField(
           value={formatInputValue(value)}
           onChange={(e) => onChange(e.target.value || undefined)}
           onBlur={onBlur}
-          placeholder={`Enter ${spec.type}`}
+          placeholder={`输入 ${spec.type}`}
         />
       );
 
@@ -219,7 +219,7 @@ function renderStaticField(
           onBlur={onBlur}
           className={INPUT_BASE}
         >
-          <option value="">Select value</option>
+          <option value="">选择值</option>
           {(spec.choices || []).map((choice) => (
             <option key={choice} value={choice}>
               {choice}
@@ -266,7 +266,7 @@ function renderStaticField(
           value={formatInputValue(value)}
           onChange={(e) => onChange(e.target.value || undefined)}
           onBlur={onBlur}
-          placeholder="Enter value"
+          placeholder="输入值"
         />
       );
   }

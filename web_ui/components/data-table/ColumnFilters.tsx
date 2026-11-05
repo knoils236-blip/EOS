@@ -1,5 +1,6 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
 import * as React from 'react';
 import { Column } from '@tanstack/react-table';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +15,7 @@ interface ColumnFilterProps<TData> {
 }
 
 export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions = [] }: ColumnFilterProps<TData>) {
+  const columnLabel = typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id;
   // Use state to track filter value for proper reactivity
   const [filterValue, setFilterValue] = React.useState(() => column.getFilterValue());
 
@@ -30,7 +32,7 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
   if (filterType === 'text') {
     return (
       <Input
-        placeholder={`Filter ${column.id}...`}
+        placeholder={`筛选 ${columnLabel}...`}
         value={(filterValue as string) ?? ''}
         onChange={(e) => handleTextChange(e.target.value)}
         className="h-8 text-sm"
@@ -43,7 +45,7 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
     const singleValue = filterType === 'select' ? ((filterValue as string) ?? '') : '';
 
     if (filterType === 'multiselect') {
-      const options = filterOptions.map((opt) => ({ value: opt, label: opt }));
+      const options = filterOptions.map((opt) => ({ value: opt, label: statusLabel(opt) }));
       return (
         <MultiCombobox
           options={options}
@@ -53,8 +55,8 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
             setFilterValue(val);
             column.setFilterValue(val);
           }}
-          placeholder={`Filter ${column.id}...`}
-          searchPlaceholder="Search..."
+          placeholder={`筛选 ${columnLabel}...`}
+          searchPlaceholder="搜索…"
         />
       );
     }
@@ -62,7 +64,7 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
     return (
       <Select.Root value={singleValue} onValueChange={(value) => column.setFilterValue(value || undefined)}>
         <Select.Trigger className="flex h-8 w-full items-center justify-between rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500">
-          <Select.Value placeholder={`Select ${column.id}...`} />
+          <Select.Value placeholder={`选择 ${columnLabel}...`} />
           <Select.Icon>
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Select.Icon>
@@ -74,7 +76,7 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
                 value=""
                 className="relative flex cursor-pointer select-none items-center rounded-sm px-8 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none hover:bg-gray-100 dark:hover:bg-slate-700 focus:bg-gray-100 dark:focus:bg-slate-700"
               >
-                <Select.ItemText>All</Select.ItemText>
+                <Select.ItemText>全部</Select.ItemText>
               </Select.Item>
               {filterOptions.map((option) => (
                 <Select.Item
@@ -85,7 +87,7 @@ export function ColumnFilter<TData>({ column, filterType = 'text', filterOptions
                   <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
                     <Check className="h-4 w-4" />
                   </Select.ItemIndicator>
-                  <Select.ItemText>{option}</Select.ItemText>
+                  <Select.ItemText>{statusLabel(option)}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.Viewport>

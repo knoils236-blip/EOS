@@ -1,0 +1,7 @@
+name: chemos2-demo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.22
+  - postgresql=14.24
+  - pip

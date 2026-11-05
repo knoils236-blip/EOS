@@ -49,7 +49,7 @@ export const StringParameterField = memo(({ name, spec, value, onChange }: Strin
         value={displayValue}
         onChange={handleChange}
         onBlur={() => restoreDefaultIfEmpty(value, spec, onChange)}
-        placeholder={`Enter ${name}`}
+        placeholder={`输入 ${name}`}
         className={`w-full px-2.5 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 ${
           error
             ? 'border-red-500 focus:ring-red-500'

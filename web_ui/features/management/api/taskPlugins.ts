@@ -35,8 +35,8 @@ export async function getTaskPlugins(): Promise<TaskPluginInfo[]> {
       };
     });
   } catch (error) {
-    console.error('Failed to fetch task plugins:', error);
-    throw new Error('Failed to fetch task plugins from database');
+    console.error('获取任务插件失败：', error);
+    throw new Error('获取数据库中的任务插件失败');
   }
 }
 
@@ -57,10 +57,10 @@ export async function reloadTaskPlugins(taskTypes: string[]): Promise<ActionResu
       success: true,
     };
   } catch (error) {
-    console.error('Failed to reload task plugins:', error);
+    console.error('重新加载任务插件失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reload task plugins',
+      error: error instanceof Error ? error.message : '重新加载任务插件失败',
     };
   }
 }

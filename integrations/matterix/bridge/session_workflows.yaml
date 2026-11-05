@@ -1,0 +1,81 @@
+schema_version: 1
+# State preconditions: grasp requires a released beaker; lift, lower, and
+# release require a successful grasp. Lowering never resets cumulative lift.
+task: Matterix-Test-Beaker-Lift-Franka-v1
+description: Continuous Franka beaker session operations.
+control:
+  mode: cartesian_ik
+default_workflow: pickup_beaker
+workflows:
+  pickup_beaker:
+    name: pickup_beaker
+    actions:
+      - type: pick
+        object: beaker
+        lift: [0.0, 0.0, 0.1]
+        orientation_tolerance: 0.1
+        timeout: 30
+      - type: wait
+        seconds: 1.2
+  grasp_beaker:
+    name: grasp_beaker
+    actions:
+      - type: pick
+        object: beaker
+        lift: [0.0, 0.0, 0.0]
+        orientation_tolerance: 0.1
+        timeout: 30
+      - type: wait
+        seconds: 1.2
+  lift_beaker:
+    name: lift_beaker
+    actions:
+      - type: move_to_pose
+        position_w: [0.0, 0.0, 0.0]
+        quaternion_wxyz: [1.0, 0.0, 0.0, 0.0]
+        timeout: 30
+        position_tolerance: 0.01
+        orientation_tolerance: 0.1
+      - type: wait
+        seconds: 1.2
+  lower_beaker:
+    name: lower_beaker
+    actions:
+      - type: move_to_pose
+        position_w: [0.0, 0.0, 0.0]
+        quaternion_wxyz: [1.0, 0.0, 0.0, 0.0]
+        timeout: 30
+        position_tolerance: 0.01
+        orientation_tolerance: 0.1
+      - type: wait
+        seconds: 1.2
+  release_beaker:
+    name: release_beaker
+    actions:
+      - type: wait
+        seconds: 1.2
+      - type: open
+        seconds: 1.0
+        timeout: 30
+      - type: wait
+        seconds: 1.2
+  return_beaker:
+    name: return_beaker
+    actions:
+      - type: move_to_pose
+        position_w: [0.0, 0.0, 0.0]
+        quaternion_wxyz: [1.0, 0.0, 0.0, 0.0]
+        timeout: 30
+        position_tolerance: 0.01
+        orientation_tolerance: 0.05
+      - type: open
+        seconds: 1.2
+        timeout: 30
+      - type: relative
+        move: [0.0, 0.0, 0.1]
+        timeout: 30
+  wait:
+    name: wait
+    actions:
+      - type: wait
+        seconds: 1.0

@@ -33,13 +33,13 @@ export async function refreshPackages(): Promise<ActionResult> {
 
     return {
       success: true,
-      message: 'Packages refreshed successfully',
+      message: '软件包已刷新',
     };
   } catch (error) {
-    console.error('Failed to refresh packages:', error);
+    console.error('刷新软件包失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to refresh packages',
+      error: error instanceof Error ? error.message : '刷新软件包失败',
     };
   }
 }

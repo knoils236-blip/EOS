@@ -24,16 +24,16 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
   const columns: DataTableColumnDef<ProtocolType>[] = [
     {
       accessorKey: 'name',
-      header: 'Protocol',
+      header: '协议',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
     },
     packageColumn<ProtocolType>(initialProtocolTypes),
     {
       accessorKey: 'loaded',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const loaded = row.getValue('loaded') as boolean;
-        return <Badge variant={loaded ? 'success' : 'default'}>{loaded ? 'Loaded' : 'Unloaded'}</Badge>;
+        return <Badge variant={loaded ? 'success' : 'default'}>{loaded ? '已加载' : '已卸载'}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -45,7 +45,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const protocolType = row.original;
         return (
@@ -58,7 +58,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
                 disabled={!isConnected}
               >
                 <Download className="h-4 w-4 mr-1" />
-                Load
+                加载
               </Button>
             )}
             {protocolType.loaded && (
@@ -70,7 +70,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
                   disabled={!isConnected}
                 >
                   <Upload className="h-4 w-4 mr-1" />
-                  Unload
+                  卸载
                 </Button>
                 <Button
                   variant="outline"
@@ -79,7 +79,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
                   disabled={!isConnected}
                 >
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Reload
+                  重新加载
                 </Button>
               </>
             )}
@@ -130,33 +130,30 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
     switch (currentAction) {
       case 'load':
         return {
-          title: 'Load Protocols',
-          description:
-            'Are you sure you want to load these protocols? This will make them available for protocol run submission.',
-          confirmLabel: 'Load',
+          title: '加载协议',
+          description: '确定要加载这些协议吗？加载后即可提交协议运行。',
+          confirmLabel: '加载',
           variant: 'default' as const,
         };
       case 'unload':
         return {
-          title: 'Unload Protocols',
-          description:
-            'Are you sure you want to unload these protocols? Active protocols using these types will not be affected.',
-          confirmLabel: 'Unload',
+          title: '卸载协议',
+          description: '确定要卸载这些协议吗？使用这些类型的活动协议运行不受影响。',
+          confirmLabel: '卸载',
           variant: 'destructive' as const,
         };
       case 'reload':
         return {
-          title: 'Reload Protocols',
-          description:
-            'Are you sure you want to reload these protocols? This will refresh their configurations and campaign optimizers.',
-          confirmLabel: 'Reload',
+          title: '重新加载协议',
+          description: '确定要重新加载这些协议吗？这将刷新协议配置和实验计划优化器。',
+          confirmLabel: '重新加载',
           variant: 'default' as const,
         };
       default:
         return {
           title: '',
           description: '',
-          confirmLabel: 'Confirm',
+          confirmLabel: '确认',
           variant: 'default' as const,
         };
     }
@@ -185,7 +182,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
           disabled={!selectedRows.some((row) => !row.loaded) || !isConnected}
         >
           <Download className="h-4 w-4 mr-1" />
-          Load Selected
+          加载所选项
         </Button>
       )}
       {selectedRows.some((row) => row.loaded) && (
@@ -197,7 +194,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
             disabled={!selectedRows.some((row) => row.loaded) || !isConnected}
           >
             <Upload className="h-4 w-4 mr-1" />
-            Unload Selected
+            卸载所选项
           </Button>
           <Button
             variant="outline"
@@ -206,7 +203,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
             disabled={!selectedRows.some((row) => row.loaded) || !isConnected}
           >
             <RefreshCw className="h-4 w-4 mr-1" />
-            Reload Selected
+            重新加载所选项
           </Button>
         </>
       )}
@@ -220,7 +217,7 @@ export function ProtocolTypesTab({ initialProtocolTypes }: ProtocolTypesTabProps
       <DataTable
         columns={columns}
         data={initialProtocolTypes}
-        searchPlaceholder="Search protocols..."
+        searchPlaceholder="搜索协议…"
         enableRowSelection
         onSelectionChange={setSelectedRows}
         bulkActions={bulkActions}

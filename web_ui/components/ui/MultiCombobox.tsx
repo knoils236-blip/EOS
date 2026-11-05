@@ -25,9 +25,9 @@ export function MultiCombobox({
   options,
   value,
   onChange,
-  placeholder = 'Select...',
-  emptyText = 'No results found',
-  searchPlaceholder = 'Search...',
+  placeholder = '选择…',
+  emptyText = '未找到结果',
+  searchPlaceholder = '搜索…',
   className,
   disabled = false,
 }: MultiComboboxProps) {

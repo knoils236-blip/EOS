@@ -17,16 +17,16 @@ class _LazyCommand(NamedTuple):
 
 # Sub-commands are imported only when invoked, so help and unrelated commands start fast.
 _COMMANDS = {
-    "setup": _LazyCommand("eos.cli.setup_cli", "run_setup", "Interactively set up EOS"),
-    "sim": _LazyCommand("eos.cli.sim_cli", "simulate", "Run a scheduling simulation"),
-    "ui": _LazyCommand("eos.cli.web_cli", "start_web_ui", "Start the EOS web UI", hidden=True),
-    "update": _LazyCommand("eos.cli.update_cli", "update", "Update EOS"),
-    "start": _LazyCommand("eos.cli.start_cli", "start_app", "Start EOS components"),
-    "services": _LazyCommand("eos.cli.services_cli", "services_app", "Manage infrastructure services"),
-    "auth": _LazyCommand("eos.cli.auth_cli", "auth_app", "Manage accounts and roles"),
-    "db": _LazyCommand("eos.cli.db_cli", "db_app", "Manage the EOS database"),
-    "pkg": _LazyCommand("eos.cli.pkg_cli", "pkg_app", "Manage EOS packages"),
-    "ray": _LazyCommand("eos.cli.ray_cli", "ray_app", "Manage the EOS Ray cluster"),
+    "setup": _LazyCommand("eos.cli.setup_cli", "run_setup", "交互式配置 EOS"),
+    "sim": _LazyCommand("eos.cli.sim_cli", "simulate", "运行调度仿真"),
+    "ui": _LazyCommand("eos.cli.web_cli", "start_web_ui", "启动 EOS Web 界面", hidden=True),
+    "update": _LazyCommand("eos.cli.update_cli", "update", "更新 EOS"),
+    "start": _LazyCommand("eos.cli.start_cli", "start_app", "启动 EOS 组件"),
+    "services": _LazyCommand("eos.cli.services_cli", "services_app", "管理基础服务"),
+    "auth": _LazyCommand("eos.cli.auth_cli", "auth_app", "管理账户和角色"),
+    "db": _LazyCommand("eos.cli.db_cli", "db_app", "管理 EOS 数据库"),
+    "pkg": _LazyCommand("eos.cli.pkg_cli", "pkg_app", "管理 EOS 软件包"),
+    "ray": _LazyCommand("eos.cli.ray_cli", "ray_app", "管理 EOS Ray 集群"),
 }
 
 

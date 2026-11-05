@@ -5,6 +5,7 @@
  */
 
 import path from 'path';
+import { ENTITY_TYPE_LABELS } from '@/lib/labels';
 import { revalidatePath } from 'next/cache';
 import { orchestratorPost } from '@/lib/api/orchestrator';
 import { requireRole, requireSuperuser } from '@/lib/auth/authz';
@@ -24,9 +25,9 @@ type EntityAction = 'load' | 'unload' | 'reload';
 const toTypeName = (entityName: string) => path.posix.basename(entityName);
 
 const ACTION_PAST_TENSE: Record<EntityAction, string> = {
-  load: 'Loaded',
-  unload: 'Unloaded',
-  reload: 'Reloaded',
+  load: '已加载',
+  unload: '已卸载',
+  reload: '已重新加载',
 };
 
 export interface ReloadOptions {
@@ -70,7 +71,7 @@ async function entityAction(
   options: ReloadOptions = {}
 ): Promise<ActionResult> {
   if (entityType === 'devices' && !labName) {
-    return { success: false, error: `Lab name is required for device ${action}` };
+    return { success: false, error: `设备操作需要指定实验室名称` };
   }
 
   try {
@@ -87,12 +88,15 @@ async function entityAction(
     revalidatePath('/management');
 
     const verb = ACTION_PAST_TENSE[action];
-    return { success: true, message: `${verb} ${entityType.slice(0, -1)} '${entityName}' successfully` };
+    return { success: true, message: `${verb}${ENTITY_TYPE_LABELS[entityType]}“${entityName}”` };
   } catch (error) {
     console.error(`Failed to ${action} ${entityType} ${entityName}:`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : `Failed to ${action} ${entityType}`,
+      error:
+        error instanceof Error
+          ? error.message
+          : `${ACTION_PAST_TENSE[action].replace('已', '')}${ENTITY_TYPE_LABELS[entityType]}失败`,
     };
   }
 }

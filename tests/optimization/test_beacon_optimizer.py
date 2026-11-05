@@ -216,13 +216,20 @@ class TestCustomOptimizer:
 
 
 class TestModelValidation:
-    @pytest.mark.parametrize("model", ["claude-agent-sdk:sonnet", "claude-agent-sdk:opus", "ollama:qwen3.5:9b"])
+    @pytest.mark.parametrize(
+        "model",
+        [
+            "claude-agent-sdk:sonnet",
+            "claude-agent-sdk:opus",
+            "ollama:qwen3.5:9b",
+            "openai:custom-model",
+            "anthropic:claude-model",
+        ],
+    )
     def test_supported_models_accepted(self, model: str):
         _validate_model(model)
 
-    @pytest.mark.parametrize(
-        "model", ["anthropic:claude-sonnet-4-6", "openai:gpt-5.4", "google-gla:gemini-3.1-pro-preview", "sonnet"]
-    )
+    @pytest.mark.parametrize("model", ["google-gla:gemini-3.1-pro-preview", "sonnet"])
     def test_unsupported_models_rejected(self, model: str):
         with pytest.raises(ValueError, match="Unsupported Beacon AI model"):
             _validate_model(model)

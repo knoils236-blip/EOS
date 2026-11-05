@@ -10,27 +10,27 @@ export interface ValidationResult {
  */
 export function validateNumeric(value: unknown, spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined || value === '') {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
 
   if (isNaN(numValue)) {
-    return { valid: false, error: 'Value must be a valid number' };
+    return { valid: false, error: '请输入有效数值' };
   }
 
   // Check min/max bounds (only for single numbers, not arrays)
   if (typeof spec.min === 'number' && numValue < spec.min) {
-    return { valid: false, error: `Value must be at least ${spec.min}` };
+    return { valid: false, error: `值不得小于 ${spec.min}` };
   }
 
   if (typeof spec.max === 'number' && numValue > spec.max) {
-    return { valid: false, error: `Value must be at most ${spec.max}` };
+    return { valid: false, error: `值不得大于 ${spec.max}` };
   }
 
   // For int type, check if it's an integer
   if (spec.type === 'int' && !Number.isInteger(numValue)) {
-    return { valid: false, error: 'Value must be an integer' };
+    return { valid: false, error: '请输入整数' };
   }
 
   return { valid: true };
@@ -41,13 +41,13 @@ export function validateNumeric(value: unknown, spec: ParameterSpec): Validation
  */
 export function validateString(value: unknown, _spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined) {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   const strValue = String(value);
 
   if (!strValue.trim()) {
-    return { valid: false, error: 'Value cannot be empty or whitespace only' };
+    return { valid: false, error: '值不能为空或仅包含空白字符' };
   }
 
   return { valid: true };
@@ -58,11 +58,11 @@ export function validateString(value: unknown, _spec: ParameterSpec): Validation
  */
 export function validateBoolean(value: unknown, _spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined) {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   if (typeof value !== 'boolean') {
-    return { valid: false, error: 'Value must be true or false' };
+    return { valid: false, error: '值必须为 true 或 false' };
   }
 
   return { valid: true };
@@ -73,11 +73,11 @@ export function validateBoolean(value: unknown, _spec: ParameterSpec): Validatio
  */
 export function validateChoice(value: unknown, spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined || value === '') {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   if (!spec.choices || spec.choices.length === 0) {
-    return { valid: false, error: 'No choices defined for this parameter' };
+    return { valid: false, error: '此参数尚未定义可选值' };
   }
 
   const strValue = String(value);
@@ -85,7 +85,7 @@ export function validateChoice(value: unknown, spec: ParameterSpec): ValidationR
   if (!spec.choices.includes(strValue)) {
     return {
       valid: false,
-      error: `Value must be one of: ${spec.choices.join(', ')}`,
+      error: `值必须为以下选项之一：${spec.choices.join(', ')}`,
     };
   }
 
@@ -97,7 +97,7 @@ export function validateChoice(value: unknown, spec: ParameterSpec): ValidationR
  */
 export function validateList(value: unknown, spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined || value === '') {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   let arrayValue: unknown[];
@@ -107,21 +107,21 @@ export function validateList(value: unknown, spec: ParameterSpec): ValidationRes
     try {
       arrayValue = JSON.parse(value);
     } catch {
-      return { valid: false, error: 'Value must be valid JSON array' };
+      return { valid: false, error: '请输入有效的 JSON 数组' };
     }
   } else {
     arrayValue = value as unknown[];
   }
 
   if (!Array.isArray(arrayValue)) {
-    return { valid: false, error: 'Value must be an array' };
+    return { valid: false, error: '值必须为数组' };
   }
 
   // Check length constraint
   if (spec.length !== undefined && arrayValue.length !== spec.length) {
     return {
       valid: false,
-      error: `Array must have exactly ${spec.length} elements`,
+      error: `数组必须包含 ${spec.length} 个元素`,
     };
   }
 
@@ -158,7 +158,7 @@ function validateListElement(
       if (!Number.isInteger(element)) {
         return {
           valid: false,
-          error: `Element ${index} must be an integer`,
+          error: `元素 ${index} 必须为整数`,
         };
       }
       break;
@@ -169,7 +169,7 @@ function validateListElement(
       if (typeof element !== 'number' || isNaN(element)) {
         return {
           valid: false,
-          error: `Element ${index} must be a number`,
+          error: `元素 ${index} 必须为数值`,
         };
       }
       break;
@@ -179,7 +179,7 @@ function validateListElement(
       if (typeof element !== 'string') {
         return {
           valid: false,
-          error: `Element ${index} must be a string`,
+          error: `元素 ${index} 必须为字符串`,
         };
       }
       break;
@@ -189,7 +189,7 @@ function validateListElement(
       if (typeof element !== 'boolean') {
         return {
           valid: false,
-          error: `Element ${index} must be a boolean`,
+          error: `元素 ${index} 必须为布尔值`,
         };
       }
       break;
@@ -213,7 +213,7 @@ function validateListElement(
       if (element < spec.min[index]) {
         return {
           valid: false,
-          error: `Element ${index} must be at least ${spec.min[index]}`,
+          error: `元素 ${index} 不得小于 ${spec.min[index]}`,
         };
       }
     }
@@ -223,7 +223,7 @@ function validateListElement(
       if (element > spec.max[index]) {
         return {
           valid: false,
-          error: `Element ${index} must be at most ${spec.max[index]}`,
+          error: `元素 ${index} 不得大于 ${spec.max[index]}`,
         };
       }
     }
@@ -237,7 +237,7 @@ function validateListElement(
  */
 export function validateDict(value: unknown, _spec: ParameterSpec): ValidationResult {
   if (value === null || value === undefined || value === '') {
-    return { valid: false, error: 'Value is required' };
+    return { valid: false, error: '此值为必填项' };
   }
 
   let objValue: unknown;
@@ -247,14 +247,14 @@ export function validateDict(value: unknown, _spec: ParameterSpec): ValidationRe
     try {
       objValue = JSON.parse(value);
     } catch {
-      return { valid: false, error: 'Value must be valid JSON object' };
+      return { valid: false, error: '请输入有效的 JSON 对象' };
     }
   } else {
     objValue = value;
   }
 
   if (typeof objValue !== 'object' || objValue === null || Array.isArray(objValue)) {
-    return { valid: false, error: 'Value must be an object' };
+    return { valid: false, error: '值必须为对象' };
   }
 
   return { valid: true };

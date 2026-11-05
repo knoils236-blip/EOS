@@ -10,7 +10,7 @@ import type { FileEntry, BrowseResult } from '@/lib/s3/types';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '--';
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString('zh-CN');
 }
 
 interface FileBrowserProps {
@@ -147,7 +147,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
   // Build breadcrumb segments
   const segments = prefix.split('/').filter(Boolean);
   const breadcrumbs = [
-    { label: 'Root', prefix: '' },
+    { label: '根目录', prefix: '' },
     ...segments.map((seg, i) => ({
       label: seg,
       prefix: segments.slice(0, i + 1).join('/') + '/',
@@ -184,7 +184,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search files..."
+              placeholder="搜索文件…"
               className="pl-8 pr-8 py-1.5 w-56 text-sm border border-gray-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {searchQuery && (
@@ -201,7 +201,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
             onClick={refresh}
             disabled={loading}
             className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-md transition-colors"
-            title="Refresh"
+            title="刷新"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -210,7 +210,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white dark:bg-yellow-500 dark:text-slate-900 rounded-md hover:bg-blue-700 dark:hover:bg-yellow-600 transition-colors"
           >
             <Upload className="w-4 h-4" />
-            Upload
+            上传
           </button>
           <input ref={fileInputRef} type="file" multiple onChange={handleUpload} className="hidden" />
         </div>
@@ -221,24 +221,24 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-              <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Name</th>
-              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-24">Size</th>
-              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-44">Last Modified</th>
-              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-20">Actions</th>
+              <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">名称</th>
+              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-24">大小</th>
+              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-44">修改时间</th>
+              <th className="text-right px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-20">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
             {isSearching && (
               <tr>
                 <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-gray-500">
-                  Searching...
+                  正在搜索…
                 </td>
               </tr>
             )}
             {!isSearching && displayEntries.length === 0 && !loading && (
               <tr>
                 <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-gray-500">
-                  {searchResults !== null ? 'No files match your search' : 'This folder is empty'}
+                  {searchResults !== null ? '没有匹配的文件' : '此文件夹为空'}
                 </td>
               </tr>
             )}
@@ -270,7 +270,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
                         <button
                           onClick={() => handleFileDownload(entry)}
                           className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors"
-                          title="Download"
+                          title="下载"
                         >
                           <Download className="w-4 h-4" />
                         </button>
@@ -278,7 +278,7 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
                       <button
                         onClick={() => setDeleteTarget(entry)}
                         className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors"
-                        title="Delete"
+                        title="删除"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -298,26 +298,26 @@ export function FileBrowser({ initialData }: FileBrowserProps) {
             disabled={loading}
             className="px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Loading...' : 'Load more'}
+            {loading ? '正在加载…' : '加载更多'}
           </button>
         </div>
       )}
 
       {loading && entries.length === 0 && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500">Loading...</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">正在加载…</div>
       )}
 
       <ConfirmDialog
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title={deleteTarget?.isFolder ? 'Delete folder' : 'Delete file'}
+        title={deleteTarget?.isFolder ? '删除文件夹' : '删除文件'}
         message={
           deleteTarget?.isFolder
-            ? `Are you sure you want to delete the folder "${deleteTarget.name}" and all its contents? This cannot be undone.`
-            : `Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`
+            ? `确定要删除文件夹“${deleteTarget.name}”及其所有内容吗？此操作无法撤销。`
+            : `确定要删除“${deleteTarget?.name}”吗？此操作无法撤销。`
         }
-        confirmText="Delete"
+        confirmText="删除"
         variant="danger"
       />
     </div>

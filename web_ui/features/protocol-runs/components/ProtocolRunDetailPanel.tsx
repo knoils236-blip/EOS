@@ -18,7 +18,7 @@ export function ProtocolRunDetailPanel({ protocolRun, open, onOpenChange }: Prot
       <SheetContent side="right" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{protocolRun.name}</SheetTitle>
-          <SheetDescription>Protocol Run Details</SheetDescription>
+          <SheetDescription>协议运行详情</SheetDescription>
         </SheetHeader>
         <div className="mt-6">
           <ProtocolRunDetail protocolRun={protocolRun} />

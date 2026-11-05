@@ -8,6 +8,7 @@ import {
   getTasksByProtocolRun,
 } from '@/lib/db/queries';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { formatErrors, submissionMessage } from './sdl';
 import { formatDate, formatDuration, formatPagination, textResult, errorResult } from '../helpers/format';
 
 export function registerProtocolTools(server: McpServer) {
@@ -147,7 +148,8 @@ export function registerProtocolTools(server: McpServer) {
     'submit_protocol_run',
     {
       title: 'Submit ProtocolRun',
-      description: 'Submit a new protocol run to the orchestrator.',
+      description:
+        'Submit a new protocol run. It starts at once when all its labs are simulated; otherwise it waits for a person to approve it in the web UI (see list_approval_requests).',
       inputSchema: {
         name: z.string().describe('Unique protocol run name'),
         type: z.string().describe('ProtocolRun type'),
@@ -159,17 +161,18 @@ export function registerProtocolTools(server: McpServer) {
         priority: z.number().int().optional().describe('Priority (default 0)'),
         resume: z.boolean().optional().describe('Whether to resume from previous state'),
         meta: z.record(z.unknown()).optional().describe('Metadata'),
+        reason: z.string().optional().describe('Why this run is worth doing; shown to the approver'),
       },
     },
-    async ({ name, type, owner, parameters, priority, resume, meta }) => {
+    async ({ name, type, owner, parameters, priority, resume, meta, reason }) => {
       try {
         const body: Record<string, unknown> = { name, type, owner };
         if (parameters) body.parameters = parameters;
         if (priority !== undefined) body.priority = priority;
         if (resume !== undefined) body.resume = resume;
         if (meta) body.meta = meta;
-        const result = await orchestratorPost('/protocols/', body);
-        return textResult(`Protocol run submitted successfully.\n${JSON.stringify(result, null, 2)}`);
+        const result = await orchestratorPost('/approvals/protocol-runs', { submission: body, reason });
+        return textResult(submissionMessage('Protocol run', result));
       } catch (e) {
         return errorResult(`Failed to submit protocol run: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -214,7 +217,7 @@ export function registerProtocolTools(server: McpServer) {
           return textResult('Validation passed — all parameters, devices, resources, and dependencies check out.');
         }
         const errors = (result.errors as Array<{ task: string | null; message: string }>) || [];
-        return errorResult(`Validation failed:\n${errors.map((e) => `- ${e.message}`).join('\n')}`);
+        return errorResult(`Validation failed:\n${formatErrors(errors)}`);
       } catch (e) {
         return errorResult(`Validation request failed: ${e instanceof Error ? e.message : String(e)}`);
       }

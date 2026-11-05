@@ -4,11 +4,11 @@ export function validateYaml(yamlString: string): { valid: boolean; error?: stri
   try {
     const parsed = yaml.load(yamlString);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { valid: false, error: 'YAML must be a mapping (object), not a scalar or array' };
+      return { valid: false, error: 'YAML 必须为映射（对象），不能是标量或数组' };
     }
     return { valid: true, parsed: parsed as Record<string, unknown> };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
     return { valid: false, error: errorMessage };
   }
 }

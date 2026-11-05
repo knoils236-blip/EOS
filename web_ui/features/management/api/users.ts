@@ -82,22 +82,22 @@ export async function createUser(
     revalidatePath('/management');
     return { success: true, temporaryPassword, userId };
   } catch (error) {
-    return { success: false, error: errorMessage(error, 'Failed to create user') };
+    return { success: false, error: errorMessage(error, '创建用户失败') };
   }
 }
 
 export async function setUserActive(userId: string, active: boolean): Promise<ActionResult> {
-  return superuserAction('Failed to update user', () =>
+  return superuserAction('更新用户失败', () =>
     active ? zitadel.reactivateUser(userId) : zitadel.deactivateUser(userId)
   );
 }
 
 export async function deleteUser(userId: string): Promise<ActionResult> {
-  return superuserAction('Failed to delete user', () => zitadel.deleteUser(userId));
+  return superuserAction('删除用户失败', () => zitadel.deleteUser(userId));
 }
 
 export async function setSuperuser(userId: string, superuser: boolean): Promise<ActionResult> {
-  return superuserAction('Failed to update superuser role', async () => {
+  return superuserAction('更新超级用户角色失败', async () => {
     if (superuser) {
       await orchestratorPost('/admin/roles', { sub: userId, role: 'SUPERUSER', lab_name: null });
     } else {
@@ -108,11 +108,11 @@ export async function setSuperuser(userId: string, superuser: boolean): Promise<
 }
 
 export async function assignRole(sub: string, role: string, labName?: string): Promise<ActionResult> {
-  return superuserAction('Failed to assign role', () =>
+  return superuserAction('分配角色失败', () =>
     orchestratorPost('/admin/roles', { sub, role, lab_name: labName ?? null })
   );
 }
 
 export async function revokeRole(roleId: number): Promise<ActionResult> {
-  return superuserAction('Failed to revoke role', () => orchestratorDelete(`/admin/roles/${roleId}`));
+  return superuserAction('撤销角色失败', () => orchestratorDelete(`/admin/roles/${roleId}`));
 }

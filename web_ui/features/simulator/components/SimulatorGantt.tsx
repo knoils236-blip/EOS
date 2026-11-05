@@ -55,10 +55,10 @@ function taskColors(name: string): { bg: string; fg: string } {
 
 function fmtTime(s: number): string {
   s = Math.round(s);
-  if (s < 60) return s + 's';
+  if (s < 60) return s + '秒';
   const m = Math.floor(s / 60);
   const r = s % 60;
-  return r ? m + 'm' + String(r).padStart(2, '0') + 's' : m + 'm';
+  return r ? m + '分' + String(r).padStart(2, '0') + '秒' : m + '分';
 }
 
 type ViewMode = 'protocol' | 'device';
@@ -189,18 +189,18 @@ export default function SimulatorGantt({ timeline, stats }: Props) {
           textStyle: { color: tooltipTextColor, fontSize: 12 },
           formatter: (p: { data: { _task: TaskRecord } }) => {
             const t = p.data._task;
-            const devs = t.devices.map((d) => `<code>${d.lab}.${d.name}</code>`).join(', ') || 'none';
-            const res = Object.values(t.resources).join(', ') || 'none';
+            const devs = t.devices.map((d) => `<code>${d.lab}.${d.name}</code>`).join(', ') || '无';
+            const res = Object.values(t.resources).join(', ') || '无';
             return (
               `<div style="min-width:220px">` +
               `<div style="font-weight:600;margin-bottom:6px">${t.task}</div>` +
               `<div style="opacity:0.7;margin-bottom:6px">${t.protocol_run}</div>` +
               `<table style="font-size:12px;width:100%">` +
-              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">Start</td><td>${fmtTime(t.start)}</td></tr>` +
-              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">Duration</td><td>${fmtTime(t.duration)}</td></tr>` +
-              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">End</td><td>${fmtTime(t.end)}</td></tr>` +
-              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">Devices</td><td>${devs}</td></tr>` +
-              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">Resources</td><td>${res}</td></tr>` +
+              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">开始</td><td>${fmtTime(t.start)}</td></tr>` +
+              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">耗时</td><td>${fmtTime(t.duration)}</td></tr>` +
+              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">结束</td><td>${fmtTime(t.end)}</td></tr>` +
+              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">设备</td><td>${devs}</td></tr>` +
+              `<tr><td style="opacity:0.6;padding:1px 8px 1px 0">资源</td><td>${res}</td></tr>` +
               `</table></div>`
             );
           },
@@ -210,7 +210,7 @@ export default function SimulatorGantt({ timeline, stats }: Props) {
           type: 'value',
           min: 0,
           max: stats.makespan,
-          name: 'Time',
+          name: '时间',
           nameLocation: 'middle',
           nameGap: 30,
           nameTextStyle: { fontSize: 12, color: textColor },
@@ -325,7 +325,7 @@ export default function SimulatorGantt({ timeline, stats }: Props) {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            Protocol Runs
+            协议运行
           </button>
           <button
             onClick={() => setView('device')}
@@ -335,13 +335,13 @@ export default function SimulatorGantt({ timeline, stats }: Props) {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            Devices
+            设备
           </button>
         </div>
         <button
           onClick={() => setMaximized((m) => !m)}
           className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-          title={maximized ? 'Minimize' : 'Maximize'}
+          title={maximized ? '最小化' : '最大化'}
         >
           {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </button>

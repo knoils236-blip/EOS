@@ -66,7 +66,7 @@ const ContextMenuComponent = ({
         <MenuItem
           key="delete-edge"
           icon={Trash2}
-          label="Delete Edge"
+          label="删除连线"
           onClick={() => {
             onDeleteEdge();
             onClose();
@@ -76,8 +76,8 @@ const ContextMenuComponent = ({
       ];
     }
     if (nodeId) {
-      const copyLabel = selectedNodeCount > 1 ? `Copy ${selectedNodeCount} Tasks` : 'Copy Task';
-      const deleteLabel = selectedNodeCount > 1 ? `Delete ${selectedNodeCount} Tasks` : 'Delete Task';
+      const copyLabel = selectedNodeCount > 1 ? `复制 ${selectedNodeCount} 个任务` : '复制任务';
+      const deleteLabel = selectedNodeCount > 1 ? `删除 ${selectedNodeCount} 个任务` : '删除任务';
 
       return [
         <MenuItem
@@ -94,7 +94,7 @@ const ContextMenuComponent = ({
               <MenuItem
                 key="paste"
                 icon={Clipboard}
-                label="Paste"
+                label="粘贴"
                 onClick={() => {
                   onPaste();
                   onClose();
@@ -105,7 +105,7 @@ const ContextMenuComponent = ({
         <MenuItem
           key="set-color"
           icon={Palette}
-          label="Set Color"
+          label="设置颜色"
           onClick={() => {
             onSetColor();
             onClose();
@@ -127,7 +127,7 @@ const ContextMenuComponent = ({
       <MenuItem
         key="new-task"
         icon={Plus}
-        label="New Task"
+        label="新建任务"
         onClick={() => {
           onNewTask();
           onClose();
@@ -138,7 +138,7 @@ const ContextMenuComponent = ({
             <MenuItem
               key="paste"
               icon={Clipboard}
-              label="Paste"
+              label="粘贴"
               onClick={() => {
                 onPaste();
                 onClose();

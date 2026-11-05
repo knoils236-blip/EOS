@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 from dataclasses import dataclass
 from itertools import groupby
@@ -16,7 +15,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.exceptions import UnexpectedModelBehavior
 from pydantic_ai.settings import ModelSettings
-from tenacity import before_sleep_log, retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
+from tenacity import RetryCallState, retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from eos.logging.logger import log
 from eos.optimization.beacon_optimizer import FLOAT_PRECISION, round_floats
@@ -33,6 +32,11 @@ _CONSTRAINT_TOLERANCE = 1e-6
 _BACKOFF_MAX_ATTEMPTS = 3
 _BACKOFF_MIN_SECONDS = 2
 _BACKOFF_MAX_SECONDS = 30
+
+
+def _log_retry(state: RetryCallState) -> None:
+    # Provider error bodies may contain credentials or request contents.
+    log.warning(f"Beacon AI request retry ({type(state.outcome.exception()).__name__})")
 
 
 class ProtocolRunSuggestion(BaseModel):
@@ -197,13 +201,15 @@ def build_system_prompt(domain: Domain) -> str:
 
 _CLAUDE_AGENT_SDK_PREFIX = "claude-agent-sdk:"
 _OLLAMA_PREFIX = "ollama:"
-_SUPPORTED_MODEL_PREFIXES = (_CLAUDE_AGENT_SDK_PREFIX, _OLLAMA_PREFIX)
+_OPENAI_PREFIX = "openai:"
+_ANTHROPIC_PREFIX = "anthropic:"
+_SUPPORTED_MODEL_PREFIXES = (_CLAUDE_AGENT_SDK_PREFIX, _OLLAMA_PREFIX, _OPENAI_PREFIX, _ANTHROPIC_PREFIX)
 
 _OLLAMA_DEFAULT_BASE_URL = "http://localhost:11434/v1"
 
 
 def _validate_model(model: str) -> None:
-    """Beacon supports the Claude Agent SDK and Ollama only."""
+    """Validate explicitly supported AI transports."""
     if not model.startswith(_SUPPORTED_MODEL_PREFIXES):
         raise ValueError(
             f"Unsupported Beacon AI model '{model}'. "
@@ -221,8 +227,53 @@ def _set_api_key(model: str, api_key: str | None) -> None:
         os.environ["ANTHROPIC_API_KEY"] = api_key
 
 
-def _resolve_model(model: str, model_settings: dict[str, Any] | None) -> tuple[Any, bool]:
+def _resolve_model(
+    model: str,
+    model_settings: dict[str, Any] | None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+) -> tuple[Any, bool]:
     """Resolve the model string to a Pydantic AI model instance."""
+    if model.startswith(_OPENAI_PREFIX):
+        from pydantic_ai.models.openai import OpenAIChatModel  # noqa: PLC0415
+        from pydantic_ai.providers.openai import OpenAIProvider  # noqa: PLC0415
+        from eos.optimization.openai_connection import OpenAIConnection  # noqa: PLC0415
+
+        connection = OpenAIConnection()
+        if connection.protocol != "openai" and not (base_url and api_key):
+            raise ValueError("The persisted AI settings use Anthropic; use an anthropic:model-name")
+        connection = OpenAIConnection(
+            protocol="openai",
+            base_url=base_url or connection.base_url,
+            api_key=api_key or connection.api_key,
+            model=model[len(_OPENAI_PREFIX) :],
+        )
+        if not connection.configured:
+            raise ValueError("Configure an OpenAI base URL, API key, and an openai:model-name")
+        # An explicit client keeps credentials and endpoints local to this agent.
+        client = connection.client()
+        return OpenAIChatModel(connection.model, provider=OpenAIProvider(openai_client=client)), False
+    if model.startswith(_ANTHROPIC_PREFIX):
+        from pydantic_ai.models.anthropic import AnthropicModel  # noqa: PLC0415
+        from pydantic_ai.providers.anthropic import AnthropicProvider  # noqa: PLC0415
+        from eos.optimization.openai_connection import OpenAIConnection  # noqa: PLC0415
+
+        connection = OpenAIConnection()
+        if connection.protocol != "anthropic" and not (base_url and api_key):
+            raise ValueError("The persisted AI settings use OpenAI; use an openai:model-name")
+        connection = OpenAIConnection(
+            protocol="anthropic",
+            base_url=base_url or connection.base_url,
+            api_key=api_key or connection.api_key,
+            model=model[len(_ANTHROPIC_PREFIX) :],
+        )
+        if not connection.configured:
+            raise ValueError("Configure an Anthropic base URL, API key, and an anthropic:model-name")
+        provider = AnthropicProvider(
+            api_key=connection.api_key.get_secret_value(),
+            base_url=connection.base_url,
+        )
+        return AnthropicModel(connection.model, provider=provider), False
     if not model.startswith(_CLAUDE_AGENT_SDK_PREFIX):
         return model, False
     from eos.optimization.claude_agent_sdk_model import ClaudeAgentSDKModel  # noqa: PLC0415
@@ -239,6 +290,7 @@ class BeaconAIAgent:
         model: str,
         api_key: str | None,
         retries: int,
+        base_url: str | None = None,
         model_settings: dict[str, Any] | None = None,
         additional_context: str | None = None,
         protocol_run_parameters_schedule: list[dict[str, dict[str, Any]]] | None = None,
@@ -256,7 +308,7 @@ class BeaconAIAgent:
         if isinstance(model_settings, str):
             model_settings = json.loads(model_settings) if model_settings.strip() else None
 
-        resolved_model, self._code_execution = _resolve_model(model, model_settings)
+        resolved_model, self._code_execution = _resolve_model(model, model_settings, base_url, api_key)
 
         # Filter out SDK-specific keys before passing to Pydantic AI ModelSettings
         sdk_keys = {"effort"}
@@ -416,7 +468,7 @@ class BeaconAIAgent:
         stop=stop_after_attempt(_BACKOFF_MAX_ATTEMPTS),
         wait=wait_exponential(min=_BACKOFF_MIN_SECONDS, max=_BACKOFF_MAX_SECONDS),
         retry=retry_if_not_exception_type(UnexpectedModelBehavior),
-        before_sleep=before_sleep_log(log.logger, logging.WARNING),
+        before_sleep=_log_retry,
         reraise=True,
     )
     def _run_with_backoff(self, deps: BeaconDeps) -> "AgentRunResult[ProtocolRunSuggestions]":
@@ -431,7 +483,7 @@ class BeaconAIAgent:
         stop=stop_after_attempt(_BACKOFF_MAX_ATTEMPTS),
         wait=wait_exponential(min=_BACKOFF_MIN_SECONDS, max=_BACKOFF_MAX_SECONDS),
         retry=retry_if_not_exception_type(UnexpectedModelBehavior),
-        before_sleep=before_sleep_log(log.logger, logging.WARNING),
+        before_sleep=_log_retry,
         reraise=True,
     )
     async def _run_with_backoff_async(self, deps: BeaconDeps) -> "AgentRunResult[ProtocolRunSuggestions]":

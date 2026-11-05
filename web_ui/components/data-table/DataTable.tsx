@@ -60,7 +60,7 @@ function SelectAllCheckbox<TData>({ table }: { table: Table<TData> }) {
       type="checkbox"
       checked={table.getIsAllPageRowsSelected()}
       onChange={table.getToggleAllPageRowsSelectedHandler()}
-      aria-label="Select all rows"
+      aria-label="选择所有行"
       className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700"
     />
   );
@@ -93,7 +93,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = '搜索…',
   searchColumn: _searchColumn,
   onRowClick,
   enableRowSelection = false,
@@ -131,7 +131,7 @@ export function DataTable<TData, TValue>({
             type="checkbox"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
-            aria-label="Select row"
+            aria-label="选择此行"
             className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-700"
           />
         ),
@@ -278,12 +278,10 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-2 flex-1">
           {enableRowSelection && selectedCount > 0 ? (
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                {selectedCount} row{selectedCount > 1 ? 's' : ''} selected
-              </span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">已选择 {selectedCount} 行</span>
               {bulkActions}
               <Button variant="outline" size="sm" onClick={() => table.resetRowSelection()} className="ml-2">
-                Clear Selection
+                清除选择
               </Button>
             </div>
           ) : (
@@ -302,7 +300,7 @@ export function DataTable<TData, TValue>({
           {filterableColumns.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="relative">
               <Filter className="mr-2 h-4 w-4" />
-              Filters
+              筛选
               {activeFilterCount > 0 && (
                 <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 dark:bg-yellow-500 text-xs text-white dark:text-slate-900">
                   {activeFilterCount}
@@ -313,7 +311,7 @@ export function DataTable<TData, TValue>({
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <Button variant="outline" size="sm">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
+                列 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
@@ -353,10 +351,10 @@ export function DataTable<TData, TValue>({
       {showFilters && filterableColumns.length > 0 && (
         <div className="rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Filters</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">列筛选</h3>
             {activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={() => table.resetColumnFilters()} className="h-7 text-xs">
-                Clear All
+                全部清除
               </Button>
             )}
           </div>
@@ -482,7 +480,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <tr>
                 <td colSpan={columnsWithSelection.length} className="h-24 text-center text-gray-500 dark:text-gray-400">
-                  No results found.
+                  未找到结果。
                 </td>
               </tr>
             )}
@@ -492,16 +490,16 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-700 dark:text-gray-300">{displayedTotal} row(s) total.</div>
+        <div className="text-sm text-gray-700 dark:text-gray-300">共 {displayedTotal} 行</div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={goToPreviousPage} disabled={!canPreviousPage}>
-            Previous
+            上一页
           </Button>
           <div className="text-sm text-gray-700 dark:text-gray-300">
-            Page {currentPageIndex + 1} of {pageCount}
+            第 {currentPageIndex + 1} / {pageCount} 页
           </div>
           <Button variant="outline" size="sm" onClick={goToNextPage} disabled={!canNextPage}>
-            Next
+            下一页
           </Button>
         </div>
       </div>

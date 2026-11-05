@@ -16,13 +16,18 @@ from eos.auth.middleware import EosAuthenticationMiddleware
 from eos.auth.token_validator import TokenValidator
 from eos.configuration.eos_config import EosConfig
 from eos.web_api.controllers.admin_controller import AdminController
+from eos.web_api.controllers.ai_settings_controller import AISettingsController
 from eos.web_api.controllers.api_token_controller import ApiTokenController
+from eos.web_api.controllers.approval_controller import ApprovalController
 from eos.web_api.controllers.campaign_controller import CampaignController
 from eos.web_api.controllers.definition_controller import DefinitionController
+from eos.web_api.controllers.decision_controller import DecisionController
 from eos.web_api.controllers.file_controller import FileController
 from eos.web_api.controllers.health_controller import HealthController
 from eos.web_api.controllers.lab_controller import LabController
 from eos.web_api.controllers.log_controller import LogController
+from eos.web_api.controllers.matterix_controller import MatterixController
+from eos.web_api.controllers.notebook_controller import NotebookController
 from eos.web_api.controllers.optimizer_controller import OptimizerController
 from eos.web_api.controllers.package_controller import PackageController
 from eos.web_api.controllers.protocol_controller import ProtocolController
@@ -39,14 +44,19 @@ if TYPE_CHECKING:
 
 CONTROLLERS: list[type[Controller]] = [
     AdminController,
+    AISettingsController,
     ApiTokenController,
+    ApprovalController,
     CampaignController,
     DefinitionController,
+    DecisionController,
     ProtocolController,
     FileController,
     HealthController,
     LabController,
     LogController,
+    MatterixController,
+    NotebookController,
     OptimizerController,
     PackageController,
     RefreshController,

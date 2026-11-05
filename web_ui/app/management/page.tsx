@@ -12,8 +12,8 @@ import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'System Management - EOS',
-  description: 'Manage packages, devices, labs, task plugins, protocols, and users',
+  title: '系统管理 - EOS',
+  description: '管理软件包、设备、实验室、任务插件、协议和用户',
 };
 
 export default async function ManagementPage() {
@@ -37,7 +37,7 @@ export default async function ManagementPage() {
   return (
     <div className="container mx-auto px-6 py-8">
       <div className="mb-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">系统管理</h1>
       </div>
 
       <ManagementTabs

@@ -1,0 +1,2695 @@
+[
+  {
+    "id": "grasp_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "抓取烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "grasp_beaker",
+    "parameters": {
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.ee_position_w",
+      "robot.gripper_position",
+      "beaker_motion",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "烧杯保持在支撑面，夹爪实际闭合并保持稳定",
+      "抓取成功后开启本次累计上升行程计数"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "lift_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "抬升烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "lift_beaker",
+    "parameters": {
+      "height_m": {
+        "type": "number",
+        "default": 0.1,
+        "min": 0.005,
+        "max": 0.58,
+        "unit": "m",
+        "label": "本次上升距离"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.ee_position_w",
+      "robot.gripper_position",
+      "beaker_motion",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "已完成抓取，烧杯实际随夹爪上升并稳定保持",
+      "累计上升行程和当前离台高度均不得超过场景验证上限，下降不会恢复预算"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "lower_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "放下烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "lower_beaker",
+    "parameters": {
+      "height_m": {
+        "type": "number",
+        "default": 0.1,
+        "min": 0.005,
+        "max": 0.58,
+        "unit": "m",
+        "label": "本次下降距离"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.ee_position_w",
+      "robot.gripper_position",
+      "beaker_motion",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "已完成抓取，实际下降到请求高度并稳定保持",
+      "累计下降量不得超过累计上升量，不得降至原支撑面以下"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "release_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "松开烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "release_beaker",
+    "parameters": {
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.ee_position_w",
+      "robot.gripper_position",
+      "beaker_motion",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "仅允许烧杯回到原支撑面并稳定后松开",
+      "夹爪实际打开，烧杯位置与姿态保持稳定"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "pickup_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "抓取并抬升烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "pickup_beaker",
+    "parameters": {
+      "lift_height_m": {
+        "type": "number",
+        "default": 0.1,
+        "min": 0.06,
+        "max": 0.2,
+        "unit": "m",
+        "label": "抬升高度"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.gripper_position",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "实际抬升高度至少为 5 cm 与“设定高度减 2 cm”中的较大值",
+      "连续保持设定秒数",
+      "任务结束时烧杯仍被夹持"
+    ],
+    "tier": "hidden"
+  },
+  {
+    "id": "return_beaker",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "放回并松开烧杯",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "return_beaker",
+    "parameters": {
+      "hold_s": {
+        "type": "number",
+        "default": 1.2,
+        "min": 1,
+        "max": 5,
+        "unit": "s",
+        "label": "保持时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "beaker.position_w",
+      "robot.gripper_position",
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "烧杯回到初始桌面位置，水平误差不超过 3 cm，垂直误差不超过 2 cm",
+      "烧杯倾角不超过 0.1 rad",
+      "夹指间距实际增大至少 0.006 m，且夹爪已打开",
+      "连续保持设定秒数，期间位移漂移不超过 0.001 m，姿态漂移不超过 0.02 rad"
+    ],
+    "tier": "hidden"
+  },
+  {
+    "id": "wait",
+    "version": 1,
+    "scene_id": "franka_beaker",
+    "label": "推进仿真时间",
+    "workflow_yaml": "session_workflows.yaml",
+    "workflow_name": "wait",
+    "parameters": {
+      "duration_s": {
+        "type": "number",
+        "default": 1,
+        "min": 0.1,
+        "max": 30,
+        "unit": "s",
+        "label": "持续时间"
+      },
+      "timeout_s": {
+        "type": "number",
+        "default": 30,
+        "min": 1,
+        "max": 120,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制视频"
+      }
+    },
+    "observations": [
+      "sim_time_s"
+    ],
+    "success_criteria": [
+      "保持控制目标并推进指定仿真秒数"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_take_drop_tip_big_bottle",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "移液站试管与 TIP 及大瓶取放",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "take_drop_tip_big_bottle",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.grips",
+      "device_state.seated_tips",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "资产操作历史出现小瓶盖和 TIP 的装取及释放事件",
+      "资产操作历史出现大瓶盖的抓取及释放事件",
+      "最终 TIP、瓶盖和夹持状态满足工作流终态",
+      "没有操作拒绝，且仅靠静态初始状态不能通过"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_small_vial_decap_recap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "小瓶取放与开盖合盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "prepare_small_vial",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.grips",
+      "device_state.cap_closed",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "历史中出现小瓶盖 cap_detached 与 cap_engaged",
+      "没有操作拒绝",
+      "最终 SmallCapOpen 为 false、夹持为空且小瓶盖闭合",
+      "仅检查初始状态为 false 不能通过"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_pipette_xiaoping_to_zhongping1",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "从小瓶向中瓶移液（20-180 微升）",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "pipette_xiaoping_to_zhongping1",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 100,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "移液体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "plc_vial_volumes_ml",
+      "device_state.operation_status",
+      "device_state.grips",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "运行历史出现增加的资产操作事件且操作状态均未拒绝",
+      "DesignC_BottleBody50ml_231 最终液量增加量等于请求的 volume_ul 换算值（容差 1e-6 mL）",
+      "TransferBottle10ml_617 运行前液量足够，最终减少量等于请求的 volume_ul 换算值（容差 1e-6 mL）",
+      "初始液量充足但没有实际转移时必须失败",
+      "提交前 1 号位 TIP 本会话未使用，否则拒绝并提示先重置场景"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_pipette_zhongping1",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "中瓶区1 自吸自吐（20-180 微升，TIP 2 号位）",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "pipette_zhongping1_tip2",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 100,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "移液体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "liquid_extrema_ml",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.attached",
+      "device_state.seated_tips"
+    ],
+    "success_criteria": [
+      "提交前中瓶区1 液量不少于请求体积，且 2 号位 TIP 本会话未使用",
+      "执行中中瓶区1 液量下降约请求体积，TIP 内液量峰值约请求体积",
+      "结束时中瓶区1 回到初始液量，账本总量守恒，其他容器不变",
+      "结束时 TIP 内无残液且已弃置，操作历史无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_filter_take_syringe",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "过滤机构取针筒",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "filter_take_syringe",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.grips",
+      "device_state.attached",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次资产历史出现 SyringeComponent1_676 和 SyringeComponent2_677 的 grasp",
+      "最终两个针筒组件 attached 均为 true 且 SyringeOn 为 true",
+      "operation:status 接受且历史没有操作拒绝",
+      "前次任务的抓取事件不能替代本次事件"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_big_bottle_decap_recap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "大瓶取放与开盖合盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "big_bottle_decap_recap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.grips",
+      "device_state.attached",
+      "device_state.cap_closed",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次资产历史出现大瓶盖 grasp/release 和 cap_detached/cap_engaged",
+      "本次 history 中 BigCapOpen 曾为 true，最终为 false",
+      "最终 DesignD_DesignC_BottleBody500ml_238 瓶盖闭合、grips 为空且 operation:status 接受",
+      "历史没有操作拒绝，前次事件不能替代本次开合事件"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_open_door",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "开门",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_open_door",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_prepare_vial",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "小瓶取放与开盖合盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_prepare_vial",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_transfer_small",
+    "version": 2,
+    "scene_id": "pipetting_realtime",
+    "label": "小瓶向中瓶移液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_transfer_small",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 100,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "移液体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "源瓶减少量和目标瓶增加量均等于请求的 volume_ul",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_open_bottle",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "大瓶取瓶与开盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_open_bottle",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_transfer_big",
+    "version": 2,
+    "scene_id": "pipetting_realtime",
+    "label": "大瓶自吸自吐、合盖归位",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_transfer_big",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 100,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "大瓶吸液和吐液过程液量变化均等于请求的 volume_ul",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_syringe_transfer",
+    "version": 2,
+    "scene_id": "pipetting_realtime",
+    "label": "注射器过滤转移",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_syringe_transfer",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "注射器实际转移量等于请求的 volume_ul（沿用控制器 5 µL 到位容差）",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_full_station_close_door",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "关门",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "full_station_close_door",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "连续阶段及耗材前置条件通过",
+      "操作事件和实际关节/液量后置条件通过",
+      "操作无拒绝"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_mixture_stock",
+    "version": "1.0.0",
+    "scene_id": "pipetting_realtime",
+    "label": "Mixture stock",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "mixture_stock",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "min": 20.0,
+        "max": 180.0,
+        "default": 100.0,
+        "unit": "µL",
+        "label": "移液体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "Observed transfer and material balance; no spill or air; recipe phase order"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_mixture_diluent",
+    "version": "1.0.0",
+    "scene_id": "pipetting_realtime",
+    "label": "Mixture diluent",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "mixture_diluent",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "min": 20.0,
+        "max": 180.0,
+        "default": 100.0,
+        "unit": "µL",
+        "label": "移液体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "Observed transfer and material balance; no spill or air; recipe phase order"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_mixture_close",
+    "version": "1.0.0",
+    "scene_id": "pipetting_realtime",
+    "label": "Mixture close",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "mixture_close",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "liquid_volumes_ml",
+      "device_state",
+      "experiment_phase"
+    ],
+    "success_criteria": [
+      "Observed transfer and material balance; no spill or air; recipe phase order"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_skill_mount_tip",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "装载 TIP",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_mount_tip",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tip_index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 2,
+        "choices": [
+          1,
+          2
+        ],
+        "unit": "",
+        "label": "TIP 槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现所选 TIP 的真实 grasp/tip_seated 记录",
+      "最终 TipOn=true 且该 TIP attached、seated"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_eject_tip",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "卸载 TIP",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_eject_tip",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "dwell_s": {
+        "type": "number",
+        "default": 1.5,
+        "min": 0.5,
+        "max": 5,
+        "unit": "s",
+        "label": "TIP 脱开等待"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 eject_tip 命令和当前已装 TIP 的 release 事件",
+      "最终 TipOn=false 且没有 attached/seated TIP"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_aspirate_from",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "从指定区吸液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_aspirate_from",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "zone": {
+        "type": "string",
+        "default": "中瓶区1",
+        "choices": [
+          "中瓶区1",
+          "大开盖区",
+          "大瓶区",
+          "小开盖区",
+          "小瓶区"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "吸液区"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 aspirate 命令",
+      "所选源容器液量下降、TIP 液量上升且总量守恒"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_dispense_to",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "向指定区吐液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_dispense_to",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "zone": {
+        "type": "string",
+        "default": "中瓶区1",
+        "choices": [
+          "中瓶区1",
+          "大开盖区",
+          "大瓶区",
+          "小开盖区",
+          "小瓶区"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "吐液区"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 dispense 命令",
+      "TIP 液量下降、目标容器液量上升且总量守恒"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_small_vial_pick",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "夹取 2 mL 小瓶",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_small_vial_pick",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现小瓶盖 grasp 事件",
+      "最终小瓶盖 attached 且小瓶盖爪闭合"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_small_vial_place",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "放回 2 mL 小瓶",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_small_vial_place",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现小瓶盖 release 事件",
+      "最终小瓶盖不再 attached 且小瓶盖爪张开"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_small_vial_decap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "打开 2 mL 小瓶盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_small_vial_decap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 cap_detached 事件",
+      "本次状态进入 SmallCapOpen=true 且最终保持打开"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_small_vial_recap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "关闭 2 mL 小瓶盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_small_vial_recap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 cap_engaged 事件",
+      "本次状态回到 SmallCapOpen=false 且瓶盖闭合"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_small_cap_home",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "小瓶盖头回静息位",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_small_cap_home",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.operation_status"
+    ],
+    "success_criteria": [
+      "本次任务 small_cap_lift 实际向 0 移动",
+      "最终 small_cap_lift 位于 0 附近"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_big_bottle_pick",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "夹取 500 mL 大瓶",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_big_bottle_pick",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现大瓶盖 grasp 事件",
+      "最终大瓶盖 attached 且相关夹爪闭合"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_big_bottle_place",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "放回 500 mL 大瓶",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_big_bottle_place",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现大瓶盖 release 事件",
+      "最终大瓶盖不再 attached 且大瓶盖爪张开"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_big_bottle_decap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "打开 500 mL 大瓶盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_big_bottle_decap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 cap_detached 事件",
+      "本次状态进入 BigCapOpen=true 且最终保持打开"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_big_bottle_recap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "关闭 500 mL 大瓶盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_big_bottle_recap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 cap_engaged 事件",
+      "本次状态回到 BigCapOpen=false 且瓶盖闭合"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_syringe_pick",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "夹取过滤针筒",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_syringe_pick",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务同时出现筒身和活塞 grasp 事件",
+      "最终两者 attached、SyringeOn=true 且 pg3/pg4 闭合"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_filter_head_mount",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "安装过滤头",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_filter_head_mount",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 filter_installed 事件",
+      "最终 FilterHeadOn=true 且针筒筒身仍 attached"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_syringe_aspirate",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "针筒吸液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_syringe_aspirate",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "针筒筒身和活塞均 mounted",
+      "本次任务出现 syringe aspirate 命令且源容器液量下降"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_syringe_dispense",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "针筒吐液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_syringe_dispense",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 1,
+        "choices": [
+          1
+        ],
+        "unit": "",
+        "label": "固定槽位"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "针筒和过滤头均 mounted",
+      "本次任务出现 syringe dispense 命令且转移瓶液量上升"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_syringe_discard",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "弃置针筒和过滤头",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_syringe_discard",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现针筒 release 事件",
+      "最终 SyringeOn=false、FilterHeadOn=false 且两者不再 attached"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_wait",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "推进仿真时间",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_wait",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "duration_s": {
+        "type": "number",
+        "default": 1,
+        "min": 0.1,
+        "max": 30,
+        "unit": "s",
+        "label": "等待时长"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "semantics.sim_time_s",
+      "liquid_volumes_ml",
+      "device_state.semantic_state"
+    ],
+    "success_criteria": [
+      "仿真时间实际推进到请求时长",
+      "等待期间液量和设备语义不变"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_pipette_transfer",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "TIP 移液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_pipette_transfer",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "source": {
+        "type": "string",
+        "default": "小瓶区",
+        "choices": [
+          "中瓶区1",
+          "大开盖区",
+          "大瓶区",
+          "小开盖区",
+          "小瓶区"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "吸液区"
+      },
+      "target": {
+        "type": "string",
+        "default": "中瓶区1",
+        "choices": [
+          "中瓶区1",
+          "大开盖区",
+          "大瓶区",
+          "小开盖区",
+          "小瓶区"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "吐液区"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "tip_index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 2,
+        "choices": [
+          1,
+          2
+        ],
+        "unit": "",
+        "label": "TIP 槽位"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+      "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_syringe_filter_transfer",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "针筒过滤转移",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_syringe_filter_transfer",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "hold_s": {
+        "type": "number",
+        "default": 0.5,
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "label": "动作末尾停顿"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现筒身、活塞 grasp/release 与 filter_installed 事件",
+      "反应器到小瓶区的液量变化与请求体积相差不超过 5 µL，最终 SyringeOn=false、FilterHeadOn=false"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_front_door",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "前门开合",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_front_door",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "open_m": {
+        "type": "number",
+        "default": 0.39,
+        "min": 0.0,
+        "max": 0.39,
+        "unit": "m",
+        "label": "前门开度"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.operation_status"
+    ],
+    "success_criteria": [
+      "最终 front_door 与请求开度相差不超过 1.5 mm",
+      "操作历史无拒绝"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_take_drop_tip",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "TIP 取放",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "take_drop_tip",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现 1 号位 TIP 的 grasp/release 与 eject_tip 命令",
+      "最终 TipOn=false 且没有 attached/seated TIP"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_small_cap_pick_place",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "小瓶原位取放",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "small_cap_pick_place",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现小瓶盖 grasp 与 release 事件",
+      "最终小瓶盖不再 attached 且小瓶盖爪张开"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_big_cap_pick_place",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "大瓶原位取放",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "big_cap_pick_place",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "本次任务出现大瓶盖 grasp 与 release 事件",
+      "最终大瓶盖不再 attached"
+    ],
+    "tier": "operation"
+  }
+]

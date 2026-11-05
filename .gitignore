@@ -146,4 +146,23 @@ node_modules/
 
 /user/*
 !/user/example/
+!/user/matterix_sim/
 !/user/.gitkeep
+
+# Matterix bridge: runtime records and Isaac Sim assets downloaded from Omniverse (listed in assets/**/manifest.json)
+/integrations/matterix/runs/
+/integrations/matterix/sessions/
+/integrations/matterix/workflows/
+/integrations/matterix/dbsync_status.json
+/integrations/matterix/assets/**
+!/integrations/matterix/assets/**/
+!/integrations/matterix/assets/**/manifest.json
+
+# start_eos.sh logs
+/.state/
+
+# Server-side AI credentials
+/.eos/
+
+# Local experiment evidence (videos, traces, observations); kept out of the repository
+/evidence/

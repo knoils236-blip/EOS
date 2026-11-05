@@ -1,0 +1,38 @@
+{
+  "begin": {
+    "x": -200,
+    "y": 100
+  },
+  "open_door": {
+    "x": 340,
+    "y": 100
+  },
+  "prepare_vial": {
+    "x": 857,
+    "y": 100
+  },
+  "transfer_small": {
+    "x": 1374,
+    "y": 100
+  },
+  "open_bottle": {
+    "x": 1620,
+    "y": 460
+  },
+  "transfer_big": {
+    "x": 1891,
+    "y": 100
+  },
+  "syringe_transfer": {
+    "x": 2408,
+    "y": 100
+  },
+  "close_door": {
+    "x": 2925,
+    "y": 120
+  },
+  "finish": {
+    "x": 3640,
+    "y": 200
+  }
+}

@@ -15,7 +15,7 @@ export interface CurrentUser {
 // Defaults match auth-disabled mode
 const DEFAULT_USER: CurrentUser = {
   sub: 'dev',
-  name: 'Dev User',
+  name: '开发用户',
   superuser: true,
   roles: [],
   authEnabled: false,

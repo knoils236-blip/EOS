@@ -1,0 +1,110 @@
+type: matterix_pick_and_return
+desc: Franka 烧杯：抓取、分次抬升、分次放下、稳定释放；累计上升行程受限
+labs:
+- matterix_lab
+tasks:
+- name: grasp
+  type: Matterix Capability
+  desc: 抓取烧杯
+  parameters:
+    capability_id: grasp_beaker
+    parameters:
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      lab_name: matterix_lab
+      name: matterix
+      hold: true
+  timeout: 660
+  retries: 0
+- name: lift_1
+  type: Matterix Capability
+  desc: 第一次抬升烧杯
+  parameters:
+    capability_id: lift_beaker
+    parameters:
+      height_m: 0.29
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      ref: grasp.matterix
+      hold: true
+  timeout: 660
+  retries: 0
+  dependencies:
+  - grasp
+- name: lift_2
+  type: Matterix Capability
+  desc: 第二次抬升烧杯
+  parameters:
+    capability_id: lift_beaker
+    parameters:
+      height_m: 0.29
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      ref: lift_1.matterix
+      hold: true
+  timeout: 660
+  retries: 0
+  dependencies:
+  - lift_1
+- name: lower_1
+  type: Matterix Capability
+  desc: 第一次放下烧杯
+  parameters:
+    capability_id: lower_beaker
+    parameters:
+      height_m: 0.29
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      ref: lift_2.matterix
+      hold: true
+  timeout: 660
+  retries: 0
+  dependencies:
+  - lift_2
+- name: lower_2
+  type: Matterix Capability
+  desc: 第二次放下烧杯
+  parameters:
+    capability_id: lower_beaker
+    parameters:
+      height_m: 0.29
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      ref: lower_1.matterix
+      hold: true
+  timeout: 660
+  retries: 0
+  dependencies:
+  - lower_1
+- name: release
+  type: Matterix Capability
+  desc: 松开烧杯
+  parameters:
+    capability_id: release_beaker
+    parameters:
+      hold_s: 1.2
+      timeout_s: 60
+      record_video: false
+  devices:
+    matterix:
+      ref: lower_2.matterix
+      hold: false
+  timeout: 660
+  retries: 0
+  dependencies:
+  - lower_2

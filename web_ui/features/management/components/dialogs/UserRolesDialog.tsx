@@ -1,5 +1,7 @@
 'use client';
 
+import { roleLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -17,10 +19,10 @@ interface UserRolesDialogProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'VIEWER', label: 'Viewer' },
-  { value: 'SUBMITTER', label: 'Submitter' },
-  { value: 'EDITOR', label: 'Editor' },
-  { value: 'LAB_ADMIN', label: 'Lab admin' },
+  { value: 'VIEWER', label: '查看者' },
+  { value: 'SUBMITTER', label: '提交者' },
+  { value: 'EDITOR', label: '编辑者' },
+  { value: 'LAB_ADMIN', label: '实验室管理员' },
 ];
 
 export function UserRolesDialog({ user, onOpenChange, labNames }: UserRolesDialogProps) {
@@ -40,14 +42,14 @@ export function UserRolesDialog({ user, onOpenChange, labNames }: UserRolesDialo
     setError(null);
     const result = await action();
     setIsSubmitting(false);
-    if (!result.success) setError(result.error ?? 'Operation failed');
+    if (!result.success) setError(result.error ?? '操作失败');
   };
 
   return (
     <Modal
       open
       onOpenChange={(next) => !next && onOpenChange(false)}
-      title={`Roles: ${user.username}`}
+      title={`角色：${user.username}`}
       closeDisabled={isSubmitting}
     >
       <div className="space-y-4">
@@ -59,26 +61,26 @@ export function UserRolesDialog({ user, onOpenChange, labNames }: UserRolesDialo
             disabled={isSubmitting}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 dark:border-slate-600 dark:bg-slate-800"
           />
-          Superuser (all permissions)
+          超级用户（全部权限）
         </label>
 
         <div className="space-y-1.5">
-          <Label>Roles</Label>
+          <Label>角色</Label>
           {user.roles.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No roles assigned.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">尚未分配角色。</p>
           ) : (
             <ul className="space-y-1">
               {user.roles.map((role) => (
                 <li key={role.id} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
-                    <Badge variant="info">{role.role.toLowerCase()}</Badge>
+                    <Badge variant="info">{roleLabel(role.role)}</Badge>
                     {role.labName && <span className="text-gray-500 dark:text-gray-400">{role.labName}</span>}
                   </span>
                   <button
                     onClick={() => run(() => revokeRole(role.id))}
                     disabled={isSubmitting}
                     className="text-gray-400 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50"
-                    aria-label="Revoke role"
+                    aria-label="撤销角色"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -89,7 +91,7 @@ export function UserRolesDialog({ user, onOpenChange, labNames }: UserRolesDialo
         </div>
 
         <div className="space-y-1.5">
-          <Label>Add role</Label>
+          <Label>添加角色</Label>
           <div className="flex items-center gap-2">
             <Select value={newRole} onValueChange={setNewRole} disabled={isSubmitting}>
               <SelectTrigger className="h-9 flex-1 text-sm">
@@ -106,7 +108,7 @@ export function UserRolesDialog({ user, onOpenChange, labNames }: UserRolesDialo
             {newRole === 'LAB_ADMIN' && (
               <Select value={newLab} onValueChange={setNewLab} disabled={isSubmitting}>
                 <SelectTrigger className="h-9 flex-1 text-sm">
-                  <SelectValue placeholder="Select lab" />
+                  <SelectValue placeholder="选择实验室" />
                 </SelectTrigger>
                 <SelectContent>
                   {labNames.map((lab) => (

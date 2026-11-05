@@ -35,9 +35,9 @@ export function Combobox({
   options,
   value,
   onChange,
-  placeholder = 'Select...',
-  emptyText = 'No results found',
-  searchPlaceholder = 'Search...',
+  placeholder = '选择…',
+  emptyText = '未找到结果',
+  searchPlaceholder = '搜索…',
   className,
   disabled = false,
   allowCustomValue = false,
@@ -171,7 +171,7 @@ export function Combobox({
                   )}
                 </span>
                 <div className="ml-6 flex flex-col items-start min-w-0 flex-1">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">Use: {searchQuery.trim()}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">使用： {searchQuery.trim()}</span>
                   {customValueHint && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">{customValueHint}</span>
                   )}

@@ -43,8 +43,8 @@ RUN git clone --depth 1 --branch "${ZITADEL_REF}" --filter=blob:none --sparse \
 # Apply the EOS overlay (changed source files + logo + trimmed workspace).
 COPY overlay/ /src/
 
-# English only: drop the non-en locale bundles.
-RUN find apps/login/locales -type f -name '*.json' ! -name 'en.json' -delete
+# Keep the EOS Chinese locale and the upstream English fallback.
+RUN find apps/login/locales -type f -name '*.json' ! -name 'en.json' ! -name 'zh.json' -delete
 
 RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 

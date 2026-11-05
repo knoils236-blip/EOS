@@ -9,11 +9,13 @@ from bofire.data_models.domain.domain import Domain
 from bofire.data_models.domain.features import Inputs, Outputs
 from bofire.data_models.enum import SamplingMethodEnum
 from bofire.data_models.features.categorical import CategoricalInput, CategoricalOutput
+from bofire.data_models.features.task import CategoricalTaskInput
 from bofire.data_models.features.continuous import ContinuousInput, ContinuousOutput
 from bofire.data_models.features.discrete import DiscreteInput
 from bofire.data_models.objectives.identity import MaximizeObjective, MinimizeObjective
 from bofire.data_models.objectives.target import CloseToTargetObjective
 from bofire.data_models.strategies.predictives.mobo import MoboStrategy
+from bofire.data_models.strategies.predictives.multi_fidelity import MultiFidelityVarianceBasedStrategy
 from bofire.data_models.strategies.predictives.sobo import SoboStrategy
 from bofire.data_models.surrogates.api import BotorchSurrogates
 from bofire.strategies.random import RandomStrategy
@@ -26,6 +28,12 @@ from eos.optimization.exceptions import EosCampaignOptimizerDomainError
 class BayesianSequentialOptimizer(AbstractSequentialOptimizer):
     """
     Uses BoFire's Bayesian optimization to optimize the parameters of a series of protocols.
+
+    Multi-fidelity: give one input as a ``CategoricalTaskInput`` whose categories are fidelity levels (e.g. a
+    simulation and a real experiment) with ``fidelities`` 0 for the target level and higher numbers for cheaper
+    ones. The optimizer then also chooses the fidelity of each run: a cheaper one while the model is still
+    uncertain there (``fidelity_thresholds``), the target one otherwise. Only target-fidelity results count as
+    optimal solutions.
     """
 
     InputType = ContinuousInput | DiscreteInput | CategoricalInput
@@ -40,7 +48,13 @@ class BayesianSequentialOptimizer(AbstractSequentialOptimizer):
         num_initial_samples: int,
         initial_sampling_method: SamplingMethodEnum = SamplingMethodEnum.SOBOL,
         surrogate_specs: BotorchSurrogates | None = None,
+        fidelity_thresholds: float | list[float] = 0.1,
     ):
+        # bofire would treat an empty output list as multi-objective and reject the acquisition function
+        if not inputs or not outputs:
+            raise EosCampaignOptimizerDomainError(
+                "The optimizer needs at least one input and one output; fill in 'inputs' and 'outputs' in optimizer.py."
+            )
         self._acquisition_function: AcquisitionFunction = acquisition_function
         self._num_initial_samples: int = num_initial_samples
         self._initial_sampling_method: SamplingMethodEnum = initial_sampling_method
@@ -63,9 +77,17 @@ class BayesianSequentialOptimizer(AbstractSequentialOptimizer):
         if surrogate_specs is not None:
             strategy_kwargs["surrogate_specs"] = surrogate_specs
 
-        self._optimizer_data_model = (
-            SoboStrategy(**strategy_kwargs) if len(outputs) == 1 else MoboStrategy(**strategy_kwargs)
-        )
+        self._fidelity_input = next((f for f in inputs if isinstance(f, CategoricalTaskInput)), None)
+        if self._fidelity_input is not None:
+            if len(outputs) != 1:
+                raise EosCampaignOptimizerDomainError("Multi-fidelity optimization supports exactly one output.")
+            self._optimizer_data_model = MultiFidelityVarianceBasedStrategy(
+                **strategy_kwargs, fidelity_thresholds=fidelity_thresholds
+            )
+        elif len(outputs) == 1:
+            self._optimizer_data_model = SoboStrategy(**strategy_kwargs)
+        else:
+            self._optimizer_data_model = MoboStrategy(**strategy_kwargs)
         self._optimizer = strategies.map(data_model=self._optimizer_data_model)
 
     def sample(self, num_protocol_runs: int = 1) -> pd.DataFrame:
@@ -143,7 +165,12 @@ class BayesianSequentialOptimizer(AbstractSequentialOptimizer):
             self._optimizer.set_candidates(remaining)
 
     def get_optimal_solutions(self) -> pd.DataFrame:
-        completed_runs = self._optimizer.experiments  # bofire API returns completed runs
+        # Failed protocol runs are reported with NaN outputs; they have no result to rank
+        completed_runs = self._optimizer.experiments.dropna(subset=self._output_names)
+        if self._fidelity_input is not None:
+            fidelity = self._fidelity_input
+            target = fidelity.categories[fidelity.fidelities.index(0)]
+            completed_runs = completed_runs[completed_runs[fidelity.key] == target]
         outputs = self._domain.outputs.get_by_objective(
             includes=[MaximizeObjective, MinimizeObjective, CloseToTargetObjective]
         ).features

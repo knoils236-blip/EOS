@@ -104,10 +104,10 @@ function filterTree(nodes: TreeNode[], lowerQuery: string): TreeNode[] {
 type FilteredPackage = { pkg: Package; matchingTrees: Partial<Record<EntityType, TreeNode[]>> };
 
 const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
-  devices: 'Devices',
-  tasks: 'Tasks',
-  labs: 'Labs',
-  protocols: 'Protocols',
+  devices: '设备',
+  tasks: '任务',
+  labs: '实验室',
+  protocols: '协议',
 };
 
 const ENTITY_TYPE_KEYS = Object.keys(ENTITY_TYPE_LABELS) as EntityType[];
@@ -239,7 +239,7 @@ function EntityItem({ entity, depth, ctx }: EntityItemProps) {
         {hasUnsaved && (
           <span
             className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-yellow-500 flex-shrink-0"
-            title="Unsaved changes"
+            title="未保存的更改"
           />
         )}
         <span className="truncate">{entity.name}</span>
@@ -250,7 +250,7 @@ function EntityItem({ entity, depth, ctx }: EntityItemProps) {
           ctx.onDeleteRequest(ctx.packageName, ctx.entityType, entity.path);
         }}
         className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900 rounded flex-shrink-0"
-        title="Delete"
+        title="删除"
       >
         <Trash2 className="w-3.5 h-3.5 text-red-600" />
       </button>
@@ -299,7 +299,7 @@ function FolderItem({ folder, depth, ctx }: FolderItemProps) {
             ctx.onCreateStart(ctx.packageName, ctx.entityType, folder.path);
           }}
           className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex-shrink-0"
-          title="Create new in this folder"
+          title="在此文件夹中新建"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -365,7 +365,7 @@ function EntityTypeSection({ entityType, nodes, isExpanded, onToggle, ctx }: Ent
         <button
           onClick={() => ctx.onCreateStart(ctx.packageName, entityType, '')}
           className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 flex-shrink-0"
-          title="Create new"
+          title="新建"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -799,13 +799,13 @@ export function PackageFileTree({
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Packages</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">软件包</h2>
         {onRefresh && (
           <button
             onClick={handleRefreshPackages}
             disabled={isRefreshing}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-50"
-            title="Refresh packages"
+            title="刷新软件包"
           >
             <RefreshCw className={`w-4 h-4 text-gray-600 dark:text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -820,14 +820,14 @@ export function PackageFileTree({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search entities..."
+              placeholder="搜索条目…"
               className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-yellow-500"
             />
             {searchQuery && (
               <button
                 onClick={handleClearSearch}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                title="Clear search"
+                title="清空搜索"
               >
                 <X className="w-3.5 h-3.5 text-gray-500" />
               </button>
@@ -838,9 +838,9 @@ export function PackageFileTree({
 
       <div className="flex-1 overflow-y-auto p-2">
         {packages.length === 0 ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No packages found</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">未找到软件包</div>
         ) : isSearching && filteredPackages.length === 0 ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No matches found</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">没有匹配结果</div>
         ) : (
           filteredPackages.map(({ pkg, matchingTrees }: FilteredPackage) => (
             <PackageNode
@@ -871,7 +871,7 @@ export function PackageFileTree({
               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              New {contextMenu.entityType.slice(0, -1)}
+              新建 {contextMenu.entityType.slice(0, -1)}
             </button>
             {contextMenu.entityPath && (
               <>
@@ -880,14 +880,14 @@ export function PackageFileTree({
                   className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
-                  Rename
+                  重命名
                 </button>
                 <button
                   onClick={handleDeleteFromContext}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-red-600"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  删除
                 </button>
               </>
             )}
@@ -899,9 +899,9 @@ export function PackageFileTree({
         <ConfirmationDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          title="Delete Entity"
-          description={`Are you sure you want to delete "${deleteTarget.entityPath}"? This action cannot be undone.`}
-          confirmLabel="Delete"
+          title="删除条目"
+          description={`确定要删除“${deleteTarget.entityPath}”吗？此操作无法撤销。`}
+          confirmLabel="删除"
           variant="destructive"
           items={[deleteTarget.entityPath]}
           onConfirm={async () => {

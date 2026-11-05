@@ -67,6 +67,13 @@ class ProtocolRunManager:
             update(ProtocolRunModel).where(ProtocolRunModel.name == protocol_run_name).values(parameters=parameters)
         )
 
+    async def set_sampling_decision(self, db: AsyncDbSession, protocol_run_name: str, decision: dict) -> None:
+        """Attach selection provenance before the sampled protocol begins execution."""
+        row = await db.scalar(select(ProtocolRunModel).where(ProtocolRunModel.name == protocol_run_name))
+        if row is None:
+            raise EosProtocolRunStateError(f"Protocol run '{protocol_run_name}' does not exist")
+        row.meta = {**(row.meta or {}), "decision": decision}
+
     async def delete_protocol_run(self, db: AsyncDbSession, protocol_run_name: str) -> None:
         """Delete a protocol run and all associated records."""
         await self._validate_protocol_run_exists(db, protocol_run_name)

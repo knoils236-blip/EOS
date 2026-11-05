@@ -1,0 +1,114 @@
+type: test
+desc: 协议说明
+
+labs:
+  - matterix_lab
+
+tasks:
+  - type: Matterix Capability
+    parameters:
+      capability_id: grasp_beaker
+      parameters:
+        hold_s: 1.2
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-3
+    desc: 抓取烧杯
+    devices:
+      matterix:
+        lab_name: matterix_lab
+        name: matterix
+        hold: true
+  - type: Matterix Capability
+    timeout: 660
+    retries: 0
+    name: task-4
+    desc: 抬升烧杯
+    dependencies:
+      - task-3
+    devices:
+      matterix:
+        ref: task-3.matterix
+        hold: true
+  - type: Matterix Capability
+    parameters:
+      capability_id: lift_beaker
+      parameters:
+        height_m: 0.3
+        hold_s: 1.2
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-5
+    desc: 抬升烧杯
+    dependencies:
+      - task-4
+    devices:
+      matterix:
+        ref: task-4.matterix
+        hold: true
+  - type: Matterix Capability
+    parameters:
+      capability_id: wait
+      parameters:
+        duration_s: 4
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-6
+    desc: 推进仿真时间
+    dependencies:
+      - task-5
+    devices:
+      matterix:
+        ref: task-5.matterix
+        hold: true
+  - type: Matterix Capability
+    parameters:
+      capability_id: lower_beaker
+      parameters:
+        height_m: 0.15
+        hold_s: 1.2
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-8
+    desc: 放下烧杯
+    dependencies:
+      - task-6
+    devices:
+      matterix:
+        ref: task-6.matterix
+        hold: true
+  - type: Matterix Capability
+    parameters:
+      capability_id: lower_beaker
+      parameters:
+        height_m: 0.25
+        hold_s: 1.2
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-9
+    desc: 放下烧杯
+    dependencies:
+      - task-8
+    devices:
+      matterix:
+        ref: task-8.matterix
+        hold: true
+  - type: Matterix Capability
+    parameters:
+      capability_id: release_beaker
+      parameters:
+        hold_s: 1.2
+        timeout_s: 30
+    timeout: 660
+    retries: 0
+    name: task-10
+    desc: 松开烧杯
+    dependencies:
+      - task-9
+    devices:
+      matterix: task-9.matterix

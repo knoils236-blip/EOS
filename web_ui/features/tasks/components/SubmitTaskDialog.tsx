@@ -29,8 +29,8 @@ import type { TaskSpec, DeviceAssignment, ResourceAssignment, ParameterSpec } fr
 import type { LabSpec } from '@/lib/api/specs';
 
 const taskFormSchema = z.object({
-  name: z.string().min(1, 'Task name is required').regex(IDENTIFIER_PATTERN, IDENTIFIER_ERROR_MESSAGE),
-  type: z.string().min(1, 'Task type is required'),
+  name: z.string().min(1, '请输入任务名称').regex(IDENTIFIER_PATTERN, IDENTIFIER_ERROR_MESSAGE),
+  type: z.string().min(1, '请选择任务类型'),
   priority: z.number().min(0),
   allocation_timeout: z.number().min(0),
   meta: z.string().optional(),
@@ -41,10 +41,12 @@ type TaskFormValues = z.infer<typeof taskFormSchema>;
 interface SubmitTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (taskName: string) => void;
   taskSpecs: Record<string, TaskSpec>;
   labSpecs: Record<string, LabSpec>;
   initialTask?: Task | null;
+  /** Task type to preselect when the dialog opens without a task to clone. */
+  initialType?: string;
   generateCloneName: (name: string) => Promise<string>;
 }
 
@@ -55,6 +57,7 @@ export function SubmitTaskDialog({
   taskSpecs,
   labSpecs,
   initialTask,
+  initialType,
   generateCloneName,
 }: SubmitTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -93,6 +96,10 @@ export function SubmitTaskDialog({
   const taskType = watch('type');
   const allLabNames = React.useMemo(() => Object.keys(labSpecs), [labSpecs]);
 
+  React.useEffect(() => {
+    if (open && initialType && !initialTask) setValue('type', initialType);
+  }, [open, initialType, initialTask, setValue]);
+
   // Fetch task types on mount
   React.useEffect(() => {
     getTaskPlugins()
@@ -105,7 +112,7 @@ export function SubmitTaskDialog({
         setTaskTypes(options);
       })
       .catch((err) => {
-        console.error('Failed to load task types:', err);
+        console.error('加载任务类型失败：', err);
         setTaskTypes([]);
       });
   }, []);
@@ -315,12 +322,12 @@ export function SubmitTaskDialog({
 
       if (result.success) {
         onOpenChange(false);
-        onSuccess?.();
+        onSuccess?.(data.name);
       } else {
-        setError(result.error || 'Failed to submit task');
+        setError(result.error || '提交任务失败');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid input in one of the fields');
+      setError(err instanceof Error ? err.message : '某个字段的输入无效');
     } finally {
       setIsSubmitting(false);
     }
@@ -344,39 +351,39 @@ export function SubmitTaskDialog({
     <BaseSubmitDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Submit New Task"
-      submitLabel="Submit Task"
+      title="提交新任务"
+      submitLabel="提交任务"
       isSubmitting={isSubmitting}
       error={error}
       onSubmit={handleSubmit(onSubmit)}
       headerActions={
         <Button variant="outline" size="sm" onClick={handleClear} className="gap-2">
           <Eraser className="w-4 h-4" />
-          Clear
+          清空
         </Button>
       }
     >
       <div className="space-y-2">
-        <Label htmlFor="name">Task Name *</Label>
+        <Label htmlFor="name">任务名称 *</Label>
         <Input id="name" {...register('name')} error={errors.name?.message} placeholder="my_task" />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Task Type *</Label>
+        <Label htmlFor="type">任务类型 *</Label>
         <Combobox
           options={taskTypes}
           value={taskType}
           onChange={(value) => setValue('type', value, { shouldValidate: true })}
-          placeholder="Select task type"
-          searchPlaceholder="Search task types..."
-          emptyText="No task types found"
+          placeholder="选择任务类型"
+          searchPlaceholder="搜索任务类型…"
+          emptyText="未找到任务类型"
         />
         {errors.type && <p className="text-sm text-red-600">{errors.type.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
+          <Label htmlFor="priority">优先级</Label>
           <Input
             id="priority"
             type="number"
@@ -386,7 +393,7 @@ export function SubmitTaskDialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="allocation_timeout">Allocation Timeout (seconds)</Label>
+          <Label htmlFor="allocation_timeout">分配超时（秒）</Label>
           <Input
             id="allocation_timeout"
             type="number"
@@ -414,7 +421,7 @@ export function SubmitTaskDialog({
           if (filtered.length === 0) return null;
           return (
             <div className="space-y-2">
-              <Label>Input Devices *</Label>
+              <Label>输入设备 *</Label>
               <div className="space-y-2.5">
                 {filtered.map(([name, spec]) => (
                   <TaskDeviceAssignment
@@ -454,7 +461,7 @@ export function SubmitTaskDialog({
           if (Object.keys(filtered).length === 0) return null;
           return (
             <div className="space-y-2">
-              <Label>Input Parameters</Label>
+              <Label>输入参数</Label>
               <TaskParameterFields
                 parameters={filtered}
                 values={inputParameters}
@@ -474,7 +481,7 @@ export function SubmitTaskDialog({
           if (filtered.length === 0) return null;
           return (
             <div className="space-y-2">
-              <Label>Input Resources</Label>
+              <Label>输入资源</Label>
               <div className="space-y-2.5">
                 {filtered.map(([name, spec]) => (
                   <TaskResourceAssignment
@@ -502,7 +509,7 @@ export function SubmitTaskDialog({
           if (filtered.length === 0) return null;
           return (
             <div className="space-y-2">
-              <Label>Input Files</Label>
+              <Label>输入文件</Label>
               <div className="space-y-2.5">
                 {filtered.map(([name, spec]) => (
                   <div key={name} className="space-y-1">
@@ -523,7 +530,7 @@ export function SubmitTaskDialog({
 
       {/* Metadata Section (always JSON) */}
       <div className="space-y-2">
-        <Label htmlFor="meta">Metadata (JSON)</Label>
+        <Label htmlFor="meta">元数据（JSON）</Label>
         <Textarea
           id="meta"
           {...register('meta')}

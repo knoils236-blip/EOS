@@ -1,0 +1,46 @@
+{
+  "begin_experiment": {
+    "x": 140,
+    "y": 120
+  },
+  "pick_big_bottle": {
+    "x": 800,
+    "y": 100
+  },
+  "decap_big_bottle": {
+    "x": 1150,
+    "y": 100
+  },
+  "pick_syringe": {
+    "x": 1500,
+    "y": 100
+  },
+  "syringe_aspirate": {
+    "x": 1850,
+    "y": 100
+  },
+  "mount_filter_head": {
+    "x": 2200,
+    "y": 100
+  },
+  "syringe_dispense_to_big_bottle": {
+    "x": 2550,
+    "y": 100
+  },
+  "discard_syringe": {
+    "x": 2900,
+    "y": 100
+  },
+  "recap_big_bottle": {
+    "x": 3250,
+    "y": 100
+  },
+  "place_big_bottle": {
+    "x": 3600,
+    "y": 100
+  },
+  "end_experiment": {
+    "x": 4400,
+    "y": 100
+  }
+}

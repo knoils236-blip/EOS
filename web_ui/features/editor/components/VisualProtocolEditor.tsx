@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { EditorSubmitButton } from './EditorSubmitButton';
 import { Save, Code, AlertTriangle, RefreshCw, Download, Upload } from 'lucide-react';
 import { ProtocolEditor } from '@/features/protocol-editor/components/ProtocolEditor';
 import { useEditorStore } from '@/lib/stores/editorStore';
@@ -65,10 +66,10 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
         setIsLoaded(true);
         onReload?.();
       } else {
-        alert(result.error || 'Failed to load protocol');
+        alert(result.error || '加载协议失败');
       }
     } catch {
-      alert('Failed to load protocol');
+      alert('加载协议失败');
     } finally {
       setIsLoading(false);
     }
@@ -84,10 +85,10 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
         setIsLoaded(false);
         onReload?.();
       } else {
-        alert(result.error || 'Failed to unload protocol');
+        alert(result.error || '卸载协议失败');
       }
     } catch {
-      alert('Failed to unload protocol');
+      alert('卸载协议失败');
     } finally {
       setIsUnloading(false);
     }
@@ -100,9 +101,9 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
     try {
       const result = await reloadEntity('protocols', selectedEntityName);
       if (result.success) onReload?.();
-      else alert(result.error || 'Failed to reload protocol');
+      else alert(result.error || '重新加载协议失败');
     } catch {
-      alert('Failed to reload protocol');
+      alert('重新加载协议失败');
     } finally {
       setIsReloading(false);
     }
@@ -127,16 +128,16 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
     return (
       <div className="h-full flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-8">
         <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Jinja Template Detected</h3>
+        <h3 className="text-xl font-semibold mb-2">检测到 Jinja 模板</h3>
         <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
-          This protocol contains Jinja2 template syntax. Visual editing is disabled to prevent corruption.
+          此协议包含 Jinja2 模板语法。为防止模板损坏，已禁用可视化编辑。
         </p>
         <button
           onClick={onSwitchToCode}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-yellow-500 text-white dark:text-slate-900 rounded hover:bg-blue-700 dark:hover:bg-yellow-600"
         >
           <Code className="w-4 h-4" />
-          Switch to Code Editor
+          切换到代码编辑器
         </button>
       </div>
     );
@@ -147,25 +148,25 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">Protocol: {selectedEntityName}</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">协议： {selectedEntityName}</span>
           <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-500">
             <span>{selectedPackage}</span>
             <span>/</span>
-            <span>protocols</span>
+            <span>协议</span>
             <span>/</span>
             <span>{selectedEntityName}</span>
           </div>
-          {isDirty && <span className="text-xs text-orange-600 dark:text-orange-400">● Unsaved</span>}
+          {isDirty && <span className="text-xs text-orange-600 dark:text-orange-400">● 未保存</span>}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onSwitchToCode}
             className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Switch to code editor"
+            title="切换到代码编辑器"
           >
             <Code className="w-4 h-4" />
-            Code
+            代码
           </button>
 
           {!isLoaded && (
@@ -173,10 +174,10 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
               onClick={handleLoad}
               disabled={isLoading || !isConnected}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="Load protocol"
+              title="加载协议"
             >
               <Download className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
-              Load
+              加载
             </button>
           )}
 
@@ -185,10 +186,10 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
               onClick={handleUnload}
               disabled={isUnloading || !isConnected}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="Unload protocol"
+              title="卸载协议"
             >
               <Upload className={`w-4 h-4 ${isUnloading ? 'animate-pulse' : ''}`} />
-              Unload
+              卸载
             </button>
           )}
 
@@ -197,21 +198,23 @@ export function VisualProtocolEditor({ hasJinja, onSave, onReload, onSwitchToCod
               onClick={handleReload}
               disabled={isReloading || !isConnected}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="Reload protocol from disk"
+              title="从磁盘重新加载协议"
             >
               <RefreshCw className={`w-4 h-4 ${isReloading ? 'animate-spin' : ''}`} />
-              Reload
+              重新加载
             </button>
           )}
+
+          <EditorSubmitButton isLoaded={isLoaded} />
 
           <button
             onClick={() => onSave()}
             disabled={!isDirty}
             className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 dark:bg-yellow-500 text-white dark:text-slate-900 rounded hover:bg-blue-700 dark:hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Save (Cmd/Ctrl+S)"
+            title="保存（Cmd/Ctrl+S）"
           >
             <Save className="w-4 h-4" />
-            Save
+            保存
           </button>
         </div>
       </div>

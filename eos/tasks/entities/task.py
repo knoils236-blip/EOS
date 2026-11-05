@@ -35,6 +35,8 @@ class TaskSubmission(BaseModel):
 
     priority: int = Field(0, ge=0)
     allocation_timeout: int = Field(600, ge=0)  # sec
+    timeout: int | None = Field(None, gt=0)  # sec
+    retries: int = Field(0, ge=0)
 
     meta: dict[str, Any] = Field(default_factory=dict)
 
@@ -70,6 +72,8 @@ class TaskSubmission(BaseModel):
             input_parameters=config.parameters,
             input_resources=input_resources,
             input_files=config.files or None,
+            timeout=config.timeout,
+            retries=config.retries,
         )
 
     def to_def(self) -> TaskDef:

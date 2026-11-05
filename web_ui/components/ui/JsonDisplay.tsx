@@ -7,7 +7,7 @@ export function JsonDisplay({ data, label }: JsonDisplayProps) {
   if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
     return (
       <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-        {label ? `No ${label.toLowerCase()}` : 'No data'}
+        {label ? `暂无 ${label.toLowerCase()}` : '暂无数据'}
       </div>
     );
   }

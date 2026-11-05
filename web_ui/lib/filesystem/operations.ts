@@ -17,6 +17,26 @@ export const getUserDir = () => {
   return process.env.USER_DIR || path.join(process.cwd(), '..', 'user');
 };
 
+export function isSafeRelPath(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    !value.includes('\\') &&
+    !value.includes('\0') &&
+    value.split('/').every((segment) => segment.length > 0 && segment !== '.' && segment !== '..')
+  );
+}
+
+function getPackagePath(packageName: string): string {
+  // scanPackages reports "." when USER_DIR itself is a package.
+  if (packageName !== '.' && !isSafeRelPath(packageName)) throw new Error('路径无效');
+  return path.join(getUserDir(), packageName);
+}
+
+function getEntityPath(packageName: string, entityType: EntityType, entityName: string): string {
+  if (!Object.hasOwn(ENTITY_FILE_NAMES, entityType) || !isSafeRelPath(entityName)) throw new Error('路径无效');
+  return path.join(getPackagePath(packageName), entityType, entityName);
+}
+
 const MAX_TREE_DEPTH = 16;
 const IGNORED_DIR_NAMES = new Set(['__pycache__', 'node_modules', '.venv', 'venv']);
 
@@ -110,7 +130,7 @@ export const ENTITY_TEMPLATES = {
 
 
 class __CLASS__(Device, type="__NAME__"):
-    """Description of the device."""
+    """设备说明。"""
 `,
   },
   tasks: {
@@ -120,12 +140,12 @@ class __CLASS__(Device, type="__NAME__"):
 
 @task("__NAME__")
 async def __NAME__() -> None:
-    """Description of the task."""
+    """任务说明。"""
 `,
   },
   labs: {
     yaml: `name: my_lab
-desc: Description of the lab
+desc: 实验室说明
 
 computers: {}
 devices: {}
@@ -134,7 +154,7 @@ devices: {}
   },
   protocols: {
     yaml: `type: my_protocol
-desc: Description of the protocol
+desc: 协议说明
 
 labs: []
 
@@ -226,7 +246,7 @@ export async function scanPackages(): Promise<Package[]> {
 
 // Get entity tree for a package
 export async function getPackageTree(packageName: string): Promise<EntityTree> {
-  const packagePath = path.join(getUserDir(), packageName);
+  const packagePath = getPackagePath(packageName);
   const entityTypes: EntityType[] = ['devices', 'tasks', 'labs', 'protocols'];
 
   const results = await Promise.all(
@@ -265,7 +285,7 @@ export async function getEntityMtimeOnly(
   entityType: EntityType,
   entityName: string
 ): Promise<number | null> {
-  const entityPath = path.join(getUserDir(), packageName, entityType, entityName);
+  const entityPath = getEntityPath(packageName, entityType, entityName);
   try {
     await fs.access(entityPath);
   } catch {
@@ -280,9 +300,8 @@ export async function readEntityFiles(
   entityType: EntityType,
   entityName: string
 ): Promise<EntityFiles | null> {
-  const userDir = getUserDir();
+  const entityPath = getEntityPath(packageName, entityType, entityName);
   const fileNames = ENTITY_FILE_NAMES[entityType];
-  const entityPath = path.join(userDir, packageName, entityType, entityName);
 
   // Check if entity directory exists
   try {
@@ -320,9 +339,8 @@ export async function writeEntityFiles(
   entityName: string,
   files: WriteFilesRequest
 ): Promise<{ conflict: boolean; mtime: number }> {
-  const userDir = getUserDir();
+  const entityPath = getEntityPath(packageName, entityType, entityName);
   const fileNames = ENTITY_FILE_NAMES[entityType];
-  const entityPath = path.join(userDir, packageName, entityType, entityName);
 
   // Conflict check: reject if disk is newer than what the client last saw
   if (files.expectedMtime != null) {
@@ -356,16 +374,15 @@ export async function writeEntityFiles(
 
 // Create new entity
 export async function createEntity(packageName: string, entityType: EntityType, entityName: string): Promise<void> {
-  const userDir = getUserDir();
+  const entityPath = getEntityPath(packageName, entityType, entityName);
   const fileNames = ENTITY_FILE_NAMES[entityType];
-  const entityPath = path.join(userDir, packageName, entityType, entityName);
 
   // Check if entity already exists
   try {
     await fs.access(entityPath);
-    throw new Error('Entity already exists');
+    throw new Error('条目已存在');
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === 'Entity already exists') throw err;
+    if (err instanceof Error && err.message === '条目已存在') throw err;
     // Directory doesn't exist, which is what we want
   }
 
@@ -373,7 +390,7 @@ export async function createEntity(packageName: string, entityType: EntityType, 
   const template = ENTITY_TEMPLATES[entityType];
   const name = path.basename(entityName);
   if (template.python && fileNames.python && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
-    throw new Error(`'${name}' is not a valid Python identifier`);
+    throw new Error(`“${name}”不是有效的 Python 标识符`);
   }
 
   // Create directory
@@ -403,8 +420,7 @@ export async function createEntity(packageName: string, entityType: EntityType, 
 
 // Delete entity
 export async function deleteEntity(packageName: string, entityType: EntityType, entityName: string): Promise<void> {
-  const userDir = getUserDir();
-  const entityPath = path.join(userDir, packageName, entityType, entityName);
+  const entityPath = getEntityPath(packageName, entityType, entityName);
 
   await fs.rm(entityPath, { recursive: true, force: true });
 }
@@ -416,23 +432,22 @@ export async function renameEntity(
   oldName: string,
   newName: string
 ): Promise<void> {
-  const userDir = getUserDir();
-  const oldPath = path.join(userDir, packageName, entityType, oldName);
-  const newPath = path.join(userDir, packageName, entityType, newName);
+  const oldPath = getEntityPath(packageName, entityType, oldName);
+  const newPath = getEntityPath(packageName, entityType, newName);
 
   // Check if old path exists
   try {
     await fs.access(oldPath);
   } catch {
-    throw new Error('Entity not found');
+    throw new Error('未找到条目');
   }
 
   // Check if new name already exists
   try {
     await fs.access(newPath);
-    throw new Error('An entity with that name already exists');
+    throw new Error('同名条目已存在');
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === 'An entity with that name already exists') throw err;
+    if (err instanceof Error && err.message === '同名条目已存在') throw err;
     // Path doesn't exist, which is what we want
   }
 

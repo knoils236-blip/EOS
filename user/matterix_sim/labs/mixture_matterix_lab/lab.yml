@@ -1,0 +1,11 @@
+name: mixture_matterix_lab
+desc: Two-source Matterix mixture; physics execution (whole-station acceptance pending) and synthetic measurement
+simulated: true
+devices:
+  workstation:
+    type: mixture_workstation
+    computer: eos_computer
+    init_parameters:
+      backend: matterix
+      address: 127.0.0.1
+      port: 65200

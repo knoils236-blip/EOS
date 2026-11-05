@@ -1,5 +1,7 @@
 'use client';
 
+import { ASSIGNMENT_MODE_LABELS } from '@/lib/labels';
+
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { DeviceAssignment as DeviceAssignmentType, DeviceSpec, DeviceIdentifier } from '@/lib/types/protocol';
 import type { LabSpec } from '@/lib/api/specs';
@@ -102,7 +104,7 @@ export function DeviceAssignment({
                     : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                 }`}
               >
-                {mode}
+                {ASSIGNMENT_MODE_LABELS[mode]}
               </button>
             ))}
           </div>
@@ -137,11 +139,8 @@ export function DeviceAssignment({
             onChange={(e) => onHoldChange(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 dark:border-slate-500"
           />
-          <span
-            className="text-sm text-gray-700 dark:text-gray-300"
-            title="Prevent this device from being released until successor tasks complete"
-          >
-            Hold for successors
+          <span className="text-sm text-gray-700 dark:text-gray-300" title="在后续任务完成前保留此设备">
+            保留至后续任务完成
           </span>
         </label>
       )}
@@ -178,23 +177,23 @@ function StaticMode({
   return (
     <div className="grid grid-cols-2 gap-2">
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Lab</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">实验室</label>
         <Combobox
           options={labOptions}
           value={staticValue.lab_name}
           onChange={(lab) => onChange({ lab_name: lab, name: '' })}
-          placeholder="Select lab..."
-          emptyText="No labs available"
+          placeholder="选择实验室…"
+          emptyText="暂无可用实验室"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Device</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">设备</label>
         <Combobox
           options={deviceOptions}
           value={staticValue.name}
           onChange={(name) => onChange({ ...staticValue, name })}
-          placeholder={staticValue.lab_name ? 'Select device...' : 'Select lab first'}
-          emptyText={`No ${deviceSpec.type} devices in this lab`}
+          placeholder={staticValue.lab_name ? '选择设备…' : '请先选择实验室'}
+          emptyText={`暂无 ${deviceSpec.type} 类型设备可用于此实验室`}
           disabled={!staticValue.lab_name}
         />
       </div>
@@ -258,12 +257,12 @@ function DynamicMode({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-700 px-2.5 py-1.5 rounded-md">
-        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Device Type:</span>
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">设备类型：</span>
         <span className="text-sm text-gray-900 dark:text-white">{deviceSpec.type}</span>
       </div>
 
       <ConstraintSection
-        label="Constrain to specific labs"
+        label="限定实验室"
         enabled={constrainLabs}
         onToggle={(enabled) => {
           setConstrainLabs(enabled);
@@ -273,15 +272,15 @@ function DynamicMode({
         onAdd={(lab) => onChange({ ...dynamicValue, allowed_labs: toggleInArray(dynamicValue.allowed_labs, lab) })}
         onRemove={(lab) => onChange({ ...dynamicValue, allowed_labs: toggleInArray(dynamicValue.allowed_labs, lab) })}
         options={labOptions}
-        placeholder="Add lab..."
-        emptyText="All labs added"
+        placeholder="添加实验室…"
+        emptyText="已添加所有实验室"
         renderItem={(item) => item}
         getKey={(item) => item}
         color="blue"
       />
 
       <ConstraintSection
-        label="Constrain to specific devices"
+        label="限定设备"
         enabled={constrainDevices}
         onToggle={(enabled) => {
           setConstrainDevices(enabled);
@@ -302,8 +301,8 @@ function DynamicMode({
           })
         }
         options={deviceOptions}
-        placeholder="Add device..."
-        emptyText="All devices added"
+        placeholder="添加设备…"
+        emptyText="已添加所有设备"
         renderItem={(d: DeviceIdentifier) => `${d.name} (${d.lab_name})`}
         getKey={(d: DeviceIdentifier) => `${d.lab_name}.${d.name}`}
         color="blue"
@@ -315,7 +314,7 @@ function DynamicMode({
 function ReferenceMode({ value, onChange }: Pick<DeviceAssignmentProps, 'value' | 'onChange'>) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Task Reference</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">任务引用</label>
       <input
         type="text"
         value={typeof value === 'string' ? value : ''}

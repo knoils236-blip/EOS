@@ -87,6 +87,7 @@ export const campaigns = pgTable(
     priority: integer('priority').notNull().default(0),
     maxProtocolRuns: integer('max_protocol_runs').notNull().default(0),
     maxConcurrentProtocolRuns: integer('max_concurrent_protocol_runs').notNull().default(1),
+    maxFailedProtocolRuns: integer('max_failed_protocol_runs').notNull().default(0),
     optimize: boolean('optimize').notNull(),
     optimizerIp: text('optimizer_ip').notNull().default('127.0.0.1'),
     globalParameters: json('global_parameters'),

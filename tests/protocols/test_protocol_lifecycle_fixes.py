@@ -1,6 +1,8 @@
 import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
-from eos.configuration.entities.task_def import DeviceAssignmentDef
+from eos.configuration.entities.task_def import DeviceAssignmentDef, TaskDef
 from eos.configuration.protocol_graph import ProtocolGraph
 from eos.orchestration.services.protocol_service import ProtocolService
 from eos.orchestration.services.task_service import TaskService
@@ -15,6 +17,38 @@ from tests.fixtures import *
 LAB = "multiplication_lab"
 PROTOCOL = "run_if"
 MULTIPLIER = {"multiplier": DeviceAssignmentDef(lab_name=LAB, name="multiplier")}
+
+
+@pytest.mark.parametrize("record", [True, False])
+async def test_protocol_recording_choice_reaches_actual_task_submission(record):
+    task = TaskDef(name="transfer", type="Matterix Capability")
+    executor = ProtocolExecutor.__new__(ProtocolExecutor)
+    executor._protocol_run_name = "recording"
+    executor._protocol_run_submission = ProtocolRunSubmission(
+        name="recording", type="station",
+        meta={"matterix": {"record_video": record, "hide_shell": True}},
+    )
+    executor._protocol_graph = SimpleNamespace(get_task=lambda name: task)
+    executor._task_input_resolver = SimpleNamespace(resolve_task_inputs=AsyncMock(return_value=task))
+    capture = AsyncMock()
+    executor._task_executor = SimpleNamespace(request_task_execution=capture)
+    executor._task_output_futures = {}
+    executor._current_task_submissions = {}
+    scheduled = ScheduledTask(name="transfer", protocol_run_name="recording", devices={}, resources={})
+    await executor._execute_task(None, scheduled)
+    await executor._task_output_futures["transfer"]
+    submission = capture.call_args.args[0]
+    assert submission.meta == {"matterix": {"record_video": record, "hide_shell": True}}
+
+
+@pytest.mark.parametrize("settings", [True, {"record_video": "false"}, {"hide_shell": 1}])
+def test_protocol_recording_rejects_non_boolean_settings(settings):
+    executor = ProtocolExecutor.__new__(ProtocolExecutor)
+    executor._protocol_run_submission = ProtocolRunSubmission(
+        name="invalid", type="station", meta={"matterix": settings},
+    )
+    with pytest.raises(EosProtocolRunExecutionError, match="must be"):
+        executor._matterix_task_meta()
 
 
 class _RecordingTaskExecutor:
@@ -40,6 +74,7 @@ async def test_duplicate_and_stale_cancellation_requests_are_ignored():
     service = ProtocolService.__new__(ProtocolService)
     service._protocol_run_cancellation_queue = asyncio.Queue()
     service._submitted_protocol_runs = {"run": _Executor()}
+    service._awaiting_preflight = {}
     for name in ("run", "run", "finished_meanwhile"):
         await service._protocol_run_cancellation_queue.put(name)
 

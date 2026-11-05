@@ -6,6 +6,10 @@ import pandas as pd
 import pytest
 
 from tests.optimization.test_beacon_optimizer import TestCustomOptimizer as CustomOptimizerFactory
+from bofire.data_models.acquisition_functions.acquisition_function import qLogNEI
+from bofire.data_models.features.api import ContinuousInput, ContinuousOutput
+from bofire.data_models.objectives.api import MinimizeObjective
+from eos.optimization.beacon_optimizer import BeaconOptimizer
 
 
 async def test_beacon_state_through_optimization_and_ai_fallback():
@@ -62,6 +66,23 @@ async def test_beacon_state_through_optimization_and_ai_fallback():
     optimizer.set_runtime_params({"p_bayesian": 1.0})
     assert optimizer._ai_agent is None
     assert optimizer.get_runtime_params()["p_ai"] == 0
+
+
+async def test_sampling_provenance_distinguishes_initial_design_from_model_guided_sampling():
+    optimizer = BeaconOptimizer(
+        inputs=[ContinuousInput(key="x", bounds=(0, 1))],
+        outputs=[ContinuousOutput(key="y", objective=MinimizeObjective())],
+        constraints=[],
+        acquisition_function=qLogNEI(),
+        num_initial_samples=1,
+        p_bayesian=1,
+        p_ai=0,
+    )
+    parameters = await optimizer.sample()
+    assert optimizer.get_meta()["sampling_decision"]["method"] == "initial_design"
+    await optimizer.report(parameters, pd.DataFrame({"y": [0.1]}))
+    await optimizer.sample()
+    assert optimizer.get_meta()["sampling_decision"]["method"] == "bayesian"
 
 
 async def test_beacon_meta_round_trip_restores_runtime_settings():

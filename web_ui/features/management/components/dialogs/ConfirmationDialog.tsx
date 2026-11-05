@@ -23,8 +23,8 @@ export function ConfirmationDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = '确认',
+  cancelLabel = '取消',
   variant = 'default',
   items,
   onConfirm,
@@ -40,7 +40,7 @@ export function ConfirmationDialog({
       await onConfirm();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : '发生错误');
     } finally {
       setIsSubmitting(false);
     }
@@ -70,9 +70,7 @@ export function ConfirmationDialog({
       <div className="space-y-4">
         {items && items.length > 0 && (
           <div className="rounded-md bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 p-3">
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Affected items ({items.length}):
-            </p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">受影响的条目（{items.length}):</p>
             <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1 max-h-40 overflow-y-auto">
               {items.map((item, index) => (
                 <li key={index} className="flex items-center gap-2">
@@ -97,7 +95,7 @@ export function ConfirmationDialog({
           disabled={isSubmitting}
           onClick={handleConfirm}
         >
-          {isSubmitting ? 'Processing...' : confirmLabel}
+          {isSubmitting ? '正在处理…' : confirmLabel}
         </Button>
       </div>
     </Modal>

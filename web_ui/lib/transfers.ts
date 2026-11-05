@@ -23,7 +23,7 @@ export function startDownload(key: string, fileName: string) {
       const response = await fetch(`/api/files/download/${encodeURI(key)}`);
 
       if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
+        throw new Error(`下载失败：${response.statusText}`);
       }
 
       const contentLength = response.headers.get('Content-Length');
@@ -31,7 +31,7 @@ export function startDownload(key: string, fileName: string) {
       updateTransfer(id, { bytesTotal: total });
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      if (!reader) throw new Error('响应正文为空');
 
       const chunks: Uint8Array[] = [];
       let loaded = 0;
@@ -64,7 +64,7 @@ export function startDownload(key: string, fileName: string) {
     } catch (error) {
       updateTransfer(id, {
         status: 'error',
-        error: error instanceof Error ? error.message : 'Download failed',
+        error: error instanceof Error ? error.message : '下载失败',
       });
     }
   })();
@@ -102,12 +102,12 @@ export function startUpload(file: File, destinationKey: string) {
       updateTransfer(id, { status: 'completed', progress: 100, bytesLoaded: file.size });
       setTimeout(() => removeTransfer(id), AUTO_REMOVE_DELAY);
     } else {
-      updateTransfer(id, { status: 'error', error: `Upload failed: ${xhr.statusText}` });
+      updateTransfer(id, { status: 'error', error: `上传失败：${xhr.statusText}` });
     }
   };
 
   xhr.onerror = () => {
-    updateTransfer(id, { status: 'error', error: 'Upload failed: network error' });
+    updateTransfer(id, { status: 'error', error: '上传失败：网络错误' });
   };
 
   xhr.open('POST', '/api/files/upload');

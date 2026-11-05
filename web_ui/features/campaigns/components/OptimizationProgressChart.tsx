@@ -50,8 +50,8 @@ interface OptimizationProgressChartProps {
 type SortOrder = 'completion' | 'index';
 
 const SORT_OPTIONS: { label: string; value: SortOrder }[] = [
-  { label: 'Completion Order', value: 'completion' },
-  { label: 'Protocol Run Index', value: 'index' },
+  { label: '完成顺序', value: 'completion' },
+  { label: '协议运行序号', value: 'index' },
 ];
 
 function getRunNumber(name: string): number {
@@ -116,7 +116,7 @@ export function OptimizationProgressChart({ samples, outputNames, campaignName }
         },
         tooltip: {
           callbacks: {
-            title: (items) => `Protocol Run ${items[0].label}`,
+            title: (items) => `协议运行 ${items[0].label}`,
             label: (context) => {
               const value = context.parsed.y;
               return `${context.dataset.label}: ${value?.toFixed(4) ?? '-'}`;
@@ -128,7 +128,7 @@ export function OptimizationProgressChart({ samples, outputNames, campaignName }
         x: {
           title: {
             display: true,
-            text: 'Protocol Run',
+            text: '协议运行',
             color: textColor,
           },
           ticks: {
@@ -141,7 +141,7 @@ export function OptimizationProgressChart({ samples, outputNames, campaignName }
         y: {
           title: {
             display: true,
-            text: 'Objective Value',
+            text: '目标值',
             color: textColor,
           },
           ticks: {
@@ -175,7 +175,7 @@ export function OptimizationProgressChart({ samples, outputNames, campaignName }
   );
 
   if (samples.length === 0) {
-    return <p className="text-gray-500 dark:text-gray-400 text-center py-8">No optimization data available yet.</p>;
+    return <p className="text-gray-500 dark:text-gray-400 text-center py-8">暂无优化数据。</p>;
   }
 
   return (

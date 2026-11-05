@@ -38,6 +38,11 @@ Example
         meta:
           location: glovebox
 
+Simulated Labs
+--------------
+Set ``simulated: true`` on a digital twin or mock lab. AI assistants connected through :doc:`mcp` may run
+protocols there without approval; submissions to other labs wait for a person to approve them.
+
 Computers
 ---------
 The built-in ``eos_computer`` represents the orchestrator at ``127.0.0.1``.

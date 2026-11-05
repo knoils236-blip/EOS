@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Server, FlaskConical, ListChecks, Boxes, Package, Users } from 'lucide-react';
+import { Server, FlaskConical, ListChecks, Boxes, Package, Users, Bot } from 'lucide-react';
 import { DevicesTab } from './DevicesTab';
 import { LabsTab } from './LabsTab';
 import { TaskPluginsTab } from './TaskPluginsTab';
 import { ProtocolTypesTab } from './ProtocolTypesTab';
 import { PackagesTab } from './PackagesTab';
 import { UsersTab } from './UsersTab';
+import { AiSettingsTab } from './AiSettingsTab';
 import type { ManagedUser } from '../api/users';
 import type { Device, Lab, TaskPluginInfo, ProtocolType, PackageInfo } from '@/lib/types/management';
 
@@ -42,7 +43,7 @@ export function ManagementTabs({
           className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
         >
           <Package className="h-5 w-5" />
-          Packages
+          软件包
           <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
             {packages.filter((p) => p.active).length}/{packages.length}
           </span>
@@ -53,7 +54,7 @@ export function ManagementTabs({
           className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
         >
           <Boxes className="h-5 w-5" />
-          Labs
+          实验室
           <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
             {labs.filter((l) => l.loaded).length}/{labs.length}
           </span>
@@ -64,7 +65,7 @@ export function ManagementTabs({
           className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
         >
           <Server className="h-5 w-5" />
-          Devices
+          设备
           <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
             {devices.length}
           </span>
@@ -75,7 +76,7 @@ export function ManagementTabs({
           className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
         >
           <ListChecks className="h-5 w-5" />
-          Tasks
+          任务
           <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
             {taskPlugins.length}
           </span>
@@ -86,7 +87,7 @@ export function ManagementTabs({
           className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
         >
           <FlaskConical className="h-5 w-5" />
-          Protocols
+          协议
           <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
             {protocolTypes.filter((e) => e.loaded).length}/{protocolTypes.length}
           </span>
@@ -98,10 +99,20 @@ export function ManagementTabs({
             className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
           >
             <Users className="h-5 w-5" />
-            Users
+            用户
             <span className="ml-1 rounded-full bg-gray-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
               {users.length}
             </span>
+          </Tabs.Trigger>
+        )}
+
+        {superuser && (
+          <Tabs.Trigger
+            value="ai"
+            className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent data-[state=active]:border-blue-600 dark:data-[state=active]:border-yellow-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-yellow-500 transition-colors"
+          >
+            <Bot className="h-5 w-5" />
+            AI
           </Tabs.Trigger>
         )}
       </Tabs.List>
@@ -129,6 +140,12 @@ export function ManagementTabs({
       {users !== null && (
         <Tabs.Content value="users" className="focus:outline-none">
           <UsersTab initialUsers={users} labNames={labs.map((lab) => lab.name)} />
+        </Tabs.Content>
+      )}
+
+      {superuser && (
+        <Tabs.Content value="ai" className="focus:outline-none">
+          <AiSettingsTab />
         </Tabs.Content>
       )}
     </Tabs.Root>

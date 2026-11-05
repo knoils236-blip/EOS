@@ -25,7 +25,7 @@ interface LogViewerProps {
 
 function formatTimestamp(epoch: number): string {
   const d = new Date(epoch * 1000);
-  return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return d.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function LogLine({ entry }: { entry: LogEntry }) {
@@ -75,9 +75,7 @@ export function LogViewer({ enabled = true, isResizing = false, className = '' }
           <Circle
             className={`h-2.5 w-2.5 ${connected ? 'fill-green-500 text-green-500' : 'fill-red-500 text-red-500'}`}
           />
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">
-            {connected ? 'Connected' : 'Disconnected'}
-          </span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">{connected ? '已连接' : '未连接'}</span>
         </div>
 
         <select
@@ -92,7 +90,7 @@ export function LogViewer({ enabled = true, isResizing = false, className = '' }
           ))}
         </select>
 
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">{entries.length} entries</span>
+        <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">{entries.length} 条记录</span>
 
         <Button variant="ghost" size="sm" onClick={clear} className="h-5 w-5 p-0">
           <Trash2 className="h-3 w-3" />
@@ -103,7 +101,7 @@ export function LogViewer({ enabled = true, isResizing = false, className = '' }
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto font-mono">
         {entries.length === 0 ? (
           <div className="flex items-center justify-center h-full text-xs text-gray-400 dark:text-gray-500">
-            {enabled ? 'Waiting for log entries...' : 'Log streaming disabled'}
+            {enabled ? '正在等待日志…' : '日志流已禁用'}
           </div>
         ) : (
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>

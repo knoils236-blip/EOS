@@ -216,7 +216,12 @@ class ResourceManager:
         result = await db.execute(select(ResourceModel.name).where(ResourceModel.lab.in_(lab_names)))
         resource_names = [row[0] for row in result.fetchall()]
 
-        await db.execute(delete(ResourceModel).where(ResourceModel.lab.in_(lab_names)))
+        # Keep physical stock across unload/reload; configuration is not a replenishment event.
+        await db.execute(
+            delete(ResourceModel).where(
+                ResourceModel.lab.in_(lab_names), ResourceModel.meta["consumable"].as_boolean().is_not(True)
+            )
+        )
 
         # Clean up locks for removed resources
         for resource_name in resource_names:

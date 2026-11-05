@@ -16,8 +16,8 @@ from eos.logging.logger import log
 
 DEFAULT_CONFIG_PATH = "./config.yml"
 
-ConfigOption = Annotated[str, typer.Option("--config", "-c", help="Path to EOS config YAML")]
-UserDirOption = Annotated[str | None, typer.Option("--user-dir", "-u", help="Override the EOS user directory")]
+ConfigOption = Annotated[str, typer.Option("--config", "-c", help="EOS YAML 配置文件路径")]
+UserDirOption = Annotated[str | None, typer.Option("--user-dir", "-u", help="覆盖 EOS 用户目录")]
 
 F = TypeVar("F", bound=Callable[..., object])
 
@@ -26,7 +26,7 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> EosConfig:
     """Load and validate the EOS configuration file, applying its log level."""
     config_file = Path(config_path)
     if not config_file.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        raise FileNotFoundError(f"未找到配置文件： {config_path}")
 
     with config_file.open() as f:
         config_data = yaml.safe_load(f) or {}
@@ -40,7 +40,7 @@ def config_callback(ctx: typer.Context, config: ConfigOption = DEFAULT_CONFIG_PA
     try:
         ctx.obj = load_config(config)
     except Exception as e:
-        typer.secho(f"Failed to load configuration: {e}", fg="red", err=True)
+        typer.secho(f"加载配置失败： {e}", fg="red", err=True)
         raise typer.Exit(1) from e
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())

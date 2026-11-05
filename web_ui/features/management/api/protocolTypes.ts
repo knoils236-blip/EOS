@@ -32,8 +32,8 @@ export async function getProtocolTypes(): Promise<ProtocolType[]> {
       package: row.packageName,
     }));
   } catch (error) {
-    console.error('Failed to fetch protocol types:', error);
-    throw new Error('Failed to fetch protocol types from database');
+    console.error('获取协议类型失败：', error);
+    throw new Error('获取数据库中的协议类型失败');
   }
 }
 
@@ -54,10 +54,10 @@ export async function loadProtocolTypes(protocolTypes: string[]): Promise<Action
       success: true,
     };
   } catch (error) {
-    console.error('Failed to load protocol types:', error);
+    console.error('加载协议类型失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to load protocol types',
+      error: error instanceof Error ? error.message : '加载协议类型失败',
     };
   }
 }
@@ -79,10 +79,10 @@ export async function unloadProtocolTypes(protocolTypes: string[]): Promise<Acti
       success: true,
     };
   } catch (error) {
-    console.error('Failed to unload protocol types:', error);
+    console.error('卸载协议类型失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to unload protocol types',
+      error: error instanceof Error ? error.message : '卸载协议类型失败',
     };
   }
 }
@@ -104,10 +104,10 @@ export async function reloadProtocolTypes(protocolTypes: string[]): Promise<Acti
       success: true,
     };
   } catch (error) {
-    console.error('Failed to reload protocol types:', error);
+    console.error('重新加载协议类型失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reload protocol types',
+      error: error instanceof Error ? error.message : '重新加载协议类型失败',
     };
   }
 }

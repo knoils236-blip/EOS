@@ -26,14 +26,14 @@ export function TaskOutputFiles({ fileNames, protocolRunName, taskName }: TaskOu
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Output Files</div>
+        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">输出文件</div>
         {fileNames.length > 1 && (
           <button
             onClick={handleDownloadAll}
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
           >
             <Download className="w-3 h-3" />
-            Download all
+            全部下载
           </button>
         )}
       </div>
@@ -50,7 +50,7 @@ export function TaskOutputFiles({ fileNames, protocolRunName, taskName }: TaskOu
             <button
               onClick={() => handleDownload(fileName)}
               className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-opacity flex-shrink-0 ml-2"
-              title="Download"
+              title="下载"
             >
               <Download className="w-3.5 h-3.5" />
             </button>

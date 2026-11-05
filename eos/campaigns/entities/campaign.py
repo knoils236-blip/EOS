@@ -24,6 +24,9 @@ class CampaignSubmission(BaseModel):
 
     max_protocol_runs: int = Field(0, ge=0)
     max_concurrent_protocol_runs: int = Field(1, ge=1)
+    # Failed protocol runs to tolerate before the campaign fails. Tolerated failures use up max_protocol_runs
+    # and are reported to the optimizer with NaN outputs.
+    max_failed_protocol_runs: int = Field(0, ge=0)
 
     optimize: bool
     optimizer_ip: str = "127.0.0.1"
@@ -116,6 +119,7 @@ class CampaignModel(Base):
 
     max_protocol_runs: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     max_concurrent_protocol_runs: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    max_failed_protocol_runs: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     optimize: Mapped[bool] = mapped_column(Boolean, nullable=False)
     optimizer_ip: Mapped[str] = mapped_column(String(45), nullable=False, default="127.0.0.1")

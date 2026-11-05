@@ -710,7 +710,14 @@ export const useEditorStore = create<EditorStore>()(
       deleteTask: (taskName) => {
         saveToHistory();
         set((state) => ({
-          tasks: state.tasks.filter((task) => task.name !== taskName),
+          // Dependencies on a deleted task have no edge left to remove them, and the protocol would not load
+          tasks: state.tasks
+            .filter((task) => task.name !== taskName)
+            .map((task) =>
+              task.dependencies?.includes(taskName)
+                ? { ...task, dependencies: task.dependencies.filter((dep) => dep !== taskName) }
+                : task
+            ),
           selectedNodeName: state.selectedNodeName === taskName ? null : state.selectedNodeName,
         }));
       },

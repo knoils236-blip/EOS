@@ -4,8 +4,8 @@ import { getDevices } from '@/features/management/api/devices';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Device Inspector - EOS',
-  description: 'Inspect and control EOS devices in real-time',
+  title: '设备检查器 - EOS',
+  description: '实时检查与控制 EOS 设备',
 };
 
 export default async function DeviceInspectorPage() {
@@ -16,10 +16,8 @@ export default async function DeviceInspectorPage() {
     <div className="h-full flex flex-col">
       <div className="px-6 pt-6 pb-4">
         <div className="max-w-screen-xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Inspector</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Monitor device state and call functions in real-time
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">设备检查器</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">实时监控设备状态并调用函数</p>
         </div>
       </div>
 

@@ -48,7 +48,7 @@ export function ParetoSolutionsTable({ solutions, inputNames, outputNames }: Par
   });
 
   if (solutions.length === 0) {
-    return <p className="text-gray-500 dark:text-gray-400 text-center py-8">No Pareto solutions available.</p>;
+    return <p className="text-gray-500 dark:text-gray-400 text-center py-8">暂无帕累托解。</p>;
   }
 
   const headerCellCls = 'py-2 px-3 font-medium text-gray-500 dark:text-gray-400 text-left';
@@ -69,7 +69,7 @@ export function ParetoSolutionsTable({ solutions, inputNames, outputNames }: Par
                 className="py-2 px-3 font-medium text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider text-center border-l border-gray-200 dark:border-slate-700"
                 style={{ gridColumn: `span ${inputCols.length}` }}
               >
-                Inputs
+                输入
               </div>
             )}
             {outputCols.length > 0 && (
@@ -77,7 +77,7 @@ export function ParetoSolutionsTable({ solutions, inputNames, outputNames }: Par
                 className="py-2 px-3 font-medium text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider text-center border-l border-gray-200 dark:border-slate-700"
                 style={{ gridColumn: `span ${outputCols.length}` }}
               >
-                Outputs
+                输出
               </div>
             )}
             {otherCols.length > 0 && <div style={{ gridColumn: `span ${otherCols.length}` }} />}
@@ -177,7 +177,7 @@ export function ParetoSolutionsTable({ solutions, inputNames, outputNames }: Par
         </div>
       </div>
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">* Best value for each objective</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">* 各目标的最优值</p>
     </div>
   );
 }

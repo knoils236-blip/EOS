@@ -72,7 +72,7 @@ export function TransferPanel() {
         className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 cursor-pointer select-none"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <span className="text-sm font-medium text-gray-900 dark:text-white">Transfers ({transfers.length})</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">传输（{transfers.length})</span>
         <div className="flex items-center gap-1">
           {hasCompleted && (
             <button
@@ -82,7 +82,7 @@ export function TransferPanel() {
               }}
               className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mr-1"
             >
-              Clear done
+              清除已完成项
             </button>
           )}
           {collapsed ? (

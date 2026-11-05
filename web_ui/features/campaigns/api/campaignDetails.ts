@@ -31,6 +31,7 @@ async function transformDbCampaign(row: CampaignRow): Promise<Campaign> {
     priority: row.priority,
     max_protocol_runs: row.maxProtocolRuns,
     max_concurrent_protocol_runs: row.maxConcurrentProtocolRuns,
+    max_failed_protocol_runs: row.maxFailedProtocolRuns,
     optimize: row.optimize,
     optimizer_ip: row.optimizerIp ?? undefined,
     global_parameters: row.globalParameters,
@@ -83,8 +84,8 @@ export async function getCampaignDetails(campaignName: string): Promise<Campaign
     if (!campaignRow) return null;
     return transformDbCampaign(campaignRow);
   } catch (error) {
-    console.error('Failed to fetch campaign details:', error);
-    throw new Error('Failed to fetch campaign details');
+    console.error('获取实验计划详情失败：', error);
+    throw new Error('获取实验计划详情失败');
   }
 }
 
@@ -94,8 +95,8 @@ export async function getCampaignOptimizationSamples(campaignName: string): Prom
     const sampleRows = await getCampaignSamples(campaignName);
     return sampleRows.map(transformDbSample);
   } catch (error) {
-    console.error('Failed to fetch campaign samples:', error);
-    throw new Error('Failed to fetch campaign samples');
+    console.error('获取实验计划样本失败：', error);
+    throw new Error('获取实验计划样本失败');
   }
 }
 
@@ -105,8 +106,8 @@ export async function getCampaignProtocolRuns(campaignName: string): Promise<Pro
     const protocolRunRows = await getProtocolRunsByCampaign(campaignName);
     return protocolRunRows.map(transformDbProtocolRun);
   } catch (error) {
-    console.error('Failed to fetch campaign protocol runs:', error);
-    throw new Error('Failed to fetch campaign protocol runs');
+    console.error('获取实验计划中的协议运行失败：', error);
+    throw new Error('获取实验计划中的协议运行失败');
   }
 }
 
@@ -136,7 +137,7 @@ export async function getCampaignWithDetails(campaignName: string): Promise<{
       journal,
     };
   } catch (error) {
-    console.error('Failed to fetch campaign with details:', error);
-    throw new Error('Failed to fetch campaign with details');
+    console.error('获取实验计划详情失败：', error);
+    throw new Error('获取实验计划详情失败');
   }
 }

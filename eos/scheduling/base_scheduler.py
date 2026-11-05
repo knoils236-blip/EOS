@@ -16,6 +16,7 @@ from eos.devices.entities.device import DeviceStatus
 from eos.logging.logger import log
 from eos.allocation.allocation_manager import AllocationManager
 from eos.scheduling.abstract_scheduler import AbstractScheduler, OnDemandProgress
+from eos.scheduling.duration_estimator import TaskDurationEstimator
 from eos.scheduling.entities.scheduled_task import ScheduledTask
 from eos.scheduling.exceptions import EosSchedulerRegistrationError
 from eos.scheduling.simulation import LockManager, ProtocolRunInstance, RunningTask
@@ -98,6 +99,7 @@ class BaseScheduler(AbstractScheduler, ABC):
         self._all_tasks_cache: dict[str, set[str]] = {}
         self._ancestors_cache: dict[str, dict[str, set[str]]] = {}
         self._task_defs: dict[str, dict[str, TaskDef]] = {}
+        self._duration_estimator: TaskDurationEstimator | None = None
         self._device_hold_users: dict[str, dict[tuple[str, str], frozenset[str]]] = {}
         self._resource_hold_users: dict[str, dict[tuple[str, str], frozenset[str]]] = {}
         self._device_hold_needs: dict[str, dict[tuple[str, str], frozenset]] = {}
@@ -119,7 +121,11 @@ class BaseScheduler(AbstractScheduler, ABC):
             task_graph = protocol_graph.get_task_graph()
             self._all_tasks_cache[protocol_run_name] = set(task_graph.nodes)
             self._ancestors_cache[protocol_run_name] = {t: nx.ancestors(task_graph, t) for t in task_graph.nodes}
-            self._task_defs[protocol_run_name] = {t: protocol_graph.get_task(t) for t in task_graph.nodes}
+            tasks = {t: protocol_graph.get_task(t) for t in task_graph.nodes}
+            if self._duration_estimator:
+                await self._duration_estimator.refresh()
+                tasks = {name: self._duration_estimator.apply(task) for name, task in tasks.items()}
+            self._task_defs[protocol_run_name] = tasks
             device_users, resource_users = compute_hold_users(protocol_graph)
             self._device_hold_users[protocol_run_name] = device_users
             self._resource_hold_users[protocol_run_name] = resource_users
@@ -127,6 +133,10 @@ class BaseScheduler(AbstractScheduler, ABC):
             self._device_hold_needs[protocol_run_name] = device_needs
             self._resource_hold_needs[protocol_run_name] = resource_needs
             self._state_version += 1
+
+    def use_duration_estimator(self, estimator: TaskDurationEstimator) -> None:
+        """Plan newly registered protocol runs with learned task durations instead of the protocol's guesses."""
+        self._duration_estimator = estimator
 
     async def unregister_protocol_run(self, db: AsyncDbSession, protocol_run_name: str) -> None:
         async with self._lock:

@@ -25,7 +25,7 @@ export async function createApiToken(label: string): Promise<ActionResult & { to
     revalidatePath('/profile');
     return { success: true, token: created.token };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create token' };
+    return { success: false, error: error instanceof Error ? error.message : '创建令牌失败' };
   }
 }
 
@@ -36,6 +36,6 @@ export async function revokeApiToken(id: number): Promise<ActionResult> {
     revalidatePath('/profile');
     return { success: true };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to revoke token' };
+    return { success: false, error: error instanceof Error ? error.message : '撤销令牌失败' };
   }
 }

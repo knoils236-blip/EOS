@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { MoreHorizontal, X, Copy, Activity } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -81,7 +83,7 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
     try {
       const result = await cancelCampaign(campaignToCancel);
       if (!result.success) {
-        alert(`Failed to cancel campaign: ${result.error}`);
+        alert(`取消实验计划失败：${result.error}`);
       }
     } finally {
       setCancellingCampaign(null);
@@ -107,29 +109,29 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
   const columns: DataTableColumnDef<Campaign>[] = [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: '名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'protocol',
-      header: 'Protocol',
+      header: '协议',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'owner',
-      header: 'Owner',
+      header: '负责人',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
-        return <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>;
+        return <Badge variant={getStatusBadgeVariant(status)}>{statusLabel(status)}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -138,7 +140,7 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
     },
     {
       accessorKey: 'protocol_runs_completed',
-      header: 'Progress',
+      header: '进度',
       cell: ({ row }) => {
         const completed = row.getValue('protocol_runs_completed') as number;
         const max = row.original.max_protocol_runs;
@@ -151,23 +153,23 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
     },
     {
       accessorKey: 'optimize',
-      header: 'Optimize',
+      header: '优化',
       cell: ({ row }) => {
         const optimize = row.getValue('optimize') as boolean;
-        return <Badge variant={optimize ? 'info' : 'default'}>{optimize ? 'Yes' : 'No'}</Badge>;
+        return <Badge variant={optimize ? 'info' : 'default'}>{optimize ? '是' : '否'}</Badge>;
       },
     },
     {
       accessorKey: 'created_at',
-      header: 'Created',
+      header: '创建时间',
       cell: ({ row }) => {
         const date = new Date(row.getValue('created_at'));
-        return date.toLocaleString();
+        return date.toLocaleString('zh-CN');
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const campaign = row.original;
         const canCancel = campaign.status === 'RUNNING' || campaign.status === 'CREATED';
@@ -179,14 +181,14 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
               size="sm"
               className="h-8 w-8 p-0"
               onClick={() => handleViewExecution(campaign.name)}
-              title="View Execution"
+              title="查看执行过程"
             >
               <Activity className="h-4 w-4" />
             </Button>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
+                  <span className="sr-only">打开菜单</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenu.Trigger>
@@ -197,7 +199,7 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
                     onClick={() => handleCloneCampaign(campaign)}
                   >
                     <Copy className="h-4 w-4" />
-                    <span>Clone</span>
+                    <span>克隆</span>
                   </DropdownMenu.Item>
                   {canCancel && (
                     <DropdownMenu.Item
@@ -206,7 +208,7 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
                       disabled={cancellingCampaign === campaign.name || !isConnected || !canSubmit}
                     >
                       <X className="h-4 w-4" />
-                      <span>{cancellingCampaign === campaign.name ? 'Cancelling...' : 'Cancel Campaign'}</span>
+                      <span>{cancellingCampaign === campaign.name ? '正在取消…' : '取消实验计划'}</span>
                     </DropdownMenu.Item>
                   )}
                 </DropdownMenu.Content>
@@ -232,26 +234,26 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
       <div className={`space-y-4 ${detailPanelOpen ? 'flex-1 min-w-0' : 'w-full'}`}>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Campaigns</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">View and manage campaigns</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">实验计划</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">查看和管理实验计划</p>
           </div>
           <Button
             variant="primary"
             disabled={!isConnected || !canSubmit}
-            title={!isConnected ? 'Orchestrator offline' : undefined}
+            title={!isConnected ? '编排器离线' : undefined}
             onClick={() => {
               setCampaignToClone(null);
               setSubmitDialogOpen(true);
             }}
           >
-            Submit Campaign
+            提交实验计划
           </Button>
         </div>
 
         <DataTable
           columns={columns}
           data={serverTable.data}
-          searchPlaceholder="Search campaigns..."
+          searchPlaceholder="搜索实验计划…"
           onRowClick={handleRowClick}
           toolbarActions={toolbarActions}
           manualPagination
@@ -282,62 +284,64 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white break-words">
                 {selectedCampaign.name}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Campaign Details</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">实验计划详情</p>
             </div>
             <button
               onClick={() => setDetailPanelOpen(false)}
               className="flex-shrink-0 rounded-sm opacity-70 ring-offset-white dark:ring-offset-slate-900 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 text-gray-900 dark:text-gray-400"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">关闭</span>
             </button>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <DetailField label="Protocol" value={selectedCampaign.protocol} />
+              <DetailField label="协议" value={selectedCampaign.protocol} />
               <DetailField
-                label="Status"
+                label="状态"
                 value={
-                  <Badge variant={getStatusBadgeVariant(selectedCampaign.status)}>{selectedCampaign.status}</Badge>
+                  <Badge variant={getStatusBadgeVariant(selectedCampaign.status)}>
+                    {statusLabel(selectedCampaign.status)}
+                  </Badge>
                 }
               />
               {selectedCampaign.status === 'FAILED' && selectedCampaign.error_message && (
                 <ErrorBox error={selectedCampaign.error_message} />
               )}
-              <DetailField label="Owner" value={selectedCampaign.owner} />
-              <DetailField label="Priority" value={selectedCampaign.priority} />
+              <DetailField label="负责人" value={selectedCampaign.owner} />
+              <DetailField label="优先级" value={selectedCampaign.priority} />
             </div>
 
             <div className={SECTION_DIVIDER}>
-              <div className={`${SECTION_TITLE} mb-3`}>Progress</div>
+              <div className={`${SECTION_TITLE} mb-3`}>进度</div>
               <div className="space-y-2">
-                <DetailField inline label="Completed" value={selectedCampaign.protocol_runs_completed} />
+                <DetailField inline label="已完成" value={selectedCampaign.protocol_runs_completed} />
                 <DetailField
                   inline
-                  label="Max Protocol Runs"
+                  label="最大协议运行次数"
                   value={selectedCampaign.max_protocol_runs === 0 ? '∞' : selectedCampaign.max_protocol_runs}
                 />
-                <DetailField inline label="Max Concurrent" value={selectedCampaign.max_concurrent_protocol_runs} />
+                <DetailField inline label="最大并发数" value={selectedCampaign.max_concurrent_protocol_runs} />
               </div>
             </div>
 
             <div className={SECTION_DIVIDER}>
-              <div className={`${SECTION_TITLE} mb-3`}>Optimization</div>
+              <div className={`${SECTION_TITLE} mb-3`}>优化</div>
               <div className="space-y-2">
                 <DetailField
                   inline
-                  label="Enabled"
+                  label="已启用"
                   value={
                     <Badge variant={selectedCampaign.optimize ? 'info' : 'default'}>
-                      {selectedCampaign.optimize ? 'Yes' : 'No'}
+                      {selectedCampaign.optimize ? '是' : '否'}
                     </Badge>
                   }
                 />
                 {selectedCampaign.optimize && (
                   <DetailField
                     inline
-                    label="Optimizer IP"
+                    label="优化器 IP"
                     value={<span className="font-mono text-xs break-all">{selectedCampaign.optimizer_ip}</span>}
                   />
                 )}
@@ -345,20 +349,20 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
             </div>
 
             <div className={SECTION_DIVIDER}>
-              <div className={`${SECTION_TITLE} mb-2`}>Timeline</div>
+              <div className={`${SECTION_TITLE} mb-2`}>时间线</div>
               <TimelineSection
                 entries={[
-                  { label: 'Created', timestamp: selectedCampaign.created_at ?? null },
-                  { label: 'Started', timestamp: selectedCampaign.start_time ?? null },
-                  { label: 'Ended', timestamp: selectedCampaign.end_time ?? null },
+                  { label: '创建时间', timestamp: selectedCampaign.created_at ?? null },
+                  { label: '开始时间', timestamp: selectedCampaign.start_time ?? null },
+                  { label: '结束时间', timestamp: selectedCampaign.end_time ?? null },
                 ]}
               />
             </div>
 
-            <ConditionalJsonSection data={selectedCampaign.global_parameters} label="Global Parameters" />
-            <ConditionalJsonSection data={selectedCampaign.protocol_run_parameters} label="Protocol Run Parameters" />
-            <ConditionalJsonSection data={selectedCampaign.pareto_solutions} label="Pareto Solutions" />
-            <ConditionalJsonSection data={selectedCampaign.meta} label="Metadata" />
+            <ConditionalJsonSection data={selectedCampaign.global_parameters} label="全局参数" />
+            <ConditionalJsonSection data={selectedCampaign.protocol_run_parameters} label="协议运行参数" />
+            <ConditionalJsonSection data={selectedCampaign.pareto_solutions} label="帕累托解" />
+            <ConditionalJsonSection data={selectedCampaign.meta} label="元数据" />
           </div>
         </div>
       )}
@@ -367,10 +371,10 @@ export function CampaignsTable({ initialData, protocolSpecs, taskSpecs }: Campai
         isOpen={campaignToCancel !== null}
         onClose={() => setCampaignToCancel(null)}
         onConfirm={handleCancelCampaign}
-        title="Cancel Campaign"
-        message={`Are you sure you want to cancel campaign "${campaignToCancel}"? This will stop all running protocol runs.`}
-        confirmText="Cancel Campaign"
-        cancelText="Keep Running"
+        title="取消实验计划"
+        message={`确定要取消实验计划“${campaignToCancel}”吗？这将停止所有正在运行的协议。`}
+        confirmText="取消实验计划"
+        cancelText="继续运行"
         variant="danger"
       />
     </div>

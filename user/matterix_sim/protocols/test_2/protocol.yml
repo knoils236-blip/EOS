@@ -1,0 +1,164 @@
+type: test_2
+desc: >-
+  Atomic-skill pipetting test that mounts TIP 1, aspirates 50 uL from the 500 mL big bottle in the big open zone,
+  dispenses it back, ejects the TIP, and releases the workstation.
+
+labs:
+  - matterix_pipetting_lab
+
+tasks:
+  - name: begin_experiment
+    type: Matterix Begin Experiment
+    desc: Reset and verify the Matterix fixture while holding the workstation.
+    duration: 5
+    dependencies: []
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: mount_tip_1
+    type: Matterix Capability
+    desc: Mount TIP 1 on the pipette.
+    duration: 5
+    dependencies:
+      - begin_experiment
+    parameters:
+      capability_id: station_skill_mount_tip
+      parameters:
+        timeout_s: 120
+        tip_index: 1
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: pick_big_bottle
+    type: Matterix Capability
+    desc: Pick the 500 mL big bottle and move it to the big open zone.
+    duration: 10
+    dependencies:
+      - mount_tip_1
+    parameters:
+      capability_id: station_skill_big_bottle_pick
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: decap_big_bottle
+    type: Matterix Capability
+    desc: Open the 500 mL big bottle cap in the big open zone.
+    duration: 10
+    dependencies:
+      - pick_big_bottle
+    parameters:
+      capability_id: station_skill_big_bottle_decap
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: aspirate_50ul
+    type: Matterix Capability
+    desc: Aspirate 50 uL from the opened 500 mL big bottle in the big open zone.
+    duration: 5
+    dependencies:
+      - decap_big_bottle
+    parameters:
+      capability_id: station_skill_aspirate_from
+      parameters:
+        timeout_s: 120
+        zone: 大开盖区
+        volume_ul: 50
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: dispense_50ul
+    type: Matterix Capability
+    desc: Dispense the 50 uL back into the same 500 mL big bottle in the big open zone.
+    duration: 5
+    dependencies:
+      - aspirate_50ul
+    parameters:
+      capability_id: station_skill_dispense_to
+      parameters:
+        timeout_s: 120
+        zone: 大开盖区
+        volume_ul: 50
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: eject_tip
+    type: Matterix Capability
+    desc: Eject and discard TIP 1.
+    duration: 5
+    dependencies:
+      - dispense_50ul
+    parameters:
+      capability_id: station_skill_eject_tip
+      parameters:
+        timeout_s: 120
+        dwell_s: 1.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: recap_big_bottle
+    type: Matterix Capability
+    desc: Recap the 500 mL big bottle after pipetting.
+    duration: 10
+    dependencies:
+      - eject_tip
+    parameters:
+      capability_id: station_skill_big_bottle_recap
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: place_big_bottle
+    type: Matterix Capability
+    desc: Return the capped 500 mL big bottle to its storage position and release it.
+    duration: 10
+    dependencies:
+      - recap_big_bottle
+    parameters:
+      capability_id: station_skill_big_bottle_place
+      parameters:
+        timeout_s: 120
+        hold_s: 0.5
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+
+  - name: end_experiment
+    type: Matterix End Experiment
+    desc: Verify the atomic-operation lifecycle and release the workstation.
+    duration: 5
+    dependencies:
+      - place_big_bottle
+    parameters:
+      expected_phase: 0
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix

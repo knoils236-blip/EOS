@@ -142,17 +142,17 @@ def _run(cmd: list[str], cwd: Path | None = None) -> bool:
     try:
         return subprocess.call(cmd, cwd=cwd) == 0
     except FileNotFoundError:
-        _warn(f"{cmd[0]} not found on PATH")
+        _warn(f"在 PATH 中未找到 {cmd[0]}")
         return False
 
 
 def _preflight() -> None:
     _section("Preflight")
-    _ok("Using the active Python environment (run 'uv sync' first if anything is missing)")
+    _ok("使用当前 Python 环境（如缺少依赖，请先运行 'uv sync'）")
     if shutil.which("docker"):
-        _ok("docker found")
+        _ok("已找到 docker")
     else:
-        _warn("docker not found; required to start services and bootstrap authentication")
+        _warn("未找到 docker，启动服务和初始化身份验证需要 docker")
 
 
 def _defaults_from_env() -> SetupAnswers:
@@ -183,51 +183,51 @@ def _defaults_from_env() -> SetupAnswers:
 
 
 def _collect_answers(a: SetupAnswers) -> SetupAnswers:
-    _section("Database (PostgreSQL)")
-    a.pg_host = Prompt.ask("PostgreSQL host", default=a.pg_host)
-    a.pg_port = IntPrompt.ask("PostgreSQL port", default=a.pg_port)
-    a.pg_name = Prompt.ask("Database name", default=a.pg_name)
-    a.pg_user = Prompt.ask("Database user", default=a.pg_user)
-    entered = Prompt.ask("Database password (blank to keep or generate)", password=True, default="")
+    _section("数据库（PostgreSQL）")
+    a.pg_host = Prompt.ask("PostgreSQL 主机", default=a.pg_host)
+    a.pg_port = IntPrompt.ask("PostgreSQL 端口", default=a.pg_port)
+    a.pg_name = Prompt.ask("数据库名称", default=a.pg_name)
+    a.pg_user = Prompt.ask("数据库用户", default=a.pg_user)
+    entered = Prompt.ask("数据库密码（留空以保留现有值或自动生成）", password=True, default="")
     a.pg_password = entered or a.pg_password or _random_string(20)
 
-    _section("Object storage (S3)")
-    a.s3_endpoint = Prompt.ask("S3 endpoint URL", default=a.s3_endpoint)
-    a.s3_bucket = Prompt.ask("S3 bucket", default=a.s3_bucket)
-    a.s3_access_key = Prompt.ask("S3 access key", default=a.s3_access_key)
-    entered = Prompt.ask("S3 secret key (blank to keep or generate)", password=True, default="")
+    _section("对象存储（S3）")
+    a.s3_endpoint = Prompt.ask("S3 端点 URL", default=a.s3_endpoint)
+    a.s3_bucket = Prompt.ask("S3 存储桶", default=a.s3_bucket)
+    a.s3_access_key = Prompt.ask("S3 访问密钥", default=a.s3_access_key)
+    entered = Prompt.ask("S3 秘密密钥（留空以保留现有值或自动生成）", password=True, default="")
     a.s3_secret_key = entered or a.s3_secret_key or _random_string(24)
 
     _section("Web API")
-    a.web_api_host = Prompt.ask("Web API host", default=a.web_api_host)
-    a.web_api_port = IntPrompt.ask("Web API port", default=a.web_api_port)
+    a.web_api_host = Prompt.ask("Web API 主机", default=a.web_api_host)
+    a.web_api_port = IntPrompt.ask("Web API 端口", default=a.web_api_port)
 
-    _section("Features")
-    a.web_ui = Confirm.ask("Set up the web UI?", default=True)
+    _section("功能")
+    a.web_ui = Confirm.ask("是否配置 Web 界面？", default=True)
     if a.web_ui:
-        a.ui_url = Prompt.ask("Web UI URL", default=a.ui_url)
-    a.auth_enabled = Confirm.ask("Enable authentication (Zitadel)?", default=a.auth_enabled)
+        a.ui_url = Prompt.ask("Web 界面 URL", default=a.ui_url)
+    a.auth_enabled = Confirm.ask("是否启用身份验证（Zitadel）？", default=a.auth_enabled)
     if a.auth_enabled:
-        _section("Authentication (Zitadel)")
-        a.issuer = Prompt.ask("Zitadel URL", default=a.issuer).rstrip("/")
+        _section("身份验证（Zitadel）")
+        a.issuer = Prompt.ask("Zitadel 地址", default=a.issuer).rstrip("/")
         if a.zitadel_scheme == "https":
             tls_default = a.tls_mode if a.tls_mode in TLS_MODES else "internal"
-            a.tls_mode = Prompt.ask("TLS certificate", choices=TLS_MODES, default=tls_default)
+            a.tls_mode = Prompt.ask("TLS 证书", choices=TLS_MODES, default=tls_default)
         else:
             a.tls_mode = "none"
-        a.relax_password_policy = Confirm.ask("Relax Zitadel password requirements?", default=a.relax_password_policy)
+        a.relax_password_policy = Confirm.ask("是否放宽 Zitadel 密码要求？", default=a.relax_password_policy)
         # Reuse existing secrets where present; the Zitadel masterkey in particular can never change.
         a.zitadel_masterkey = a.zitadel_masterkey or _random_string(32)
         a.zitadel_db_password = a.zitadel_db_password or _random_string(20)
         a.zitadel_admin_password = a.zitadel_admin_password or generate_complexity_password()
         a.auth_secret = a.auth_secret or secrets.token_urlsafe(32)
-        _ok("Prepared Zitadel masterkey, database password, admin password, and web UI auth secret")
+        _ok("已准备 Zitadel 主密钥、数据库密码、管理员密码和 Web 界面身份验证密钥")
 
     return a
 
 
 def _write_config_files(a: SetupAnswers) -> None:
-    _section("Writing configuration")
+    _section("正在写入配置")
 
     config: dict = {
         "user_dir": a.user_dir,
@@ -237,7 +237,7 @@ def _write_config_files(a: SetupAnswers) -> None:
         "scheduler": {"type": "greedy"},
     }
     CONFIG_PATH.write_text(yaml.safe_dump(config, sort_keys=False))
-    _ok(f"wrote {CONFIG_PATH.name}")
+    _ok(f"已写入 {CONFIG_PATH.name}")
 
     env_values = {
         "COMPOSE_PROJECT_NAME": "eos",
@@ -271,7 +271,7 @@ def _write_config_files(a: SetupAnswers) -> None:
             "ZITADEL_HTTPS_PORT": str(https_port),
         }
     _update_env_file(ENV_PATH, env_values)
-    _ok(f"wrote {ENV_PATH.name}")
+    _ok(f"已写入 {ENV_PATH.name}")
 
     if a.web_ui:
         web_values = {
@@ -288,7 +288,7 @@ def _write_config_files(a: SetupAnswers) -> None:
         if a.auth_enabled:
             web_values |= {"AUTH_SECRET": a.auth_secret, "AUTH_ISSUER": a.issuer}
         _update_env_file(WEB_UI_ENV_PATH, web_values)
-        _ok(f"wrote web_ui/{WEB_UI_ENV_PATH.name}")
+        _ok(f"已写入 web_ui/{WEB_UI_ENV_PATH.name}")
 
 
 def _start_zitadel() -> bool:
@@ -304,47 +304,47 @@ def _reset_zitadel_volumes() -> None:
 def _bootstrap_auth(a: SetupAnswers) -> bool:
     """Deploy Zitadel and programmatically create the org, project, roles, apps, and service user."""
     if not _start_zitadel():
-        _warn("Zitadel failed to start, usually a stale Zitadel data volume from an earlier attempt")
-        if not Confirm.ask("Reset Zitadel's data volumes and retry? This deletes all Zitadel accounts", default=True):
-            _warn("skipping auth bootstrap")
+        _warn("Zitadel 启动失败，通常是之前遗留的数据卷导致")
+        if not Confirm.ask("是否重置 Zitadel 数据卷并重试？这将删除所有 Zitadel 账户", default=True):
+            _warn("跳过身份验证初始化")
             return False
         _reset_zitadel_volumes()
         if not _start_zitadel():
-            _warn("Zitadel still failed to start; skipping (check 'docker logs eos-zitadel')")
+            _warn("Zitadel 仍无法启动，已跳过（请检查 'docker logs eos-zitadel'）")
             return False
 
-    console.print("  waiting for Zitadel to become ready...")
+    console.print("  正在等待 Zitadel 就绪…")
     admin_pat = read_bootstrap_pat()
-    _ok("read bootstrap admin PAT")
+    _ok("已读取初始化管理员 PAT")
 
     client = ZitadelBootstrapClient(a.issuer, admin_pat)
     try:
         client.wait_ready()
-        _ok("Zitadel is ready")
+        _ok("Zitadel 已就绪")
 
         client.disable_registration()
-        _ok("disabled self-registration")
+        _ok("已禁用自助注册")
 
         org_id = client.ensure_org("EOS")
         project_id = client.ensure_project("EOS")
-        _ok(f"created org and project 'EOS' (project {project_id})")
+        _ok(f"已创建组织和项目 'EOS'（项目 ID：{project_id}）")
 
         if a.relax_password_policy:
             client.relax_password_complexity()
-            _ok("relaxed password requirements")
+            _ok("已放宽密码要求")
 
         dev_mode = a.zitadel_scheme == "http"
         web_client_id = client.ensure_oidc_app(
             project_id, f"{a.ui_url}/api/auth/callback/zitadel", f"{a.ui_url}/signin", dev_mode
         )
-        _ok("created app 'EOS Web UI'")
+        _ok("已创建应用 'EOS Web UI'")
 
         api_client_id, api_client_secret = client.ensure_api_app(project_id)
-        _ok("created app 'EOS API'")
+        _ok("已创建应用 'EOS API'")
 
         user_id = client.ensure_machine_user("eos-user-admin")
         client.ensure_org_member(user_id, [ORG_USER_MANAGER_ROLE])
-        _ok("created service user 'eos-user-admin'")
+        _ok("已创建服务用户 'eos-user-admin'")
 
         # Always mint a fresh PAT: a reused one from .env may belong to an old (reset) Zitadel instance.
         pat = client.create_pat(user_id)
@@ -352,7 +352,7 @@ def _bootstrap_auth(a: SetupAnswers) -> bool:
         existing = _read_existing_env(ENV_PATH)
         api_client_secret = api_client_secret or existing.get("EOS_AUTH_INTROSPECTION_CLIENT_SECRET", "")
         if not api_client_secret:
-            _warn("EOS API client secret could not be determined; clear it and re-run to regenerate")
+            _warn("无法获取 EOS API 客户端密钥，请清空该值并重新运行以生成")
     finally:
         client.close()
 
@@ -381,7 +381,7 @@ def _bootstrap_auth(a: SetupAnswers) -> bool:
                 "AUTH_INTROSPECTION_CLIENT_SECRET": api_client_secret,
             },
         )
-    _ok("wrote auth credentials to .env and web_ui/.env")
+    _ok("已将身份验证凭据写入 .env 和 web_ui/.env")
     return True
 
 
@@ -398,38 +398,34 @@ def _read_existing_env(path: Path) -> dict[str, str]:
 
 def _bootstrap_auth_step(a: SetupAnswers) -> None:
     """Deploy and bootstrap Zitadel, the one part of setup that touches services. Auth needs it pre-configured."""
-    _section("Authentication (Zitadel)")
+    _section("身份验证（Zitadel）")
     # Make the freshly written .env available to docker compose interpolation regardless of the working directory.
     os.environ.update(_read_existing_env(ENV_PATH))
     if not _bootstrap_auth(a):
-        _warn("authentication bootstrap did not complete; re-run 'eos setup' to retry")
+        _warn("身份验证初始化未完成，请重新运行 'eos setup' 重试")
 
 
 def _print_summary(a: SetupAnswers) -> None:
-    console.print("\n[bold green]Setup complete.[/bold green]")
+    console.print("\n[bold green]配置完成。[/bold green]")
     written = f"{CONFIG_PATH.name}, {ENV_PATH.name}" + (f", web_ui/{WEB_UI_ENV_PATH.name}" if a.web_ui else "")
-    console.print(f"  Configuration written to {written}.")
+    console.print(f"  配置已写入 {written}。")
 
     services = "PostgreSQL, SeaweedFS" + (", Zitadel" if a.auth_enabled else "")
-    console.print("\n[bold]Next steps[/bold]")
-    console.print(f"  eos services up    # start the infrastructure services ({services})")
-    console.print("  eos start          # start the orchestrator and REST API (initializes the database on first run)")
+    console.print("\n[bold]后续步骤[/bold]")
+    console.print(f"  eos services up    # 启动基础服务（{services}）")
+    console.print("  eos start          # 启动编排器和 REST API（首次运行时初始化数据库）")
     if a.web_ui:
-        console.print("  (cd web_ui && npm install)   # install web UI dependencies, first time only")
-        console.print("  eos start ui       # build and start the web UI")
+        console.print("  (cd web_ui && npm install)   # 安装 Web 界面依赖，仅首次需要")
+        console.print("  eos start ui       # 构建并启动 Web 界面")
     if a.auth_enabled:
-        console.print(
-            "  eos auth create-user <username> <email> --superuser   # create your account and grant superuser"
-        )
+        console.print("  eos auth create-user <username> <email> --superuser   # 创建账户并授予超级用户角色")
 
 
 def run_setup(
-    skip_bootstrap: bool = typer.Option(
-        False, "--skip-bootstrap", help="Only write configuration files; don't deploy or bootstrap Zitadel"
-    ),
+    skip_bootstrap: bool = typer.Option(False, "--skip-bootstrap", help="仅写入配置文件，不部署或初始化 Zitadel"),
 ) -> None:
-    """Interactive wizard that writes the EOS configuration files and bootstraps Zitadel auth when enabled."""
-    console.print(Panel.fit("[bold]EOS Setup[/bold]", border_style="cyan"))
+    """通过交互式向导写入 EOS 配置，并在启用身份验证时初始化 Zitadel。"""
+    console.print(Panel.fit("[bold]EOS 配置向导[/bold]", border_style="cyan"))
     try:
         _preflight()
         answers = _collect_answers(_defaults_from_env())
@@ -438,8 +434,8 @@ def run_setup(
             _bootstrap_auth_step(answers)
         _print_summary(answers)
     except KeyboardInterrupt:
-        console.print("\n[yellow]Setup cancelled. Re-run 'eos setup' to start over.[/yellow]")
+        console.print("\n[yellow]配置已取消，请重新运行 'eos setup' 开始配置。[/yellow]")
         raise typer.Exit(1) from None
     except Exception as e:
-        typer.secho(f"Setup failed: {e}", fg="red", err=True)
+        typer.secho(f"配置失败： {e}", fg="red", err=True)
         raise typer.Exit(1) from e

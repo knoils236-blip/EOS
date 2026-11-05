@@ -59,6 +59,23 @@ If omitted, tasks default to **1 second**.
    Provide **realistic** average durations for CP-SAT. Better estimates -> better global schedules (fewer conflicts,
    shorter makespan).
 
+Learned durations
+~~~~~~~~~~~~~~~~~
+Instead of keeping ``duration`` up to date by hand, let the scheduler learn it from completed tasks:
+
+:bdg-primary:`config.yml`
+
+.. code-block:: yaml
+
+    scheduler:
+      type: cpsat
+      learn_durations: true
+
+When a protocol run is registered, each task whose type has at least 3 completed executions is planned with the
+median of its 20 most recent execution times (rounded up to whole seconds). Other tasks keep the ``duration`` from
+``protocol.yml``. The protocol files are not changed. The greedy scheduler ignores durations, so the option has no
+effect on it.
+
 Device and resource allocation
 ------------------------------
 All schedulers support specific and dynamic device or resource assignments.

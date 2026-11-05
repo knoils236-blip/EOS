@@ -1,6 +1,6 @@
 'use server';
 
-import { orchestratorGet, orchestratorPost, orchestratorPut } from '@/lib/api/orchestrator';
+import { OrchestratorApiError, orchestratorGet, orchestratorPost, orchestratorPut } from '@/lib/api/orchestrator';
 import type { OptimizerDefaults, OptimizerInfo, ActionResult } from '@/lib/types/api';
 
 /**
@@ -9,10 +9,29 @@ import type { OptimizerDefaults, OptimizerInfo, ActionResult } from '@/lib/types
  */
 export async function getOptimizerDefaults(protocolType: string): Promise<OptimizerDefaults | null> {
   try {
-    const result = await orchestratorGet(`/campaigns/optimizer/defaults/${protocolType}`);
+    const result = await orchestratorGet(`/campaigns/optimizer/defaults/${encodeURIComponent(protocolType)}`);
     return result as OptimizerDefaults;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof OrchestratorApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export type OptimizerDefaultsResult =
+  | { success: true; defaults: OptimizerDefaults | null }
+  | { success: false; error: string };
+
+/**
+ * Server-action-safe optimizer defaults loader.
+ * Non-404 errors are converted to a small serializable result for the client.
+ */
+export async function getOptimizerDefaultsResult(protocolType: string): Promise<OptimizerDefaultsResult> {
+  try {
+    return { success: true, defaults: await getOptimizerDefaults(protocolType) };
+  } catch (error) {
+    const status = error instanceof OrchestratorApiError ? `（HTTP ${error.status}）` : '';
+    const message = error instanceof Error ? error.message : '读取优化器配置失败。';
+    return { success: false, error: `${message}${status}` };
   }
 }
 
@@ -47,7 +66,7 @@ export async function updateOptimizerParams(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update optimizer parameters',
+      error: error instanceof Error ? error.message : '更新优化器参数失败',
     };
   }
 }
@@ -62,7 +81,7 @@ export async function addOptimizerInsight(campaignName: string, insight: string)
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to add insight',
+      error: error instanceof Error ? error.message : '添加建议失败',
     };
   }
 }

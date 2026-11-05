@@ -9,8 +9,8 @@ export default async function FilesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Files</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Browse and manage files in object storage</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">文件</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">浏览和管理对象存储中的文件</p>
       </div>
       <FileBrowser initialData={initialData} />
     </div>

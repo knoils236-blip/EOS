@@ -1,0 +1,42 @@
+{
+  "begin_experiment": {
+    "x": -980,
+    "y": -160
+  },
+  "mount_tip_1": {
+    "x": -300,
+    "y": -20
+  },
+  "pick_big_bottle": {
+    "x": 380,
+    "y": -500
+  },
+  "decap_big_bottle": {
+    "x": 640,
+    "y": 520
+  },
+  "aspirate_50ul": {
+    "x": 1300,
+    "y": -380
+  },
+  "dispense_50ul": {
+    "x": 1540,
+    "y": 360
+  },
+  "eject_tip": {
+    "x": 1980,
+    "y": -340
+  },
+  "recap_big_bottle": {
+    "x": 2340,
+    "y": 440
+  },
+  "place_big_bottle": {
+    "x": 2660,
+    "y": -380
+  },
+  "end_experiment": {
+    "x": 3460,
+    "y": 140
+  }
+}

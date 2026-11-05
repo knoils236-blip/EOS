@@ -26,16 +26,16 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
   const columns: DataTableColumnDef<Lab>[] = [
     {
       accessorKey: 'name',
-      header: 'Lab Name',
+      header: '实验室名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
     },
     packageColumn<Lab>(initialLabs),
     {
       accessorKey: 'loaded',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const loaded = row.getValue('loaded') as boolean;
-        return <Badge variant={loaded ? 'success' : 'default'}>{loaded ? 'Loaded' : 'Unloaded'}</Badge>;
+        return <Badge variant={loaded ? 'success' : 'default'}>{loaded ? '已加载' : '已卸载'}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -47,7 +47,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const lab = row.original;
         return (
@@ -60,7 +60,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
                 disabled={!isConnected}
               >
                 <Download className="h-4 w-4 mr-1" />
-                Load
+                加载
               </Button>
             )}
             {lab.loaded && (
@@ -72,7 +72,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
                   disabled={!isConnected}
                 >
                   <Upload className="h-4 w-4 mr-1" />
-                  Unload
+                  卸载
                 </Button>
                 <Button
                   variant="outline"
@@ -81,7 +81,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
                   disabled={!isConnected}
                 >
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Reload
+                  重新加载
                 </Button>
               </>
             )}
@@ -135,32 +135,30 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
     switch (currentAction) {
       case 'load':
         return {
-          title: 'Load Labs',
-          description: 'Are you sure you want to load these labs? This will initialize all lab devices and resources.',
-          confirmLabel: 'Load',
+          title: '加载实验室',
+          description: '确定要加载这些实验室吗？这将初始化所有实验室设备和资源。',
+          confirmLabel: '加载',
           variant: 'default' as const,
         };
       case 'unload':
         return {
-          title: 'Unload Labs',
-          description:
-            'Are you sure you want to unload these labs? This will shut down all lab devices and release resources.',
-          confirmLabel: 'Unload',
+          title: '卸载实验室',
+          description: '确定要卸载这些实验室吗？这将关闭所有实验室设备并释放资源。',
+          confirmLabel: '卸载',
           variant: 'destructive' as const,
         };
       case 'reload':
         return {
-          title: 'Reload Labs',
-          description:
-            'Are you sure you want to reload these labs? This will restart all lab devices and refresh configurations.',
-          confirmLabel: 'Reload',
+          title: '重新加载实验室',
+          description: '确定要重新加载这些实验室吗？这将重启所有实验室设备并刷新配置。',
+          confirmLabel: '重新加载',
           variant: 'default' as const,
         };
       default:
         return {
           title: '',
           description: '',
-          confirmLabel: 'Confirm',
+          confirmLabel: '确认',
           variant: 'default' as const,
         };
     }
@@ -189,7 +187,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
           disabled={!selectedRows.some((row) => !row.loaded) || !isConnected}
         >
           <Download className="h-4 w-4 mr-1" />
-          Load Selected
+          加载所选项
         </Button>
       )}
       {selectedRows.some((row) => row.loaded) && (
@@ -201,7 +199,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
             disabled={!selectedRows.some((row) => row.loaded) || !isConnected}
           >
             <Upload className="h-4 w-4 mr-1" />
-            Unload Selected
+            卸载所选项
           </Button>
           <Button
             variant="outline"
@@ -210,7 +208,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
             disabled={!selectedRows.some((row) => row.loaded) || !isConnected}
           >
             <RefreshCw className="h-4 w-4 mr-1" />
-            Reload Selected
+            重新加载所选项
           </Button>
         </>
       )}
@@ -224,7 +222,7 @@ export function LabsTab({ initialLabs, canManage }: LabsTabProps) {
       <DataTable
         columns={visibleColumns}
         data={initialLabs}
-        searchPlaceholder="Search labs..."
+        searchPlaceholder="搜索实验室…"
         enableRowSelection={canManage}
         onSelectionChange={setSelectedRows}
         bulkActions={bulkActions}

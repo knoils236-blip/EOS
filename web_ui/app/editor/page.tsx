@@ -7,8 +7,8 @@ import type { EntityType } from '@/lib/types/filesystem';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Editor',
-  description: 'Edit EOS packages, protocols, devices, tasks, and labs',
+  title: '编辑器',
+  description: '编辑 EOS 软件包、协议、设备、任务和实验室',
 };
 
 interface EditorPageProps {

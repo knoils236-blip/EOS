@@ -27,8 +27,8 @@ export async function getDevices(): Promise<Device[]> {
       meta: (row.meta as Record<string, unknown>) || {},
     }));
   } catch (error) {
-    console.error('Failed to fetch devices:', error);
-    throw new Error('Failed to fetch devices from database');
+    console.error('获取设备失败：', error);
+    throw new Error('获取数据库中的设备失败');
   }
 }
 
@@ -40,8 +40,8 @@ export async function getDeviceReport(labName: string, deviceName: string): Prom
     const response = (await orchestratorGet(`/labs/${labName}/device/${deviceName}/report`)) as DeviceReport;
     return response;
   } catch (error) {
-    console.error('Failed to fetch device report:', error);
-    throw new Error('Failed to fetch device report');
+    console.error('获取设备报告失败：', error);
+    throw new Error('获取设备报告失败');
   }
 }
 
@@ -62,10 +62,10 @@ export async function reloadDevices(labName: string, deviceNames: string[]): Pro
       success: true,
     };
   } catch (error) {
-    console.error('Failed to reload devices:', error);
+    console.error('重新加载设备失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reload devices',
+      error: error instanceof Error ? error.message : '重新加载设备失败',
     };
   }
 }

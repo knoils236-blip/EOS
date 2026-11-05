@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "source_root": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable",
+  "files": {
+    "table_instanceable.usd": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/table_instanceable.usd",
+      "size_bytes": 4584,
+      "sha256": "479ed8fd374d8eafdedf3ca3b9d0d5981ffc6d5c5016929347f748be93d5df17"
+    },
+    "table.usd": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/table.usd",
+      "size_bytes": 10536613,
+      "sha256": "fb8988eb83dd1fd5ee63877b6a60b74d80952940568c005989de1afe20fa3e1d"
+    },
+    "Materials/Textures/DemoTable_TableParts_BaseColor.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableParts_BaseColor.png",
+      "size_bytes": 905610,
+      "dimensions": [4096, 4096],
+      "sha256": "5d095ed2e4fe2fa18d35a2677f3c281796fba135544439db8ec32d851144fbc0"
+    },
+    "Materials/Textures/DemoTable_TableParts_Metallic.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableParts_Metallic.png",
+      "size_bytes": 414290,
+      "dimensions": [4096, 4096],
+      "sha256": "fdcd7dcec52034b60662cccf58c02ae442c0a87d60b099fcf6cd9ccd6cf5535d"
+    },
+    "Materials/Textures/DemoTable_TableParts_Normal.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableParts_Normal.png",
+      "size_bytes": 13632148,
+      "dimensions": [4096, 4096],
+      "sha256": "9413615d7cf9809f639ec9722022c164ad73a14add32a94293fc7c69d97b601c"
+    },
+    "Materials/Textures/DemoTable_TableParts_Roughness.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableParts_Roughness.png",
+      "size_bytes": 2995685,
+      "dimensions": [4096, 4096],
+      "sha256": "1cb2096ba97d3519f876b9d0dc84822bdd428cf93f0887a8f75e3bba208c4a35"
+    },
+    "Materials/Textures/DemoTable_TableBase_BaseColor.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableBase_BaseColor.png",
+      "size_bytes": 6335308,
+      "dimensions": [4096, 4096],
+      "sha256": "2cf139f46874df8a133c26eb51405161824ddecb0ce6a094e6477a675656bfe4"
+    },
+    "Materials/Textures/DemoTable_TableBase_Metallic.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableBase_Metallic.png",
+      "size_bytes": 119609,
+      "dimensions": [4096, 4096],
+      "sha256": "c56bdeeecef908a1a6869af71556ad9c43794d0d292e3b8463aa7b82f3367771"
+    },
+    "Materials/Textures/DemoTable_TableBase_Normal.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableBase_Normal.png",
+      "size_bytes": 34371270,
+      "dimensions": [4096, 4096],
+      "sha256": "bfcbadb3f98c9fe116bc6eb2c040d09196c40ca16347367900f8fd2d3451e10d"
+    },
+    "Materials/Textures/DemoTable_TableBase_Roughness.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Props/Mounts/SeattleLabTable/Materials/Textures/DemoTable_TableBase_Roughness.png",
+      "size_bytes": 7077839,
+      "dimensions": [4096, 4096],
+      "sha256": "35426471bf910ae4ef32d044b360489de8477c97cf1a75ad25341ef2a25a644b"
+    }
+  },
+  "external_references": {
+    "table_instanceable.usd": ["table.usd"],
+    "table.usd": [
+      "OmniPBR.mdl",
+      "Materials/Textures/DemoTable_TableParts_BaseColor.png",
+      "Materials/Textures/DemoTable_TableParts_Metallic.png",
+      "Materials/Textures/DemoTable_TableParts_Normal.png",
+      "Materials/Textures/DemoTable_TableParts_Roughness.png",
+      "Materials/Textures/DemoTable_TableBase_BaseColor.png",
+      "Materials/Textures/DemoTable_TableBase_Metallic.png",
+      "Materials/Textures/DemoTable_TableBase_Normal.png",
+      "Materials/Textures/DemoTable_TableBase_Roughness.png"
+    ]
+  },
+  "builtin_mdl_dependencies": ["OmniPBR.mdl"]
+}

@@ -21,11 +21,11 @@ export async function GET(req: NextRequest) {
       signal: req.signal,
     });
   } catch {
-    return new Response('Failed to connect to log stream', { status: 502 });
+    return new Response('无法连接日志流', { status: 502 });
   }
 
   if (!upstream.ok || !upstream.body) {
-    return new Response('Failed to connect to log stream', { status: upstream.status || 502 });
+    return new Response('无法连接日志流', { status: upstream.status || 502 });
   }
 
   return new Response(upstream.body, {

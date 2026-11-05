@@ -51,8 +51,8 @@ export async function getProtocolRuns(options: TableQueryOptions = {}): Promise<
       offset: result.offset,
     };
   } catch (error) {
-    console.error('Failed to fetch protocol runs:', error);
-    throw new Error('Failed to fetch protocol runs from database');
+    console.error('获取协议运行失败：', error);
+    throw new Error('获取数据库中的协议运行失败');
   }
 }
 
@@ -62,8 +62,8 @@ export async function submitProtocolRun(definition: ProtocolRunDefinition): Prom
     revalidatePath('/protocol-runs');
     return createSuccessResult();
   } catch (error) {
-    console.error('Failed to submit protocol run:', error);
-    return createErrorResult(error, 'Failed to submit protocol run');
+    console.error('提交协议运行失败：', error);
+    return createErrorResult(error, '提交协议运行失败');
   }
 }
 
@@ -73,7 +73,7 @@ export async function cancelProtocolRun(protocolRunName: string): Promise<Action
     revalidatePath('/protocol-runs');
     return createSuccessResult();
   } catch (error) {
-    console.error('Failed to cancel protocol run:', error);
-    return createErrorResult(error, 'Failed to cancel protocol run');
+    console.error('取消协议运行失败：', error);
+    return createErrorResult(error, '取消协议运行失败');
   }
 }

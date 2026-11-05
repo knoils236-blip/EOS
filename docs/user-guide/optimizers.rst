@@ -12,6 +12,7 @@ Choose an Optimizer
 * ``BayesianSequentialOptimizer`` uses BoFire and BoTorch for constrained single-objective
   or multi-objective optimization.
 * :doc:`beacon_optimizer` mixes an optimizer with AI suggestions, a journal, and expert insights.
+* :doc:`atlas_optimizer` runs the ChemOS 2.0 Atlas planner from a separate Python environment.
 * Implement ``AbstractSequentialOptimizer`` for a standalone algorithm, or follow
   :doc:`custom_beacon` to plug one into Beacon.
 
@@ -20,6 +21,12 @@ Protocol Integration
 Place ``optimizer.py`` beside ``protocol.yml``. Its factory returns constructor arguments and
 an optimizer class. Input and output keys use ``task_name.parameter_name`` so EOS can collect
 and route values.
+
+协议保存与优化器配置是两件独立的事。保存 ``protocol.yml`` 不会自动生成优化器；
+单次执行协议也不要求配置优化器。空的 ``optimizer.py`` 表示当前协议没有优化器。
+可视化编辑器会显示“未配置优化器”，可点击“配置优化器”后自行定义可调整变量及优化目标，再显式保存。
+新草稿默认使用纯贝叶斯策略，不会自动调用 AI；编辑草稿不会改写已有的自定义优化器代码。
+读取配置的服务、权限或代码错误会单独显示，不应通过反复保存或加载协议来处理。
 
 This Bayesian optimizer works with the bundled multiplication protocol:
 
@@ -54,6 +61,29 @@ This Bayesian optimizer works with the bundled multiplication protocol:
 The domain contains input features, output objectives, and constraints. The acquisition function
 selects later Bayesian samples after initialization. See the
 `BoFire documentation <https://experimental-design.github.io/bofire/>`_ for domain and strategy options.
+
+Multi-Fidelity Optimization
+---------------------------
+When a cheap but imperfect source of results exists (a simulation, a DFT calculation, a quick screening assay)
+next to the expensive experiment, let ``BayesianSequentialOptimizer`` choose between them. Add a
+``CategoricalTaskInput`` whose categories are the fidelity levels; ``fidelities`` marks the target level with 0 and
+cheaper levels with higher numbers. The protocol receives the chosen level as an ordinary dynamic parameter and runs
+the matching branch.
+
+.. code-block:: python
+
+    from bofire.data_models.features.task import CategoricalTaskInput
+
+    "inputs": [
+        ContinuousInput(key="measure.temperature", bounds=(20, 120)),
+        CategoricalTaskInput(key="measure.fidelity", categories=["experiment", "simulation"], fidelities=[0, 1]),
+    ],
+    "fidelity_thresholds": 0.1,
+
+For each run the optimizer picks the next point with the target-fidelity model, then runs it at the cheapest
+fidelity whose model is still uncertain there (variance above ``fidelity_thresholds``), and at the target fidelity
+otherwise. Only target-fidelity results are reported as optimal solutions. Multi-fidelity supports one output.
+The ``optimize_yield_multi_fidelity`` protocol in the example package runs this end to end.
 
 Custom Optimizer Contract
 -------------------------

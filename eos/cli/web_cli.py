@@ -34,25 +34,23 @@ def _node_ca_from_env_file() -> str | None:
 
 
 def start_web_ui(
-    dev: Annotated[bool, typer.Option("--dev", "-d", help="Run the development server instead of production")] = False,
-    build: Annotated[
-        bool, typer.Option("--build", "-b", help="Force a rebuild even if a build already exists")
-    ] = False,
-    host: Annotated[str, typer.Option("--host", "-H", help="Host to bind to (default: 127.0.0.1)")] = "127.0.0.1",
+    dev: Annotated[bool, typer.Option("--dev", "-d", help="启动开发服务器而非生产服务器")] = False,
+    build: Annotated[bool, typer.Option("--build", "-b", help="即使已有构建也强制重新构建")] = False,
+    host: Annotated[str, typer.Option("--host", "-H", help="绑定地址（默认：127.0.0.1）")] = "127.0.0.1",
 ) -> None:
-    """Start the EOS web UI."""
+    """启动 EOS Web 界面。"""
     if not WEB_UI_DIR.is_dir():
-        typer.echo(f"Error: web UI directory not found at {WEB_UI_DIR}", err=True)
+        typer.echo(f"错误：未找到 Web 界面目录： {WEB_UI_DIR}", err=True)
         raise typer.Exit(1)
 
     if not (WEB_UI_DIR / "node_modules").is_dir():
-        typer.echo("Error: node_modules not found. Run 'npm install' in the web_ui/ directory first.", err=True)
+        typer.echo("错误：未找到 node_modules，请先在 web_ui/ 目录运行 'npm install'。", err=True)
         raise typer.Exit(1)
 
     port = int(os.environ.get("PORT", DEFAULT_UI_PORT))
     if is_port_in_use(host, port):
         typer.echo(
-            f"Error: port {host}:{port} is already in use. The web UI may already be running.",
+            f"错误：端口 {host}:{port} 已被占用，Web 界面可能已在运行。",
             err=True,
         )
         raise typer.Exit(1)
@@ -64,19 +62,19 @@ def start_web_ui(
 
     try:
         if dev:
-            typer.echo("Starting web UI in development mode...")
+            typer.echo("正在以开发模式启动 Web 界面…")
             sys.exit(_run_npm("run", "dev", cwd=WEB_UI_DIR, env=env))
         else:
             needs_build = build or not (WEB_UI_DIR / ".next").is_dir()
             if needs_build:
-                typer.echo("Building web UI...")
+                typer.echo("正在构建 Web 界面…")
                 result = _run_npm("run", "build", cwd=WEB_UI_DIR)
                 if result != 0:
-                    typer.echo("Error: build failed.", err=True)
+                    typer.echo("错误：构建失败。", err=True)
                     raise typer.Exit(result)
 
-            typer.echo("Starting web UI...")
+            typer.echo("正在启动 Web 界面…")
             sys.exit(_run_npm("start", cwd=WEB_UI_DIR, env=env))
     except FileNotFoundError:
-        typer.echo("Error: npm not found on PATH.", err=True)
+        typer.echo("错误：在 PATH 中未找到 npm。", err=True)
         raise typer.Exit(1) from None

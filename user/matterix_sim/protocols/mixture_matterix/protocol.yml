@@ -1,0 +1,34 @@
+type: mixture_matterix
+desc: 200 uL mixture; variable stock; synthetic sensor; quality-gated optimization
+labs:
+- mixture_matterix_lab
+tasks:
+- name: prepare
+  type: Prepare Mixture
+  timeout: 1200
+  retries: 0
+  parameters:
+    stock_volume_ul: eos_dynamic
+  devices:
+    workstation:
+      lab_name: mixture_matterix_lab
+      name: workstation
+- name: measure
+  type: Measure Mixture
+  dependencies:
+  - prepare
+  parameters:
+    sample: prepare.sample
+- name: quality
+  type: Check Mixture Quality
+  dependencies:
+  - measure
+  parameters:
+    observation: measure.observation
+- name: score
+  type: Score Mixture
+  dependencies:
+  - quality
+  parameters:
+    observation: measure.observation
+    quality: quality.quality

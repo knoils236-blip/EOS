@@ -1,0 +1,461 @@
+{
+  "common": {
+    "back": "返回",
+    "title": "登录 EOS"
+  },
+  "accounts": {
+    "title": "账户",
+    "description": "选择要使用的账户。",
+    "addAnother": "添加其他账户",
+    "noResults": "未找到账户",
+    "verified": "已验证",
+    "expired": "已过期"
+  },
+  "logout": {
+    "title": "退出登录",
+    "description": "点击账户以结束会话",
+    "noResults": "未找到账户",
+    "clear": "结束会话",
+    "verifiedAt": "最近活动：{time}",
+    "success": {
+      "title": "已退出登录",
+      "description": "您已成功退出登录。"
+    }
+  },
+  "loginname": {
+    "title": "登录",
+    "description": "输入用户名以继续。",
+    "register": "注册新用户",
+    "submit": "继续",
+    "labels": {
+      "loginname": "用户名",
+      "username": "用户名",
+      "usernameOrPhoneNumber": "用户名或手机号",
+      "usernameOrEmail": "用户名或邮箱"
+    },
+    "required": {
+      "loginName": "此字段为必填项"
+    },
+    "errors": {
+      "internalError": "发生内部错误",
+      "couldNotGetLoginSettings": "无法获取登录设置",
+      "couldNotSearchUsers": "无法搜索用户",
+      "couldNotGetDomain": "无法获取域名",
+      "couldNotGetHost": "无法获取主机",
+      "couldNotStartIDPFlow": "无法启动身份提供商登录流程",
+      "moreThanOneUserFound": "找到多个用户，请提供唯一标识。",
+      "userNotFound": "系统中未找到此用户",
+      "couldNotCreateSession": "无法为用户创建会话",
+      "initialUserNotSupported": "不支持处于初始状态的用户",
+      "localAuthenticationNotAllowed": "不允许本地身份验证，请联系管理员了解详情。",
+      "passkeysNotAllowed": "不允许使用通行密钥，请联系管理员了解详情。",
+      "couldNotFindIdentityProvider": "未找到身份提供商。",
+      "userNotActive": "用户未启用，请联系管理员了解详情。"
+    }
+  },
+  "zitadel": {
+    "errors": {
+      "errorOccured": "发生错误",
+      "multipleUsersFound": "找到多个用户",
+      "userNotFound": "系统中未找到此用户"
+    }
+  },
+  "password": {
+    "verify": {
+      "title": "",
+      "description": "",
+      "resetPassword": "重置密码",
+      "submit": "继续",
+      "labels": {
+        "password": "密码"
+      },
+      "required": {
+        "password": "此字段为必填项"
+      },
+      "errors": {
+        "couldNotVerifyPassword": "无法验证密码",
+        "couldNotResetPassword": "无法重置密码"
+      },
+      "info": {
+        "passwordResetSent": "密码已重置，请检查邮箱"
+      }
+    },
+    "set": {
+      "title": "设置密码",
+      "description": "设置您的账户密码",
+      "codeSent": "新验证码已发送至您的邮箱。",
+      "noCodeReceived": "没有收到验证码？",
+      "resend": "重新发送验证码",
+      "submit": "继续",
+      "labels": {
+        "code": "验证码",
+        "newPassword": "新密码",
+        "confirmPassword": "确认密码"
+      },
+      "required": {
+        "code": "此字段为必填项",
+        "newPassword": "请输入密码！",
+        "confirmPassword": "此字段为必填项"
+      },
+      "errors": {
+        "couldNotSetPassword": "无法设置密码",
+        "couldNotResetPassword": "无法重置密码",
+        "couldNotVerifyPassword": "无法验证密码"
+      }
+    },
+    "change": {
+      "title": "修改密码",
+      "description": "设置您的账户密码",
+      "submit": "继续",
+      "labels": {
+        "currentPassword": "当前密码",
+        "newPassword": "新密码",
+        "confirmPassword": "确认密码"
+      },
+      "required": {
+        "currentPassword": "请输入当前密码！",
+        "newPassword": "请输入新密码！",
+        "confirmPassword": "此字段为必填项"
+      },
+      "errors": {
+        "currentPasswordInvalid": "当前密码不正确。",
+        "couldNotChangePassword": "无法修改密码",
+        "couldNotVerifyPassword": "无法验证密码",
+        "unknownError": "未知错误"
+      }
+    },
+    "complexity": {
+      "length": "长度至少为 {minLength} 个字符。",
+      "hasSymbol": "必须包含符号。",
+      "hasNumber": "必须包含数字。",
+      "hasUppercase": "必须包含大写字母。",
+      "hasLowercase": "必须包含小写字母。",
+      "equals": "两次输入的密码一致。",
+      "matches": "一致",
+      "doesNotMatch": "不一致"
+    },
+    "errors": {
+      "noHostFound": "未找到主机",
+      "couldNotSendResetLink": "无法发送密码重置链接",
+      "couldNotCreateSessionForUser": "无法为用户创建会话",
+      "couldNotVerifyPassword": "无法验证密码",
+      "failedToAuthenticate": "身份验证失败，已尝试 {failedAttempts} 次，最多允许 {maxPasswordAttempts} 次。{lockoutMessage}",
+      "failedToAuthenticateNoLimit": "身份验证失败。",
+      "accountLockedContactAdmin": "请联系管理员解锁账户",
+      "userNotFound": "系统中未找到此用户",
+      "initialUserNotSupported": "不支持处于初始状态的用户",
+      "userInitialStateNotSupported": "不支持用户的初始状态",
+      "codeOrVerificationRequired": "请提供验证码或完成有效的用户验证检查",
+      "verificationRequired": "必须完成用户验证检查",
+      "couldNotLoadSession": "无法加载会话",
+      "couldNotLoadAuthMethods": "无法加载身份验证方式",
+      "failedPrecondition": "未满足前置条件",
+      "sessionNotValid": "会话无效",
+      "passwordVerificationMissing": "缺少密码验证。",
+      "passwordVerificationTooOld": "密码验证已过期，请重新验证密码。"
+    }
+  },
+  "idp": {
+    "title": "使用单点登录",
+    "description": "选择以下身份提供商之一登录",
+    "orSignInWith": "或使用以下方式登录",
+    "signInWithApple": "使用 Apple 登录",
+    "signInWithGoogle": "使用 Google 登录",
+    "signInWithAzureAD": "使用 AzureAD 登录",
+    "signInWithGithub": "使用 GitHub 登录",
+    "signInWithGitlab": "使用 GitLab 登录",
+    "loginError": {
+      "title": "登录失败",
+      "description": "尝试登录时发生错误。"
+    },
+    "linkingError": {
+      "title": "账户关联失败",
+      "description": "尝试关联账户时发生错误。"
+    },
+    "completeRegister": {
+      "title": "完善个人信息",
+      "description": "请提供邮箱和姓名以完成注册。"
+    },
+    "accountNotFound": {
+      "title": "未找到账户",
+      "description": "未找到与您的身份提供商凭据关联的账户。",
+      "info": "未找到已有账户，请使用现有账户登录或联系管理员。",
+      "backToLogin": "返回登录"
+    },
+    "registrationFailed": {
+      "title": "注册不可用",
+      "description": "无法完成注册。",
+      "info": "无法确定注册所属组织，请联系管理员。",
+      "backToLogin": "返回登录"
+    },
+    "processing": {
+      "message": "正在进行身份验证…",
+      "noRedirect": "服务器未返回重定向地址或错误信息",
+      "unexpectedError": "发生意外错误"
+    },
+    "errors": {
+      "missingParameters": "缺少必需参数",
+      "missingIdpInfo": "缺少身份提供商信息",
+      "idpNotFound": "未找到身份提供商",
+      "linkingNotAllowed": "此身份提供商不允许关联账户",
+      "linkingFailed": "无法将身份提供商关联到账户",
+      "autoLinkingFailed": "无法自动关联账户",
+      "userCreationFailed": "无法创建用户账户",
+      "orgResolutionFailed": "无法确定注册所属组织",
+      "sessionCreationFailed": "无法创建会话或确定重定向地址",
+      "unknownError": "发生未知错误"
+    }
+  },
+  "ldap": {
+    "title": "LDAP 登录",
+    "description": "输入您的 LDAP 凭据。",
+    "submit": "继续",
+    "labels": {
+      "username": "用户名",
+      "password": "密码"
+    },
+    "required": {
+      "username": "此字段为必填项",
+      "password": "此字段为必填项"
+    }
+  },
+  "mfa": {
+    "verify": {
+      "title": "验证身份",
+      "description": "选择以下验证因素之一。",
+      "noResults": "没有可设置的第二验证因素。"
+    },
+    "set": {
+      "title": "设置双因素验证",
+      "description": "选择以下第二验证因素之一。",
+      "skip": "跳过"
+    }
+  },
+  "otp": {
+    "verify": {
+      "title": "双因素验证",
+      "totpDescription": "输入身份验证应用中的验证码。",
+      "smsDescription": "输入短信中的验证码。",
+      "emailDescription": "输入邮件中的验证码。",
+      "noCodeReceived": "没有收到验证码？",
+      "resendCode": "重新发送验证码",
+      "submit": "继续",
+      "labels": {
+        "code": "验证码"
+      },
+      "required": {
+        "code": "此字段为必填项"
+      }
+    },
+    "set": {
+      "title": "设置双因素验证",
+      "totpDescription": "使用身份验证应用扫描二维码。",
+      "smsDescription": "输入手机号以通过短信接收验证码。",
+      "emailDescription": "输入邮箱地址以通过邮件接收验证码。",
+      "totpRegisterDescription": "扫描二维码或手动打开该 URL。",
+      "submit": "继续",
+      "labels": {
+        "code": "验证码"
+      },
+      "required": {
+        "code": "此字段为必填项"
+      }
+    }
+  },
+  "passkey": {
+    "verify": {
+      "title": "使用通行密钥验证身份",
+      "description": "您的设备将请求指纹、面部识别或屏幕锁验证",
+      "usePassword": "使用密码",
+      "submit": "继续",
+      "errors": {
+        "couldNotRequestChallenge": "无法请求通行密钥验证挑战",
+        "couldNotVerifyPasskey": "无法验证通行密钥",
+        "noResponseReceived": "通行密钥验证失败：未收到响应",
+        "noRedirectProvided": "通行密钥验证已完成，但未提供重定向地址",
+        "couldNotRetrievePasskey": "获取通行密钥时发生错误",
+        "verificationCancelled": "通行密钥验证已取消",
+        "verificationFailed": "通行密钥验证时发生错误",
+        "couldNotFindSession": "未找到会话",
+        "couldNotUpdateSession": "无法更新会话",
+        "userNotFound": "系统中未找到此用户",
+        "couldNotDetermineRedirect": "无法确定通行密钥验证后的重定向 URL"
+      }
+    },
+    "set": {
+      "title": "设置通行密钥",
+      "description": "您的设备将请求指纹、面部识别或屏幕锁验证",
+      "info": {
+        "description": "通行密钥是一种设备身份验证方式，例如指纹、Apple FaceID 等。",
+        "link": "通行密钥身份验证"
+      },
+      "skip": "跳过",
+      "submit": "继续"
+    }
+  },
+  "u2f": {
+    "verify": {
+      "title": "双因素验证",
+      "description": "使用您的设备验证账户。"
+    },
+    "set": {
+      "title": "设置双因素验证",
+      "description": "将设备设置为第二验证因素。",
+      "submit": "继续"
+    }
+  },
+  "register": {
+    "methods": {
+      "passkey": "通行密钥",
+      "password": "密码"
+    },
+    "disabled": {
+      "title": "注册已禁用",
+      "description": "注册功能已禁用，请联系管理员。"
+    },
+    "missingdata": {
+      "title": "缺少信息",
+      "description": "请提供邮箱和姓名以注册。"
+    },
+    "title": "注册",
+    "description": "创建您的 Zitadel 账户。",
+    "noMethodAvailableWarning": "没有可用的身份验证方式，请联系管理员。",
+    "selectMethod": "选择要使用的身份验证方式",
+    "agreeTo": "注册前必须同意条款和条件",
+    "termsOfService": "服务条款",
+    "privacyPolicy": "隐私政策",
+    "submit": "继续",
+    "password": {
+      "title": "设置密码",
+      "description": "设置您的账户密码",
+      "submit": "继续",
+      "labels": {
+        "password": "密码",
+        "confirmPassword": "确认密码"
+      },
+      "required": {
+        "password": "请输入密码！",
+        "confirmPassword": "此字段为必填项"
+      }
+    },
+    "labels": {
+      "firstname": "名",
+      "lastname": "姓",
+      "email": "邮箱"
+    },
+    "required": {
+      "firstname": "此字段为必填项",
+      "lastname": "此字段为必填项",
+      "email": "此字段为必填项"
+    },
+    "errors": {
+      "couldNotCreateUser": "无法创建用户",
+      "couldNotCreateSession": "无法创建会话",
+      "userNotFound": "系统中未找到此用户",
+      "couldNotLinkIDP": "无法将身份提供商关联到用户",
+      "couldNotRegisterUser": "无法注册用户"
+    }
+  },
+  "invite": {
+    "title": "邀请用户",
+    "description": "提供要邀请的用户的邮箱地址和姓名。",
+    "info": "用户将收到包含后续操作说明的邮件。",
+    "notAllowed": "您的设置不允许邀请用户。",
+    "submit": "继续",
+    "success": {
+      "title": "已邀请用户",
+      "description": "邮件已成功发送。",
+      "verified": "已邀请用户，且其邮箱已验证。",
+      "notVerifiedYet": "已邀请用户，对方将收到包含后续操作说明的邮件。",
+      "submit": "邀请其他用户"
+    }
+  },
+  "signedin": {
+    "title": "欢迎，{user}！",
+    "description": "您已登录。",
+    "continue": "继续",
+    "error": {
+      "title": "错误",
+      "description": "尝试登录时发生错误。"
+    }
+  },
+  "verify": {
+    "userIdMissing": "未提供 userId！",
+    "successTitle": "用户已验证",
+    "successDescription": "用户验证成功。",
+    "successContinue": "继续",
+    "setupAuthenticator": "设置身份验证器",
+    "verify": {
+      "title": "验证用户",
+      "description": "输入验证邮件中的验证码。",
+      "noCodeReceived": "没有收到验证码？",
+      "resendCode": "重新发送验证码",
+      "codeSent": "新验证码刚刚已发送至您的邮箱。",
+      "submit": "继续",
+      "labels": {
+        "code": "验证码"
+      },
+      "required": {
+        "code": "此字段为必填项"
+      }
+    },
+    "errors": {
+      "couldNotResendEmail": "无法重新发送邮件",
+      "couldNotVerifyUser": "无法验证用户",
+      "couldNotVerifyInvite": "无法验证邀请",
+      "couldNotVerifyEmail": "无法验证邮箱",
+      "couldNotVerify": "无法完成验证",
+      "couldNotLoadUser": "无法加载用户",
+      "couldNotLoadAuthenticators": "无法加载可用的身份验证器",
+      "couldNotCreateSession": "无法创建会话",
+      "noHostFound": "未找到主机",
+      "userAlreadyVerified": "用户已完成验证！",
+      "couldNotResendInvite": "无法重新发送邀请",
+      "inviteSendFailed": "邀请邮件发送失败",
+      "emailSendFailed": "验证邮件发送失败",
+      "contextMissing": "发生错误，请重试。"
+    }
+  },
+  "authenticator": {
+    "title": "选择身份验证方式",
+    "description": "选择要使用的身份验证方式",
+    "noMethodsAvailable": "没有可用的身份验证方式",
+    "allSetup": "您已设置身份验证器！",
+    "linkWithIDP": "或关联身份提供商"
+  },
+  "device": {
+    "usercode": {
+      "title": "设备代码",
+      "description": "输入应用或设备上显示的代码。",
+      "submit": "继续",
+      "labels": {
+        "code": "验证码"
+      },
+      "required": {
+        "code": "此字段为必填项"
+      }
+    },
+    "request": {
+      "title": "{appName} 希望连接",
+      "description": "{appName} 将获得以下权限：",
+      "disclaimer": "点击“允许”即表示您允许 {appName} 和 Zitadel 根据各自的服务条款及隐私政策使用您的信息。您可以随时撤销此访问权限。",
+      "submit": "允许",
+      "deny": "拒绝"
+    },
+    "scope": {
+      "openid": "验证您的身份。",
+      "email": "查看您的邮箱地址。",
+      "profile": "查看您的完整个人资料。",
+      "offline_access": "允许离线访问您的账户。"
+    }
+  },
+  "error": {
+    "noUserCode": "未提供用户代码！",
+    "noDeviceRequest": "未找到设备请求。",
+    "unknownContext": "无法获取用户上下文，请先输入用户名或通过查询参数提供 loginName。",
+    "sessionExpired": "当前会话已过期，请重新登录。",
+    "failedLoading": "加载数据失败，请重试。",
+    "tryagain": "重试",
+    "couldNotContinueSession": "无法继续会话：缺少用户信息"
+  }
+}

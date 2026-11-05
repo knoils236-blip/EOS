@@ -32,8 +32,8 @@ export function DeviceStateViewer({ device }: DeviceStateViewerProps) {
       setDeviceState(state);
       updateLastRefreshTime();
     } catch (error) {
-      console.error('Failed to fetch device state:', error);
-      toast.error('Failed to fetch device state');
+      console.error('获取设备状态失败：', error);
+      toast.error('获取设备状态失败');
     } finally {
       setIsLoading(false);
     }
@@ -62,9 +62,9 @@ export function DeviceStateViewer({ device }: DeviceStateViewerProps) {
   const handleToggleAutoRefresh = () => {
     setAutoRefreshEnabled(!autoRefreshEnabled);
     if (!autoRefreshEnabled) {
-      toast.success(`Auto-refresh enabled (every ${refreshInterval / 1000}s)`);
+      toast.success(`已启用自动刷新（间隔 ${refreshInterval / 1000} 秒）`);
     } else {
-      toast.success('Auto-refresh disabled');
+      toast.success('已禁用自动刷新');
     }
   };
 
@@ -77,7 +77,7 @@ export function DeviceStateViewer({ device }: DeviceStateViewerProps) {
           className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300"
         >
           {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-          Device State
+          设备状态
         </button>
 
         <div className="flex items-center gap-2">
@@ -85,24 +85,24 @@ export function DeviceStateViewer({ device }: DeviceStateViewerProps) {
             variant="outline"
             size="sm"
             onClick={handleToggleAutoRefresh}
-            title={autoRefreshEnabled ? 'Pause auto-refresh' : 'Enable auto-refresh'}
+            title={autoRefreshEnabled ? '暂停自动刷新' : '启用自动刷新'}
           >
             {autoRefreshEnabled ? (
               <>
                 <Pause className="h-4 w-4 mr-2" />
-                Pause
+                暂停
               </>
             ) : (
               <>
                 <Play className="h-4 w-4 mr-2" />
-                Auto
+                自动
               </>
             )}
           </Button>
 
           <Button variant="outline" size="sm" onClick={fetchState} disabled={isLoading || !isConnected}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            刷新
           </Button>
         </div>
       </div>
@@ -126,7 +126,7 @@ export function DeviceStateViewer({ device }: DeviceStateViewerProps) {
               <JsonDisplay data={deviceState} />
             </div>
           ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-8">No state data available</div>
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">暂无状态数据</div>
           )}
         </div>
       )}

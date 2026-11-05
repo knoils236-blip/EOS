@@ -21,7 +21,9 @@ User Guide
     campaigns
     optimizers
     beacon_optimizer
+    decision_ai
     custom_beacon
+    atlas_optimizer
     scheduling
 
 .. toctree::
@@ -35,7 +37,9 @@ User Guide
 .. toctree::
     :caption: Advanced
 
+    matterix_execution
     sila2_integration
+    aiida_integration
     jinja2_templating
 
 .. toctree::

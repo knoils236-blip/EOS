@@ -9,7 +9,7 @@ export function TimelineEntry({ label, timestamp }: TimelineEntryProps) {
   return (
     <div>
       <span className="text-gray-500 dark:text-gray-400">{label}:</span>{' '}
-      <span className="text-gray-900 dark:text-gray-100">{new Date(timestamp).toLocaleString()}</span>
+      <span className="text-gray-900 dark:text-gray-100">{new Date(timestamp).toLocaleString('zh-CN')}</span>
     </div>
   );
 }

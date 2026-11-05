@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, X, TrendingUp, FlaskConical } from 'lucide-react';
@@ -26,6 +28,7 @@ import { getCampaignWithDetails, type CampaignSample } from '../api/campaignDeta
 import { cancelCampaign } from '../api/campaigns';
 import { OptimizerPanel } from './OptimizerPanel';
 import { BeaconJournalPanel } from './BeaconJournalPanel';
+import { DecisionPanel } from './DecisionPanel';
 import { extractOptimizerInfo } from '../utils/optimizerMeta';
 import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import { useOrchestratorConnected } from '@/contexts/OrchestratorStatusContext';
@@ -76,7 +79,7 @@ export function CampaignExecutionView({
         }
       }
     } catch (error) {
-      console.error('Failed to refresh campaign:', error);
+      console.error('刷新实验计划失败：', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -97,7 +100,7 @@ export function CampaignExecutionView({
     try {
       const result = await cancelCampaign(currentCampaign.name);
       if (!result.success) {
-        alert(`Failed to cancel campaign: ${result.error}`);
+        alert(`取消实验计划失败：${result.error}`);
       } else {
         handleRefresh();
       }
@@ -141,12 +144,14 @@ export function CampaignExecutionView({
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              返回
             </Button>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-gray-900 dark:text-white">{currentCampaign.name}</h1>
-                <Badge variant={getStatusBadgeVariant(currentCampaign.status)}>{currentCampaign.status}</Badge>
+                <Badge variant={getStatusBadgeVariant(currentCampaign.status)}>
+                  {statusLabel(currentCampaign.status)}
+                </Badge>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {currentCampaign.protocol} • {currentCampaign.owner_username ?? currentCampaign.owner}
@@ -165,7 +170,7 @@ export function CampaignExecutionView({
                 className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
               >
                 <X className="h-4 w-4" />
-                {isCancelling ? 'Cancelling...' : 'Cancel'}
+                {isCancelling ? '正在取消…' : '取消'}
               </Button>
             )}
 
@@ -185,13 +190,17 @@ export function CampaignExecutionView({
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Campaign Info */}
           <CampaignInfoPanel campaign={currentCampaign} activeCount={activeCount} />
+          <DecisionPanel
+            campaignName={currentCampaign.name}
+            refreshKey={`${currentCampaign.status}:${samples.length}:${protocolRuns.map((run) => `${run.name}:${run.status}`).join(',')}`}
+          />
 
           {/* Optimization Section */}
           {currentCampaign.optimize && (
             <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Optimization Progress
+                优化进度
               </h2>
 
               {hasOptimizationData ? (
@@ -201,19 +210,19 @@ export function CampaignExecutionView({
                       value="progress"
                       className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 dark:data-[state=active]:border-yellow-500 dark:data-[state=active]:text-yellow-500"
                     >
-                      Progress Over Time
+                      随时间变化
                     </Tabs.Trigger>
                     <Tabs.Trigger
                       value="pareto"
                       className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 dark:data-[state=active]:border-yellow-500 dark:data-[state=active]:text-yellow-500"
                     >
-                      Pareto Front
+                      帕累托前沿
                     </Tabs.Trigger>
                     <Tabs.Trigger
                       value="solutions"
                       className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 dark:data-[state=active]:border-yellow-500 dark:data-[state=active]:text-yellow-500"
                     >
-                      Pareto Solutions
+                      帕累托解
                     </Tabs.Trigger>
                   </Tabs.List>
 
@@ -242,14 +251,14 @@ export function CampaignExecutionView({
                       />
                     ) : (
                       <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                        Pareto solutions will be computed when the campaign completes.
+                        实验计划完成后将计算帕累托解。
                       </p>
                     )}
                   </Tabs.Content>
                 </Tabs.Root>
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                  No optimization data yet. Data will appear after protocol runs complete.
+                  暂无优化数据，协议运行完成后将显示数据。
                 </p>
               )}
             </div>
@@ -280,7 +289,7 @@ export function CampaignExecutionView({
           <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <FlaskConical className="h-5 w-5" />
-              Protocol Runs
+              协议运行
             </h2>
             <RunningProtocolRunsTable protocolRuns={protocolRuns} campaignName={campaign.name} />
           </div>
@@ -291,10 +300,10 @@ export function CampaignExecutionView({
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
         onConfirm={handleCancelCampaign}
-        title="Cancel Campaign"
-        message={`Are you sure you want to cancel campaign "${currentCampaign.name}"? This will stop all running protocol runs.`}
-        confirmText="Cancel Campaign"
-        cancelText="Keep Running"
+        title="取消实验计划"
+        message={`确定要取消实验计划“${currentCampaign.name}”吗？这将停止所有正在运行的协议。`}
+        confirmText="取消实验计划"
+        cancelText="继续运行"
         variant="danger"
       />
     </div>

@@ -14,6 +14,6 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
     await changePassword(user.sub, currentPassword, newPassword);
     return { success: true };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to change password' };
+    return { success: false, error: error instanceof Error ? error.message : '修改密码失败' };
   }
 }

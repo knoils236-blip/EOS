@@ -14,7 +14,7 @@ const SimulatorGantt = dynamic(() => import('./SimulatorGantt'), {
   ssr: false,
   loading: () => (
     <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-8 flex items-center justify-center min-h-[400px]">
-      <div className="text-gray-400 dark:text-gray-500">Loading chart...</div>
+      <div className="text-gray-400 dark:text-gray-500">正在加载图表…</div>
     </div>
   ),
 });
@@ -70,7 +70,7 @@ export function SimulatorClient() {
         const res = await runSimulation({ ...cfg, packages: packages.length > 0 ? packages : cfg.packages });
         setResults(res);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Simulation failed');
+        setError(e instanceof Error ? e.message : '仿真失败');
       } finally {
         setLoading(false);
       }
@@ -107,10 +107,10 @@ export function SimulatorClient() {
           setResults(parsed);
           setError(null);
         } else {
-          setError('Invalid results file.');
+          setError('结果文件无效。');
         }
       } catch {
-        setError('Invalid results file.');
+        setError('结果文件无效。');
       }
     };
     input.click();
@@ -137,17 +137,17 @@ export function SimulatorClient() {
         <>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Results
+              结果
               <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                Makespan: {results.stats.makespan_fmt} &middot; {results.stats.total_tasks} tasks &middot;{' '}
+                总工期： {results.stats.makespan_fmt} &middot; {results.stats.total_tasks} 个任务 ·{' '}
                 {results.stats.scheduler_type}
               </span>
             </h2>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={uploadResults} title="Load results">
+              <Button variant="ghost" size="sm" onClick={uploadResults} title="加载结果">
                 <Upload className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={downloadResults} title="Save results">
+              <Button variant="ghost" size="sm" onClick={downloadResults} title="保存结果">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
@@ -162,13 +162,13 @@ export function SimulatorClient() {
       {!results && !loading && (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <p className="text-gray-400 dark:text-gray-500 mb-2">No simulation results yet</p>
+            <p className="text-gray-400 dark:text-gray-500 mb-2">暂无仿真结果</p>
             <p className="text-sm text-gray-400 dark:text-gray-500">
-              Configure and run a simulation, or{' '}
+              配置并运行仿真，或{' '}
               <button onClick={uploadResults} className="text-blue-600 dark:text-yellow-500 hover:underline">
-                load results
+                加载结果
               </button>{' '}
-              from a file.
+              从文件中读取。
             </p>
           </div>
         </div>

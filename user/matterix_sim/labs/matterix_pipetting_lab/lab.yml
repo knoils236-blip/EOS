@@ -1,0 +1,84 @@
+name: matterix_pipetting_lab
+desc: 250 Hz physics station (whole-station acceptance pending); semantic volumes are simulated, not hardware measurements
+simulated: true
+devices:
+  matterix:
+    type: matterix_workstation
+    computer: eos_computer
+    init_parameters:
+      address: 127.0.0.1
+      port: 65200
+      insecure: true
+      scene_id: pipetting_realtime
+      consumable_map:
+        MX_TIPS_STOCK: [_1mlTipBox_222_Tip_85, _1mlTipBox_222_Tip_73]
+        MX_SYRINGES_STOCK: [SyringeComponent1_676]
+        MX_VIALS_STOCK: [DesignD_DesignC_ChromatographyVial2ml_190]
+      resource_map:
+        MX_SOURCE: TransferBottle10ml_617
+        MX_TARGET: DesignC_BottleBody50ml_231
+        MX_REACTOR: EightPositionReactor_662
+        MX_BIG_BOTTLE: DesignD_DesignC_BottleBody500ml_238
+        MX_TIP_1: _1mlTipBox_222_Tip_85
+        MX_TIP_2: _1mlTipBox_222_Tip_73
+        MX_SYRINGE: SyringeComponent1_676
+        MX_PISTON: SyringeComponent2_677
+resource_types:
+  consumable:
+    meta:
+      consumable: true
+      source: simulation
+      unit: 个
+      low_stock_threshold: 5
+  matterix_object:
+    meta:
+      source: simulation
+resources:
+  MX_TIPS_STOCK:
+    type: consumable
+    meta:
+      label: TIP 头（仿真示例库存）
+      quantity: 96
+      low_stock_threshold: 10
+  MX_SYRINGES_STOCK:
+    type: consumable
+    meta:
+      label: 注射器（仿真示例库存）
+      quantity: 20
+  MX_VIALS_STOCK:
+    type: consumable
+    meta:
+      label: 小瓶（仿真示例库存）
+      quantity: 24
+  MX_SOURCE:
+    type: matterix_object
+    meta:
+      asset_id: TransferBottle10ml_617
+  MX_TARGET:
+    type: matterix_object
+    meta:
+      asset_id: DesignC_BottleBody50ml_231
+  MX_REACTOR:
+    type: matterix_object
+    meta:
+      asset_id: EightPositionReactor_662
+  MX_BIG_BOTTLE:
+    type: matterix_object
+    meta:
+      asset_id: DesignD_DesignC_BottleBody500ml_238
+  MX_TIP_1:
+    type: matterix_object
+    meta:
+      asset_id: _1mlTipBox_222_Tip_85
+  MX_TIP_2:
+    type: matterix_object
+    meta:
+      asset_id: _1mlTipBox_222_Tip_73
+  MX_SYRINGE:
+    type: matterix_object
+    meta:
+      asset_id: SyringeComponent1_676
+  MX_PISTON:
+    type: matterix_object
+    meta:
+      asset_id: SyringeComponent2_677

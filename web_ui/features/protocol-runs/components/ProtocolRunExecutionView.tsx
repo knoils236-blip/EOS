@@ -1,8 +1,10 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { ArrowLeft, X, List } from 'lucide-react';
+import { ArrowLeft, X, List, GitBranch, LayoutDashboard } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { RefreshControl } from '@/components/ui/RefreshControl';
@@ -11,26 +13,28 @@ import { ProtocolRunFlowCanvas } from './ProtocolRunFlowCanvas';
 import { TaskDetailPanel } from './TaskDetailPanel';
 import { TaskDetailPanelSkeleton } from './TaskDetailPanelSkeleton';
 import { TaskListPanel } from './TaskListPanel';
+import { ProtocolMatterixExecutionView } from './ProtocolMatterixExecutionView';
 import { getProtocolRunWithTaskStatuses, getTaskDetails, type TaskStatusInfo } from '../api/protocolRunDetails';
 import { cancelProtocolRun } from '../api/protocolRuns';
 import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import type { ProtocolRun, Task, TaskDeviceConfig } from '@/lib/types/api';
 import type { ProtocolSpec } from '@/lib/api/specs';
 import { useOrchestratorConnected } from '@/contexts/OrchestratorStatusContext';
+import { protocolRunUsesMatterix } from '../utils/matterixExecution';
 
 const PROTOCOL_RUN_POLLING_INTERVALS = [
-  { label: 'Off', value: 0 },
-  { label: '1s', value: 1000 },
-  { label: '5s', value: 5000 },
-  { label: '10s', value: 10000 },
-  { label: '30s', value: 30000 },
-  { label: '1m', value: 60000 },
+  { label: '关闭', value: 0 },
+  { label: '1 秒', value: 1000 },
+  { label: '5 秒', value: 5000 },
+  { label: '10 秒', value: 10000 },
+  { label: '30 秒', value: 30000 },
+  { label: '1 分钟', value: 60000 },
 ];
 
 interface ProtocolRunExecutionViewProps {
   protocolRun: ProtocolRun;
   initialTaskStatuses: TaskStatusInfo[];
-  protocolSpec: ProtocolSpec;
+  protocolSpec?: ProtocolSpec;
 }
 
 export function ProtocolRunExecutionView({
@@ -70,10 +74,24 @@ export function ProtocolRunExecutionView({
   const [isLoadingTaskDetails, setIsLoadingTaskDetails] = React.useState(false);
   const [isCancelling, setIsCancelling] = React.useState(false);
   const [showCancelDialog, setShowCancelDialog] = React.useState(false);
-  const [showTaskList, setShowTaskList] = React.useState(false);
+  const [showTaskList, setShowTaskList] = React.useState(!protocolSpec);
+  const usesMatterix = React.useMemo(
+    () =>
+      protocolRunUsesMatterix({
+        protocolRunType: currentProtocolRun.type,
+        protocolSpec,
+        taskStatuses,
+      }),
+    [currentProtocolRun.type, protocolSpec, taskStatuses]
+  );
+  const [mainView, setMainView] = React.useState<'overview' | 'canvas'>(usesMatterix ? 'overview' : 'canvas');
 
   const selectedTaskDetails = selectedTaskName ? taskDetailsCache[selectedTaskName] : null;
   const canCancel = currentProtocolRun.status === 'RUNNING' || currentProtocolRun.status === 'CREATED';
+
+  React.useEffect(() => {
+    if (usesMatterix) setMainView('overview');
+  }, [usesMatterix]);
 
   const handleRefresh = React.useCallback(async () => {
     setIsRefreshing(true);
@@ -107,7 +125,7 @@ export function ProtocolRunExecutionView({
         }
       }
     } catch (error) {
-      console.error('Failed to refresh protocol run:', error);
+      console.error('刷新协议运行失败：', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -131,7 +149,7 @@ export function ProtocolRunExecutionView({
           insertTaskDetails(taskName, taskDetails);
         } else {
           // Task not yet in DB, build a minimal Task from spec data
-          const specTask = protocolSpec.tasks.find((t) => t.name === taskName);
+          const specTask = protocolSpec?.tasks.find((t) => t.name === taskName);
           if (specTask) {
             const statusInfo = taskStatuses.find((t) => t.name === taskName);
             const fallbackTask: Task = {
@@ -147,12 +165,12 @@ export function ProtocolRunExecutionView({
           }
         }
       } catch (error) {
-        console.error('Failed to fetch task details:', error);
+        console.error('获取任务详情失败：', error);
       } finally {
         setIsLoadingTaskDetails(false);
       }
     },
-    [protocolRun.name, protocolRun.created_at, protocolSpec.tasks, taskStatuses, insertTaskDetails]
+    [protocolRun.name, protocolRun.created_at, protocolSpec?.tasks, taskStatuses, insertTaskDetails]
   );
 
   // Auto-refetch selected task details when its cache entry is invalidated
@@ -187,7 +205,7 @@ export function ProtocolRunExecutionView({
     try {
       const result = await cancelProtocolRun(currentProtocolRun.name);
       if (!result.success) {
-        alert(`Failed to cancel protocol run: ${result.error}`);
+        alert(`取消协议运行失败：${result.error}`);
       } else {
         handleRefresh();
       }
@@ -204,12 +222,14 @@ export function ProtocolRunExecutionView({
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              返回
             </Button>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-gray-900 dark:text-white">{currentProtocolRun.name}</h1>
-                <Badge variant={getStatusBadgeVariant(currentProtocolRun.status)}>{currentProtocolRun.status}</Badge>
+                <Badge variant={getStatusBadgeVariant(currentProtocolRun.status)}>
+                  {statusLabel(currentProtocolRun.status)}
+                </Badge>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {currentProtocolRun.type} • {currentProtocolRun.owner}
@@ -218,6 +238,29 @@ export function ProtocolRunExecutionView({
           </div>
 
           <div className="flex items-center gap-2">
+            {usesMatterix && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMainView('overview')}
+                  className={`gap-2 ${mainView === 'overview' ? 'bg-gray-100 dark:bg-slate-700' : ''}`}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  协议总览
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMainView('canvas')}
+                  className={`gap-2 ${mainView === 'canvas' ? 'bg-gray-100 dark:bg-slate-700' : ''}`}
+                >
+                  <GitBranch className="h-4 w-4" />
+                  流程图
+                </Button>
+              </>
+            )}
+
             {/* Task list toggle */}
             <Button
               variant="outline"
@@ -226,7 +269,7 @@ export function ProtocolRunExecutionView({
               className={`gap-2 ${showTaskList ? 'bg-gray-100 dark:bg-slate-700' : ''}`}
             >
               <List className="h-4 w-4" />
-              Tasks
+              任务
             </Button>
 
             {/* Cancel button */}
@@ -239,7 +282,7 @@ export function ProtocolRunExecutionView({
                 className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
               >
                 <X className="h-4 w-4" />
-                {isCancelling ? 'Cancelling...' : 'Cancel'}
+                {isCancelling ? '正在取消…' : '取消'}
               </Button>
             )}
 
@@ -257,16 +300,28 @@ export function ProtocolRunExecutionView({
 
       {/* Main content: Flow canvas + Task detail panel + Logs */}
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1">
-          <ReactFlowProvider>
-            <ProtocolRunFlowCanvas
-              protocolTasks={protocolSpec.tasks}
-              taskStatuses={taskStatuses}
+        <div className="flex-1 min-w-0">
+          {usesMatterix && mainView === 'overview' ? (
+            <ProtocolMatterixExecutionView
+              protocolRunName={currentProtocolRun.name}
+              protocolRunStatus={currentProtocolRun.status}
               onTaskSelect={handleTaskSelect}
-              selectedTaskName={selectedTaskName}
-              onShowTaskList={() => setShowTaskList(true)}
             />
-          </ReactFlowProvider>
+          ) : protocolSpec ? (
+            <ReactFlowProvider>
+              <ProtocolRunFlowCanvas
+                protocolTasks={protocolSpec.tasks}
+                taskStatuses={taskStatuses}
+                onTaskSelect={handleTaskSelect}
+                selectedTaskName={selectedTaskName}
+                onShowTaskList={() => setShowTaskList(true)}
+              />
+            </ReactFlowProvider>
+          ) : (
+            <p className="p-6 text-sm text-gray-500 dark:text-gray-400">
+              此协议定义已移除。请从任务列表查看本次运行保存的参数、观测、验收和文件。
+            </p>
+          )}
         </div>
         {showTaskList && (
           <TaskListPanel
@@ -288,10 +343,10 @@ export function ProtocolRunExecutionView({
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
         onConfirm={handleCancelProtocolRun}
-        title="Cancel Protocol Run"
-        message={`Are you sure you want to cancel protocol run "${currentProtocolRun.name}"? This will stop all running tasks.`}
-        confirmText="Cancel Protocol Run"
-        cancelText="Keep Running"
+        title="取消协议运行"
+        message={`确定要取消协议运行“${currentProtocolRun.name}”吗？这将停止所有正在运行的任务。`}
+        confirmText="取消协议运行"
+        cancelText="继续运行"
         variant="danger"
       />
     </div>

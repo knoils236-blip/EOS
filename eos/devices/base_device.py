@@ -49,6 +49,20 @@ class BaseDevice:
 
     device_type: ClassVar[str | None] = None
 
+    @classmethod
+    def editor_presets(cls, init_parameters: dict[str, Any]) -> dict[str, Any] | None:
+        """Describe scene operations for offline editing, without initializing a device."""
+        return None
+
+    @classmethod
+    def check_plan(cls, init_parameters: dict[str, Any], steps: list[dict[str, Any]]) -> list[dict[str, str]]:
+        """
+        Check a protocol's steps on this device offline, without initializing it. ``steps`` are in execution order,
+        each {"task", "type", "parameters", "ordered"}; ``ordered`` is false when the step does not depend on the
+        previous one. Return [{"task", "message"}] only for steps that are certain to fail.
+        """
+        return []
+
     def __init_subclass__(cls, type: str | None = None, **kwargs: Any) -> None:  # noqa: A002
         super().__init_subclass__(**kwargs)
         if type is not None:
@@ -110,6 +124,17 @@ class BaseDevice:
         Return a dictionary with any member variables needed for logging purposes and progress tracking.
         """
         return await self._report()
+
+    async def finalize_task(self, protocol_run_name: str | None, task_name: str, stop: bool = False) -> dict | None:
+        """Finish externally running work before EOS releases its allocation.
+
+        Override for devices with work outside their Ray caller. Return parameters, files (bytes),
+        resource_updates (metadata by resource name), and available. Optional inventory_events carry
+        resource_name, stable event_id, integer delta, source (simulation/hardware), and note.
+        With stop=True, first confirm
+        the operation has stopped. Ordinary devices need no additional finalization.
+        """
+        return None
 
     async def enable(self) -> None:
         """

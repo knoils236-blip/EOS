@@ -58,6 +58,7 @@ export function ProtocolRunFlowCanvas({
           name: expTask.name,
           type: expTask.type,
           status: task?.status || 'CREATED',
+          parameters: expTask.parameters,
         },
       };
     });
@@ -132,15 +133,13 @@ export function ProtocolRunFlowCanvas({
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800">
         <div className="text-center">
-          <p className="text-base text-gray-500 dark:text-gray-400">
-            Protocol definition is required to show protocol run DAG.
-          </p>
+          <p className="text-base text-gray-500 dark:text-gray-400">显示协议运行依赖图需要协议定义。</p>
           {onShowTaskList && (
             <button
               onClick={onShowTaskList}
               className="mt-3 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
-              View task list
+              查看任务列表
             </button>
           )}
         </div>

@@ -43,11 +43,11 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
 
   const handleSubmit = () => {
     if (config.protocols.length === 0) {
-      setError('Add at least one protocol.');
+      setError('请至少添加一个协议。');
       return;
     }
     if (config.protocols.some((p) => !p.type)) {
-      setError('All protocols must have a type selected.');
+      setError('必须为所有协议选择类型。');
       return;
     }
     setError(null);
@@ -76,7 +76,7 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
         const parsed = JSON.parse(text) as SimConfig;
         onLoadConfig(parsed);
       } catch {
-        setError('Invalid config file.');
+        setError('配置文件无效。');
       }
     };
     input.click();
@@ -85,12 +85,12 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
   return (
     <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Configuration</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">配置</h2>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={uploadConfig} title="Load config">
+          <Button variant="ghost" size="sm" onClick={uploadConfig} title="加载配置">
             <Upload className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={downloadConfig} title="Save config">
+          <Button variant="ghost" size="sm" onClick={downloadConfig} title="保存配置">
             <Download className="h-4 w-4" />
           </Button>
         </div>
@@ -105,24 +105,24 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
       <div className="space-y-4">
         {/* Protocols */}
         <div>
-          <Label className="mb-2 block">Protocols</Label>
+          <Label className="mb-2 block">协议</Label>
           {/* Column headers */}
           <div className="flex items-center gap-2 px-3 mb-1">
             <div className="flex-1 min-w-0">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Type</span>
-              <DescriptionTooltip description="The protocol to simulate." />
+              <span className="text-xs text-gray-500 dark:text-gray-400">类型</span>
+              <DescriptionTooltip description="要仿真的协议。" />
             </div>
             <div className="w-24">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Iterations</span>
-              <DescriptionTooltip description="Number of protocol runs to create for this protocol type." />
+              <span className="text-xs text-gray-500 dark:text-gray-400">迭代次数</span>
+              <DescriptionTooltip description="为此协议类型创建的协议运行数量。" />
             </div>
             <div className="w-32">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Max Concurrent</span>
-              <DescriptionTooltip description="Maximum number of concurrent runs allowed for this protocol type. 0 means unlimited." />
+              <span className="text-xs text-gray-500 dark:text-gray-400">最大并发数</span>
+              <DescriptionTooltip description="此协议类型允许的最大并发运行数，0 表示不限。" />
             </div>
             <div className="w-20">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Priority</span>
-              <DescriptionTooltip description="Scheduling priority. Higher values are scheduled first." />
+              <span className="text-xs text-gray-500 dark:text-gray-400">优先级</span>
+              <DescriptionTooltip description="调度优先级，数值越大越优先。" />
             </div>
             <div className="w-8" />
           </div>
@@ -137,8 +137,8 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
                     options={protocolTypes.map((t) => ({ value: t, label: t }))}
                     value={protocol.type}
                     onChange={(v) => updateProtocol(i, { type: v })}
-                    placeholder="Protocol type"
-                    searchPlaceholder="Search protocols..."
+                    placeholder="协议类型"
+                    searchPlaceholder="搜索协议…"
                     className="h-8 text-sm"
                   />
                 </div>
@@ -177,7 +177,7 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
           </div>
           <Button variant="ghost" size="sm" onClick={addProtocol} className="mt-2">
             <Plus className="h-4 w-4 mr-1" />
-            Add Protocol
+            添加协议
           </Button>
         </div>
 
@@ -185,24 +185,24 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <Label htmlFor="scheduler" className="mb-1 block">
-              Scheduler
-              <DescriptionTooltip description="The scheduling algorithm to use. Greedy schedules tasks as soon as resources are available. Heuristic does the same but plans which tasks get contended devices first. CP-SAT uses constraint programming to find an optimal schedule." />
+              调度器
+              <DescriptionTooltip description="选择调度算法。贪心算法在资源可用时立即调度任务；启发式算法还会规划设备竞争时的分配顺序；CP-SAT 使用约束规划寻找最优调度。" />
             </Label>
             <Select value={config.scheduler} onValueChange={(v) => setConfig({ ...config, scheduler: v })}>
               <SelectTrigger id="scheduler" className="h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="greedy">Greedy</SelectItem>
-                <SelectItem value="heuristic">Heuristic</SelectItem>
+                <SelectItem value="greedy">贪心</SelectItem>
+                <SelectItem value="heuristic">启发式</SelectItem>
                 <SelectItem value="cpsat">CP-SAT</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label htmlFor="jitter" className="mb-1 block">
-              Jitter
-              <DescriptionTooltip description="Random variation applied to task durations. For example, 10% means each task duration varies by up to ±10%. Task durations are always at least 1 second." />
+              时长抖动
+              <DescriptionTooltip description="任务耗时的随机波动幅度，例如 10% 表示最多波动 ±10%。任务耗时始终不低于 1 秒。" />
             </Label>
             <div className="relative">
               <Input
@@ -221,8 +221,8 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
           </div>
           <div>
             <Label htmlFor="seed" className="mb-1 block">
-              Seed
-              <DescriptionTooltip description="Random seed for reproducible simulation results. Leave empty for a random seed." />
+              随机种子
+              <DescriptionTooltip description="用于复现仿真结果的随机种子，留空时随机生成。" />
             </Label>
             <Input
               id="seed"
@@ -230,13 +230,13 @@ export function SimulatorForm({ protocolTypes, loading, onRun, onLoadConfig, con
               value={config.seed ?? ''}
               onChange={(e) => setConfig({ ...config, seed: e.target.value ? parseInt(e.target.value) : null })}
               className="h-9 text-sm"
-              placeholder="Optional"
+              placeholder="可选"
             />
           </div>
           <div className="flex items-end">
             <Button variant="primary" onClick={handleSubmit} disabled={loading} className="w-full h-9">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              {loading ? 'Running...' : 'Run'}
+              {loading ? '正在运行…' : '运行'}
             </Button>
           </div>
         </div>

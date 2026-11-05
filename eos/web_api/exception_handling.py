@@ -5,6 +5,7 @@ from litestar.connection import Request
 from pydantic import ValidationError
 
 from eos.logging.logger import log
+from eos.orchestration.exceptions import EosProtocolInUseError
 
 
 class APIError(HTTPException):
@@ -58,6 +59,9 @@ def general_exception_handler(request: Request, exc: Exception) -> Response:
 
     # Other HTTP and general exceptions
     status_code = exc.status_code if isinstance(exc, HTTPException) else HTTP_500_INTERNAL_SERVER_ERROR
+    if isinstance(exc, EosProtocolInUseError):
+        log.warning(f"API conflict: {request.method} {request.url.path}: {exc}")
+        return Response(content={"error": str(exc)}, status_code=409)
     detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
     log.error(f"API error: {request.method} {request.url.path}: {detail}", exc_info=exc)
 

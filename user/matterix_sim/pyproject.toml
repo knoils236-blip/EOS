@@ -1,0 +1,5 @@
+[project]
+name = "matterix_sim"
+version = "0.1.0"
+description = "Matterix (Isaac Sim) digital-twin workstation for EOS through the ChemOS 2.0 Matterix SiLA 2 bridge"
+readme = "README.md"

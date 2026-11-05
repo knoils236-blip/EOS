@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ExternalLink, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -28,7 +30,10 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (exp) => exp.name.toLowerCase().includes(query) || exp.status.toLowerCase().includes(query)
+        (exp) =>
+          exp.name.toLowerCase().includes(query) ||
+          exp.status.toLowerCase().includes(query) ||
+          statusLabel(exp.status).includes(query)
       );
     }
 
@@ -66,7 +71,7 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
   };
 
   if (protocolRuns.length === 0) {
-    return <p className="text-gray-500 dark:text-gray-400 text-center py-4">No protocol runs yet.</p>;
+    return <p className="text-gray-500 dark:text-gray-400 text-center py-4">暂无协议运行。</p>;
   }
 
   return (
@@ -76,7 +81,7 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           type="text"
-          placeholder="Search protocol runs..."
+          placeholder="搜索协议运行…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
@@ -88,10 +93,10 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-slate-700">
-              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Name</th>
-              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
-              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Started</th>
-              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">Ended</th>
+              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">名称</th>
+              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">状态</th>
+              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">开始时间</th>
+              <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400">结束时间</th>
               <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400"></th>
             </tr>
           </thead>
@@ -99,7 +104,7 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
             {paginatedProtocolRuns.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-4 text-center text-gray-500 dark:text-gray-400">
-                  No protocol runs match your search.
+                  没有匹配的协议运行。
                 </td>
               </tr>
             ) : (
@@ -111,13 +116,13 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
                 >
                   <td className="py-2 px-3 font-medium text-gray-900 dark:text-white">{protocolRun.name}</td>
                   <td className="py-2 px-3">
-                    <Badge variant={getStatusBadgeVariant(protocolRun.status)}>{protocolRun.status}</Badge>
+                    <Badge variant={getStatusBadgeVariant(protocolRun.status)}>{statusLabel(protocolRun.status)}</Badge>
                   </td>
                   <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    {protocolRun.start_time ? new Date(protocolRun.start_time).toLocaleString() : '-'}
+                    {protocolRun.start_time ? new Date(protocolRun.start_time).toLocaleString('zh-CN') : '-'}
                   </td>
                   <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    {protocolRun.end_time ? new Date(protocolRun.end_time).toLocaleString() : '-'}
+                    {protocolRun.end_time ? new Date(protocolRun.end_time).toLocaleString('zh-CN') : '-'}
                   </td>
                   <td className="py-2 px-3 text-right">
                     <ExternalLink className="h-4 w-4 text-gray-400 dark:text-gray-500 inline-block" />
@@ -133,8 +138,8 @@ export function RunningProtocolRunsTable({ protocolRuns, campaignName }: Running
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Showing {currentPage * PAGE_SIZE + 1}-{Math.min((currentPage + 1) * PAGE_SIZE, filteredProtocolRuns.length)}{' '}
-            of {filteredProtocolRuns.length}
+            显示 {currentPage * PAGE_SIZE + 1}-{Math.min((currentPage + 1) * PAGE_SIZE, filteredProtocolRuns.length)} /{' '}
+            {filteredProtocolRuns.length}
           </span>
           <div className="flex items-center gap-1">
             <Button

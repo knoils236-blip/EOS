@@ -77,6 +77,9 @@ class TaskDef(BaseModel):
     duration: int = Field(1, ge=0)  # seconds
     group: str | None = None
 
+    timeout: int | None = Field(None, gt=0)  # seconds; a task running longer fails
+    retries: int = Field(0, ge=0)  # re-runs after a failure or timeout, keeping the same devices
+
     devices: dict[str, str | DeviceAssignmentDef | DeviceReferenceDef | DynamicDeviceAssignmentDef] = Field(
         default_factory=dict
     )

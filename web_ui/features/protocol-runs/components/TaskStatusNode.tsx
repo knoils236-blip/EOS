@@ -1,5 +1,7 @@
 'use client';
 
+import { matterixTaskLabel, statusLabel } from '@/lib/labels';
+
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { TaskStatus } from '@/lib/types/api';
@@ -8,6 +10,7 @@ export interface TaskStatusNodeData extends Record<string, unknown> {
   name: string;
   type: string;
   status: TaskStatus;
+  parameters?: Record<string, unknown>;
 }
 
 const STATUS_COLORS: Record<TaskStatus, { border: string; bg: string; text: string }> = {
@@ -43,14 +46,35 @@ const STATUS_COLORS: Record<TaskStatus, { border: string; bg: string; text: stri
   },
 };
 
+function objectValue(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function shortValue(value: unknown): string {
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value) ?? String(value);
+}
+
 const TaskStatusNodeComponent = ({ data, selected }: NodeProps) => {
-  const { name, type, status } = data as TaskStatusNodeData;
+  const { name, type, status, parameters = {} } = data as TaskStatusNodeData;
   const colors = STATUS_COLORS[status];
+  const label = matterixTaskLabel(type, parameters);
+  const capabilityId = typeof parameters.capability_id === 'string' ? parameters.capability_id : null;
+  const { capability_id: _, ...flatParameters } = parameters;
+  const capabilityParameters =
+    type === 'Matterix Volume Operation' ? flatParameters : objectValue(parameters.parameters);
+  const parameterSummary = Object.entries(capabilityParameters ?? {})
+    .map(([key, value]) => `${key}=${shortValue(value)}`)
+    .join(' · ');
 
   return (
     <div
       className={`
-        relative px-4 py-3 rounded-lg border-2 min-w-[180px] transition-all cursor-pointer
+        relative px-4 py-3 rounded-lg border-2 min-w-[220px] max-w-[280px] transition-all cursor-pointer
         ${colors.border} ${colors.bg}
         ${selected ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg' : 'shadow-md hover:shadow-lg'}
       `}
@@ -68,9 +92,18 @@ const TaskStatusNodeComponent = ({ data, selected }: NodeProps) => {
       />
 
       <div className="flex flex-col gap-1">
-        <div className={`font-semibold text-sm ${colors.text}`}>{name}</div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">{type}</div>
-        <div className={`text-xs font-medium ${colors.text} uppercase tracking-wide`}>{status}</div>
+        <div className={`font-semibold text-sm ${colors.text}`}>{label}</div>
+        <div className="font-mono text-xs text-gray-500 dark:text-gray-400 break-all">{name}</div>
+        <div className="text-[11px] text-gray-500 dark:text-gray-400">{type}</div>
+        {capabilityId && capabilityId !== label && (
+          <div className="font-mono text-[10px] text-gray-500 dark:text-gray-400 break-all">{capabilityId}</div>
+        )}
+        {parameterSummary && (
+          <div className="text-[10px] leading-snug text-gray-600 dark:text-gray-300 break-words">
+            {parameterSummary}
+          </div>
+        )}
+        <div className={`text-xs font-medium ${colors.text} uppercase tracking-wide`}>{statusLabel(status)}</div>
       </div>
 
       {/* Source handle (right side) for outgoing dependencies */}

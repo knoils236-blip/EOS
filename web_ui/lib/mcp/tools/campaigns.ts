@@ -2,6 +2,7 @@ import { z } from 'zod/v3';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAllCampaigns, getCampaignByName, getCampaignSamples, getProtocolRunsByCampaign } from '@/lib/db/queries';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { submissionMessage } from './sdl';
 import { formatDate, formatDuration, formatPagination, textResult, errorResult } from '../helpers/format';
 
 export function registerCampaignTools(server: McpServer) {
@@ -131,7 +132,8 @@ export function registerCampaignTools(server: McpServer) {
     'submit_campaign',
     {
       title: 'Submit Campaign',
-      description: 'Submit a new campaign to the orchestrator.',
+      description:
+        'Submit a new campaign. It starts at once when all its labs are simulated; otherwise it waits for a person to approve it in the web UI (see list_approval_requests).',
       inputSchema: {
         name: z.string().describe('Unique campaign name'),
         protocol: z.string().describe('ProtocolRun type to run'),
@@ -139,6 +141,12 @@ export function registerCampaignTools(server: McpServer) {
         max_protocol_runs: z.number().int().min(1).describe('Maximum number of protocols'),
         optimize: z.boolean().describe('Whether to use Bayesian optimization'),
         max_concurrent_protocol_runs: z.number().int().min(1).optional().describe('Max concurrent protocols'),
+        max_failed_protocol_runs: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe('Failed protocol runs to tolerate before the campaign fails (default 0)'),
         priority: z.number().int().optional().describe('Priority (default 0)'),
         global_parameters: z
           .record(z.record(z.unknown()))
@@ -150,15 +158,18 @@ export function registerCampaignTools(server: McpServer) {
           .describe('Per-protocol-run parameter overrides'),
         meta: z.record(z.unknown()).optional().describe('Metadata (e.g. optimizer_overrides)'),
         resume: z.boolean().optional().describe('Whether to resume from previous state'),
+        reason: z.string().optional().describe('Why this campaign is worth running; shown to the approver'),
       },
     },
     async ({
+      reason,
       name,
       protocol,
       owner,
       max_protocol_runs,
       optimize,
       max_concurrent_protocol_runs,
+      max_failed_protocol_runs,
       priority,
       global_parameters,
       protocol_run_parameters,
@@ -169,13 +180,14 @@ export function registerCampaignTools(server: McpServer) {
         const body: Record<string, unknown> = { name, protocol, owner, max_protocol_runs, optimize };
         if (max_concurrent_protocol_runs !== undefined)
           body.max_concurrent_protocol_runs = max_concurrent_protocol_runs;
+        if (max_failed_protocol_runs !== undefined) body.max_failed_protocol_runs = max_failed_protocol_runs;
         if (priority !== undefined) body.priority = priority;
         if (global_parameters) body.global_parameters = global_parameters;
         if (protocol_run_parameters) body.protocol_run_parameters = protocol_run_parameters;
         if (meta) body.meta = meta;
         if (resume !== undefined) body.resume = resume;
-        const result = await orchestratorPost('/campaigns/', body);
-        return textResult(`Campaign submitted successfully.\n${JSON.stringify(result, null, 2)}`);
+        const result = await orchestratorPost('/approvals/campaigns', { submission: body, reason });
+        return textResult(submissionMessage('Campaign', result));
       } catch (e) {
         return errorResult(`Failed to submit campaign: ${e instanceof Error ? e.message : String(e)}`);
       }

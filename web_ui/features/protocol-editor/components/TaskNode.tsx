@@ -82,7 +82,7 @@ const Port = memo(
         {hasHold && (
           <span
             className="text-xs px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded font-medium"
-            title="Held for successor tasks"
+            title="为后续任务保留"
           >
             H
           </span>
@@ -123,7 +123,8 @@ const isValueConfigured = (value: unknown, type: 'device' | 'resource' | 'parame
 };
 
 const TaskNodeComponent = ({ data }: NodeProps) => {
-  const { taskNode, taskSpec, isMissingSpec, onNodeClick, onNodeContextMenu, onPortDoubleClick } = data as TaskNodeData;
+  const { taskNode, taskSpec, displayLabel, isMissingSpec, onNodeClick, onNodeContextMenu, onPortDoubleClick } =
+    data as TaskNodeData;
   const taskErrors = useEditorStore((state) => state.taskValidationErrors[taskNode.name]);
   const hasErrors = taskErrors && taskErrors.length > 0;
 
@@ -352,11 +353,9 @@ const TaskNodeComponent = ({ data }: NodeProps) => {
           background: `linear-gradient(to right, ${headerColor}, ${darkerColor})`,
         }}
       >
-        <div className="font-semibold text-base">{taskNode.name}</div>
-        <div className="text-sm opacity-90">{taskSpec.type}</div>
-        {isMissingSpec && (
-          <div className="text-xs font-medium opacity-90 mt-0.5">⚠ Spec not found — load the package</div>
-        )}
+        <div className="font-semibold text-base">{displayLabel || taskNode.name}</div>
+        <div className="text-xs opacity-90">{displayLabel ? taskNode.name : taskSpec.type}</div>
+        {isMissingSpec && <div className="text-xs font-medium opacity-90 mt-0.5">⚠ 未找到定义，请加载软件包</div>}
       </div>
 
       {/* Body */}
@@ -390,7 +389,7 @@ const TaskNodeComponent = ({ data }: NodeProps) => {
           <div className="min-w-0 flex-1">
             <div className="px-4 py-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-mono min-w-0">
-                <span className="shrink-0 font-bold uppercase tracking-wide opacity-80">run if</span>
+                <span className="shrink-0 font-bold uppercase tracking-wide opacity-80">运行条件</span>
                 <span className="truncate">{taskNode.run_if}</span>
               </div>
             </div>

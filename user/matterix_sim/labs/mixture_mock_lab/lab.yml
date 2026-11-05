@@ -1,0 +1,9 @@
+name: mixture_mock_lab
+desc: Fast mixture execution mock; all observations are synthetic
+simulated: true
+devices:
+  workstation:
+    type: mixture_workstation
+    computer: eos_computer
+    init_parameters:
+      backend: mock

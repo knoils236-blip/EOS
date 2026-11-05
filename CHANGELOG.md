@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- Added learned task durations: with `scheduler.learn_durations`, CP-SAT and the heuristic scheduler plan with the median of recent measured durations instead of the protocols' guesses.
+- Added multi-fidelity optimization to `BayesianSequentialOptimizer`: with a `CategoricalTaskInput`, it chooses for each run between cheap simulations and the real experiment. Example protocol `optimize_yield_multi_fidelity`.
+- Added simulation preflight: a protocol run with `meta.preflight` first runs on twin labs, and runs on the real labs only if that rehearsal completes. Example twin lab `multiplication_lab_twin`.
+- Added AI-drafted protocols: `POST /api/protocols/draft` and an "AI 草稿" button in the protocol editor turn an experimental goal into a protocol, validated and repaired against the chosen labs.
+- Added "submit task" and "submit protocol run" buttons to the editor, using the same dialogs as the Tasks and Protocol Runs pages.
+- Added a task palette to the visual protocol editor: drag tasks onto the canvas or click to add them. Connecting a parameter now adds the missing dependency instead of rejecting the connection.
+- Added `max_failed_protocol_runs` to campaigns, so a campaign can continue past failed protocol runs; failed runs are reported to the optimizer with NaN outputs.
+- Added `timeout` and `retries` task fields in protocols.
+- Fixed Pareto solutions including runs without results.
+- Added `SilaDevice`, a device base class for instruments with their own SiLA 2 server, configured from the lab definition and checked for reachability at lab load.
+- Added `AtlasOptimizer`, which runs the ChemOS 2.0 Atlas planner from a separate Python environment.
+- Added `eos.integrations.aiida.verdi_run` for running AiiDA computations, such as DFT workchains, from tasks.
+- Fixed SiLA defined execution errors raised in tasks reaching the orchestrator as an opaque deserialization error.
+
 ## 0.31.0
 
 - Breaking: Replaced `task.yml` and `device.yml` with Python-only task and device definitions.

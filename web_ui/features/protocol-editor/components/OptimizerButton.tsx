@@ -18,7 +18,7 @@ export function OptimizerButton({ onClick, isOpen }: OptimizerButtonProps) {
       }`}
     >
       <Sliders className="w-4 h-4" />
-      <span>Optimizer</span>
+      <span>优化器</span>
     </button>
   );
 }

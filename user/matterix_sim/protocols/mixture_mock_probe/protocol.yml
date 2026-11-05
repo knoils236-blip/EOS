@@ -1,0 +1,40 @@
+type: mixture_mock_probe
+desc: "Minimal mixture_mock probe - prepare 100 uL stock in a 200 uL mixture, measure, quality check, score"
+
+labs:
+  - mixture_mock_lab
+
+tasks:
+  - name: prepare
+    type: Prepare Mixture
+    timeout: 1200
+    retries: 0
+    parameters:
+      stock_volume_ul: 100.0
+    devices:
+      workstation:
+        lab_name: mixture_mock_lab
+        name: workstation
+
+  - name: measure
+    type: Measure Mixture
+    dependencies:
+      - prepare
+    parameters:
+      sample: prepare.sample
+      seed: 20261102
+
+  - name: quality
+    type: Check Mixture Quality
+    dependencies:
+      - measure
+    parameters:
+      observation: measure.observation
+
+  - name: score
+    type: Score Mixture
+    dependencies:
+      - quality
+    parameters:
+      observation: measure.observation
+      quality: quality.quality

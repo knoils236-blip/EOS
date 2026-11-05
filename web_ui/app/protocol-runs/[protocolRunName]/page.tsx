@@ -30,9 +30,6 @@ export default async function ProtocolRunDetailPage({ params }: ProtocolRunDetai
 
   // Get the protocol spec for this protocol run
   const protocolSpec = protocolSpecs[protocolRun.type];
-  if (!protocolSpec) {
-    throw new Error(`Protocol spec not found for type: ${protocolRun.type}`);
-  }
 
   return (
     <Suspense

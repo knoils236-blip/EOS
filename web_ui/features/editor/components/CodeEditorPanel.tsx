@@ -1,5 +1,7 @@
 'use client';
 
+import { ENTITY_TYPE_LABELS } from '@/lib/labels';
+import { EditorSubmitButton } from './EditorSubmitButton';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Editor, { type BeforeMount } from '@monaco-editor/react';
 import { Save, CheckCircle, AlertCircle, AlertTriangle, Code, Eye, RefreshCw, Download, Upload } from 'lucide-react';
@@ -70,7 +72,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
         const loadedEntities = status[entityTypeKey];
         setIsLoaded(loadedEntities.includes(selectedEntityName!));
       } catch (error) {
-        console.error('Failed to check loaded status:', error);
+        console.error('检查加载状态失败：', error);
       }
     }
 
@@ -163,11 +165,11 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
           onReload();
         }
       } else {
-        alert(result.error || 'Failed to load entity');
+        alert(result.error || '加载条目失败');
       }
     } catch (error) {
       console.error('Error loading entity:', error);
-      alert('Failed to load entity');
+      alert('加载条目失败');
     } finally {
       setIsLoading(false);
     }
@@ -185,11 +187,11 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
           onReload();
         }
       } else {
-        alert(result.error || 'Failed to unload entity');
+        alert(result.error || '卸载条目失败');
       }
     } catch (error) {
       console.error('Error unloading entity:', error);
-      alert('Failed to unload entity');
+      alert('卸载条目失败');
     } finally {
       setIsUnloading(false);
     }
@@ -207,11 +209,11 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
           onReload();
         }
       } else {
-        alert(result.error || 'Failed to reload entity');
+        alert(result.error || '重新加载条目失败');
       }
     } catch (error) {
       console.error('Error reloading entity:', error);
-      alert('Failed to reload entity');
+      alert('重新加载条目失败');
     } finally {
       setIsReloading(false);
     }
@@ -225,7 +227,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
       <div className="h-full flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center text-gray-500 dark:text-gray-400">
           <Code className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p className="text-lg">Select an entity to edit</p>
+          <p className="text-lg">选择要编辑的条目</p>
         </div>
       </div>
     );
@@ -245,11 +247,11 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
           <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
             <span className="font-medium">{selectedPackage}</span>
             <span>/</span>
-            <span>{selectedEntityType}</span>
+            <span>{selectedEntityType ? ENTITY_TYPE_LABELS[selectedEntityType] : ''}</span>
             <span>/</span>
             <span className="font-medium">{selectedEntityName}</span>
           </div>
-          {hasUnsavedChanges && <span className="text-xs text-orange-600 dark:text-orange-400">● Unsaved</span>}
+          {hasUnsavedChanges && <span className="text-xs text-orange-600 dark:text-orange-400">● 未保存</span>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -259,7 +261,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
               {validationErrors.length === 0 ? (
                 <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                   <CheckCircle className="w-4 h-4" />
-                  Valid
+                  验证通过
                 </div>
               ) : (
                 <div
@@ -267,7 +269,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
                   title={validationErrors.join('\n')}
                 >
                   <AlertCircle className="w-4 h-4" />
-                  {validationErrors.length} error{validationErrors.length > 1 ? 's' : ''}
+                  {validationErrors.length} 个错误
                 </div>
               )}
             </>
@@ -275,9 +277,9 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
 
           {/* Visual Mode Toggle */}
           {canUseVisualMode && (
-            <button onClick={onToggleMode} className={BTN_SECONDARY} title="Switch to visual editor">
+            <button onClick={onToggleMode} className={BTN_SECONDARY} title="切换到可视化编辑器">
               <Eye className="w-4 h-4" />
-              Visual
+              可视化
             </button>
           )}
 
@@ -287,10 +289,10 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
               onClick={handleLoad}
               disabled={isLoading || !isConnected}
               className={BTN_SECONDARY}
-              title="Load entity"
+              title="加载条目"
             >
               <Download className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
-              Load
+              加载
             </button>
           )}
 
@@ -299,10 +301,10 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
               onClick={handleUnload}
               disabled={isUnloading || !isConnected}
               className={BTN_SECONDARY}
-              title="Unload entity"
+              title="卸载条目"
             >
               <Upload className={`w-4 h-4 ${isUnloading ? 'animate-pulse' : ''}`} />
-              Unload
+              卸载
             </button>
           )}
 
@@ -312,17 +314,19 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
               onClick={handleReload}
               disabled={isReloading || !isConnected}
               className={BTN_SECONDARY}
-              title="Reload entity from disk"
+              title="从磁盘重新加载条目"
             >
               <RefreshCw className={`w-4 h-4 ${isReloading ? 'animate-spin' : ''}`} />
-              Reload
+              重新加载
             </button>
           )}
 
+          <EditorSubmitButton isLoaded={isLoaded} />
+
           {/* Save Button */}
-          <button onClick={onSave} disabled={!hasUnsavedChanges} className={BTN_PRIMARY} title="Save (Cmd/Ctrl+S)">
+          <button onClick={onSave} disabled={!hasUnsavedChanges} className={BTN_PRIMARY} title="保存（Cmd/Ctrl+S）">
             <Save className="w-4 h-4" />
-            Save
+            保存
           </button>
         </div>
       </div>
@@ -331,8 +335,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
       {hasJinja && (
         <div className="flex items-center gap-2 px-4 py-2 border-b border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          This protocol contains Jinja2 template syntax. Use the code editor &mdash; visual editing is disabled to
-          prevent template corruption.
+          此协议包含 Jinja2 模板语法，请使用代码编辑器。为防止模板损坏，已禁用可视化编辑。
         </div>
       )}
 
@@ -397,7 +400,7 @@ export function CodeEditorPanel({ onSave, onReload, onToggleMode, canUseVisualMo
       {/* Validation Errors Panel */}
       {validationErrors.length > 0 && activeTab === 'yaml' && (
         <div className="border-t border-gray-200 dark:border-gray-700 bg-red-50 dark:bg-red-900/20 px-4 py-2">
-          <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">Validation Errors:</div>
+          <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">验证错误：</div>
           {validationErrors.map((error, idx) => (
             <div key={idx} className="text-xs text-red-700 dark:text-red-300">
               • {error}

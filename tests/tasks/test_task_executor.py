@@ -141,3 +141,67 @@ class TestTaskExecutor:
             task_record = await task_manager.get_task(db, "water_purification", "failing_mix")
             assert task_record.status == TaskStatus.FAILED
             assert task_record.error_message is not None
+
+    async def _run_sleep_task(self, task_executor, name, task_timeout=None, retries=0, time=0):
+        task_submission = TaskSubmission.from_def(
+            TaskDef(name=name, type="Sleep", parameters={"time": time}, timeout=task_timeout, retries=retries),
+            "water_purification",
+        )
+        scheduled_task = ScheduledTask(name=name, protocol_run_name="water_purification", devices={}, resources={})
+        future = asyncio.create_task(task_executor.request_task_execution(task_submission, scheduled_task))
+        await self._process_until_done(task_executor, future, timeout_seconds=30)
+        return future
+
+    @pytest.mark.asyncio
+    async def test_task_exceeding_timeout_fails(self, task_executor, protocol_run_manager, db_interface, task_manager):
+        async with db_interface.get_async_session() as db:
+            await self._setup_protocol_run(db, protocol_run_manager)
+
+        future = await self._run_sleep_task(task_executor, "slow_task", task_timeout=1, time=30)
+
+        with pytest.raises(EosTaskExecutionError, match="timed out after 1 s"):
+            await future
+        async with db_interface.get_async_session() as db:
+            task_record = await task_manager.get_task(db, "water_purification", "slow_task")
+            assert task_record.status == TaskStatus.FAILED
+
+    @pytest.mark.asyncio
+    async def test_failed_task_is_retried(self, task_executor, protocol_run_manager, db_interface, tmp_path):
+        async with db_interface.get_async_session() as db:
+            await self._setup_protocol_run(db, protocol_run_manager)
+        attempts = tmp_path / "attempts"
+
+        @eos.task("Sleep")
+        async def flaky(time: int = eos.Param(0)) -> None:
+            # Ray runs each attempt in a worker process, so count attempts in a file
+            with attempts.open("a") as f:
+                f.write("x")
+            if len(attempts.read_text()) == 1:
+                raise RuntimeError("transient instrument error")
+
+        with patch.dict(task_executor._task_plugin_registry.plugin_types, {"Sleep": flaky}):
+            future = await self._run_sleep_task(task_executor, "flaky_task", retries=2)
+
+        await future
+        assert attempts.read_text() == "xx"
+
+    @pytest.mark.asyncio
+    async def test_task_fails_after_retries_are_exhausted(
+        self, task_executor, protocol_run_manager, db_interface, tmp_path
+    ):
+        async with db_interface.get_async_session() as db:
+            await self._setup_protocol_run(db, protocol_run_manager)
+        attempts = tmp_path / "attempts"
+
+        @eos.task("Sleep")
+        async def broken(time: int = eos.Param(0)) -> None:
+            with attempts.open("a") as f:
+                f.write("x")
+            raise RuntimeError("instrument offline")
+
+        with patch.dict(task_executor._task_plugin_registry.plugin_types, {"Sleep": broken}):
+            future = await self._run_sleep_task(task_executor, "broken_task", retries=1)
+
+        with pytest.raises(EosTaskExecutionError, match="instrument offline"):
+            await future
+        assert attempts.read_text() == "xx"

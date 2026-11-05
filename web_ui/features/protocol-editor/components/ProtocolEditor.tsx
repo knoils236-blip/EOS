@@ -23,6 +23,16 @@ import { TaskNode } from './TaskNode';
 import { Toolbar } from './Toolbar';
 import { ContextMenu } from './ContextMenu';
 import { NewTaskModal } from './NewTaskModal';
+import { TaskPalette, TASK_DRAG_TYPE, CAPABILITY_DRAG_TYPE } from './TaskPalette';
+import { getEditorScenes } from '@/features/editor/api/scenes';
+import {
+  bindScenePresets,
+  createPresetTask,
+  findTaskPreset,
+  sceneTaskLabel,
+  type BoundPreset,
+  type EditorScene,
+} from '../lib/scenePresets';
 import { TaskPropertiesPanel } from './TaskPropertiesPanel';
 import { ColorPicker } from './ColorPicker';
 import { ExportImageDialog } from './ExportImageDialog';
@@ -110,6 +120,7 @@ export function ProtocolEditor() {
   const taskTemplates = useEditorStore((state) => state.taskTemplates);
   const labSpecs = useEditorStore((state) => state.labSpecs);
   const labs = useEditorStore((state) => state.labs);
+  const setLabs = useEditorStore((state) => state.setLabs);
   const selectedNodeName = useEditorStore((state) => state.selectedNodeName);
   const isPropertiesPanelOpen = useEditorStore((state) => state.isPropertiesPanelOpen);
   const clipboard = useEditorStore((state) => state.clipboard);
@@ -151,6 +162,32 @@ export function ProtocolEditor() {
   const { toasts, showToast, closeToast } = useToast();
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
+  const [scenes, setScenes] = useState<EditorScene[]>([]);
+  const [scenesLoading, setScenesLoading] = useState(true);
+  const [scenesError, setScenesError] = useState<string | null>(null);
+  const [sceneReload, setSceneReload] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setScenesLoading(true);
+    setScenesError(null);
+    getEditorScenes()
+      .then((data) => {
+        if (!cancelled) setScenes(data);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setScenesError(error instanceof Error ? error.message : '读取场景能力失败');
+      })
+      .finally(() => {
+        if (!cancelled) setScenesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sceneReload, labSpecs]);
+  const scenePresets = useMemo(
+    () => bindScenePresets(scenes).filter((p) => taskTemplates.some((t) => t.type === p.task.type)),
+    [scenes, taskTemplates]
+  );
 
   // Save viewport to store on unmount so it survives navigation
   const getViewportRef = useRef(getViewport);
@@ -204,6 +241,7 @@ export function ProtocolEditor() {
         position: task.position,
         data: {
           taskNode: task,
+          displayLabel: sceneTaskLabel(task, findTaskPreset(task, scenePresets, tasks)),
           taskSpec: taskSpec ?? ({ type: task.type, desc: '', device_types: [] } as TaskSpec),
           isMissingSpec,
           onNodeClick: onNodeClickRef.current,
@@ -217,8 +255,8 @@ export function ProtocolEditor() {
     if (missingTemplates.size > 0) {
       showToast(
         'error',
-        'Missing Task Specs',
-        `The following task types are not in the database (package may not be loaded): ${Array.from(missingTemplates).join(', ')}`
+        '缺少任务定义',
+        `数据库中没有以下任务类型（软件包可能尚未加载）：${Array.from(missingTemplates).join(', ')}`
       );
     }
 
@@ -233,7 +271,7 @@ export function ProtocolEditor() {
         needsOverlapResolution: true,
       });
     }
-  }, [tasks, templateMap, setNodes, showToast]);
+  }, [tasks, templateMap, scenePresets, setNodes, showToast]);
 
   // Sync edges - create edges from task dependencies and references
   useEffect(() => {
@@ -360,7 +398,7 @@ export function ProtocolEditor() {
       const targetParam = targetHandle.split(`-input-${portType}-`)[1];
 
       if (!sourceParam || !targetParam) {
-        console.error('Failed to parse port names', { sourceHandle, targetHandle, sourceParam, targetParam });
+        console.error('无法解析端口名称', { sourceHandle, targetHandle, sourceParam, targetParam });
         return;
       }
 
@@ -382,23 +420,36 @@ export function ProtocolEditor() {
         }
 
         if (sourceType !== targetType) {
-          showToast(
-            'error',
-            'Connection Error',
-            `Cannot connect: Type mismatch! Source: ${sourceType}, Target: ${targetType}`
-          );
+          showToast('error', '连接错误', `无法连接：类型不匹配！源类型：${sourceType}，目标类型：${targetType}`);
           return;
         }
       }
 
-      // Source must be a transitive dependency of target (also rejects self-refs).
+      // Source must be a transitive dependency of target; add a direct one unless that would form a cycle.
+      let dependencies = targetTask.dependencies;
       if (!isAncestor(taskMap, connection.target!, connection.source!)) {
-        showToast(
-          'error',
-          'Connection Error',
-          `Cannot connect: '${connection.target}' does not depend on '${connection.source}'. Add a dependency first.`
+        if (connection.source === connection.target || isAncestor(taskMap, connection.source!, connection.target!)) {
+          showToast(
+            'error',
+            '连接错误',
+            `无法连接：会产生循环依赖（“${connection.source}”已经依赖“${connection.target}”）。`
+          );
+          return;
+        }
+        dependencies = [...(targetTask.dependencies || []), connection.source!];
+        setEdges((eds) =>
+          addEdge(
+            {
+              source: connection.source!,
+              target: connection.target!,
+              sourceHandle: `${connection.source}-main-output`,
+              targetHandle: `${connection.target}-main-input`,
+              style: { strokeWidth: 4, stroke: edgeColors.dependency },
+            },
+            eds
+          )
         );
-        return;
+        showToast('info', '已自动添加依赖', `“${connection.target}”现在依赖“${connection.source}”。`);
       }
 
       // For parameters, a second source onto an existing reference builds a fan-in list.
@@ -413,13 +464,14 @@ export function ProtocolEditor() {
         nextValue = existing === newRef ? existing : [existing, newRef];
       }
       updateTask(connection.target!, {
+        dependencies,
         [field]: { ...fieldValues, [targetParam]: nextValue },
       });
 
       // Add edge with appropriate color
       setEdges((eds) => addEdge({ ...connection, style: { stroke: edgeColor } }, eds));
     },
-    [taskMap, templateMap, updateTask, setEdges, showToast]
+    [taskMap, templateMap, updateTask, setEdges, showToast, edgeColors]
   );
 
   const onConnect = useCallback(
@@ -437,8 +489,8 @@ export function ProtocolEditor() {
         if (connection.source === connection.target || isAncestor(taskMap, connection.source, connection.target)) {
           showToast(
             'error',
-            'Connection Error',
-            `Cannot connect: would create a dependency cycle ('${connection.source}' already depends on '${connection.target}').`
+            '连接错误',
+            `无法连接：会产生循环依赖（“${connection.source}”已经依赖“${connection.target}”）。`
           );
           return;
         }
@@ -485,8 +537,8 @@ export function ProtocolEditor() {
         const targetPortType = getPortType(targetHandle);
         showToast(
           'error',
-          'Connection Error',
-          `Cannot connect: ${sourcePortType}s can only connect to ${sourcePortType}s (not ${targetPortType}s)`
+          '连接错误',
+          `无法连接：${sourcePortType}只能连接到 ${sourcePortType}（不能连接到 ${targetPortType}）`
         );
         return;
       }
@@ -600,20 +652,87 @@ export function ProtocolEditor() {
     }
   }, [contextMenu]);
 
-  const handleSelectTemplate = useCallback(
-    (template: TaskSpec) => {
-      const position = snapToGrid(screenToFlowPosition(newNodePosition));
+  const addTaskAt = useCallback(
+    (template: TaskSpec, screenPosition: { x: number; y: number }) => {
       addTask({
         name: getNextTaskName(),
         type: template.type,
-        position,
+        position: snapToGrid(screenToFlowPosition(screenPosition)),
         devices: {},
         resources: {},
         parameters: {},
         desc: template.desc,
       });
     },
-    [newNodePosition, addTask, screenToFlowPosition, getNextTaskName]
+    [addTask, screenToFlowPosition, getNextTaskName]
+  );
+
+  const handleSelectTemplate = useCallback(
+    (template: TaskSpec) => addTaskAt(template, newNodePosition),
+    [addTaskAt, newNodePosition]
+  );
+
+  const addPresetAt = useCallback(
+    (preset: BoundPreset, screenPosition: { x: number; y: number }) => {
+      const state = useEditorStore.getState();
+      batchOperation(() => {
+        if (!state.labs.includes(preset.scene.lab_name)) setLabs([...state.labs, preset.scene.lab_name]);
+        const task = createPresetTask(
+          preset,
+          getNextTaskName(),
+          snapToGrid(screenToFlowPosition(screenPosition)),
+          state.tasks
+        );
+        useEditorStore.setState({ overlapResolutionRequested: true });
+        addTask(task);
+        state.setSelectedNodeName(task.name);
+        setIsPropertiesPanelOpen(true);
+      });
+    },
+    [batchOperation, setLabs, getNextTaskName, screenToFlowPosition, addTask, setIsPropertiesPanelOpen]
+  );
+
+  // Task palette: drag a task onto the canvas, or click + to drop it in the middle of the visible canvas
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const taskUsage = useMemo(() => {
+    const counts = new Map<string, number>();
+    tasks.forEach((t) => {
+      const preset = findTaskPreset(t, scenePresets, tasks);
+      if (preset) counts.set(preset.key, (counts.get(preset.key) ?? 0) + 1);
+    });
+    return counts;
+  }, [tasks, scenePresets]);
+
+  const handleCanvasDragOver = useCallback((event: React.DragEvent) => {
+    if (!event.dataTransfer.types.includes(TASK_DRAG_TYPE) && !event.dataTransfer.types.includes(CAPABILITY_DRAG_TYPE))
+      return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleCanvasDrop = useCallback(
+    (event: React.DragEvent) => {
+      const preset = scenePresets.find((p) => p.key === event.dataTransfer.getData(CAPABILITY_DRAG_TYPE));
+      if (preset) {
+        event.preventDefault();
+        addPresetAt(preset, { x: event.clientX, y: event.clientY });
+        return;
+      }
+      const template = templateMap.get(event.dataTransfer.getData(TASK_DRAG_TYPE));
+      if (!template) return;
+      event.preventDefault();
+      addTaskAt(template, { x: event.clientX, y: event.clientY });
+    },
+    [templateMap, addTaskAt, scenePresets, addPresetAt]
+  );
+
+  const handlePaletteAdd = useCallback(
+    (preset: BoundPreset) => {
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      addPresetAt(preset, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 3 });
+    },
+    [addPresetAt]
   );
 
   const handleNodesChange = useCallback(
@@ -649,7 +768,7 @@ export function ProtocolEditor() {
     if (nodesToCopy.length === 0) return;
 
     copyNodes(nodesToCopy);
-    showToast('success', 'Copied', `Copied ${nodesToCopy.length} task${nodesToCopy.length > 1 ? 's' : ''}`);
+    showToast('success', '已复制', `已复制 ${nodesToCopy.length} 个任务`);
   }, [selectedNodes, contextMenu, copyNodes, showToast]);
 
   // Paste handler
@@ -658,7 +777,7 @@ export function ProtocolEditor() {
 
     const flowPosition = screenToFlowPosition(mousePositionRef.current);
     const pastedNodeIds = pasteNodes(flowPosition);
-    showToast('success', 'Pasted', `Pasted ${pastedNodeIds.length} task${pastedNodeIds.length > 1 ? 's' : ''}`);
+    showToast('success', '已粘贴', `已粘贴 ${pastedNodeIds.length} 个任务`);
   }, [clipboard, screenToFlowPosition, pasteNodes, showToast]);
 
   // Update delete to handle multiple selected nodes
@@ -753,8 +872,8 @@ export function ProtocolEditor() {
   const handleAutoLayout = useCallback(() => {
     // Show confirmation dialog before applying layout
     setConfirmDialog({
-      title: 'Apply Auto Layout?',
-      message: 'This will automatically arrange all nodes in a left-to-right hierarchical layout.',
+      title: '应用自动布局？',
+      message: '这将按从左到右的层级结构自动排列所有节点。',
       onConfirm: () => {
         // Calculate new layout using auto-layout utility
         const { nodes: newNodes, edges: newEdges } = performAutoLayout(nodes, edges);
@@ -770,7 +889,7 @@ export function ProtocolEditor() {
           });
         });
 
-        showToast('success', 'Layout Applied', 'Nodes have been auto-arranged left-to-right.');
+        showToast('success', '布局已应用', '节点已按从左到右的顺序自动排列。');
         setConfirmDialog(null);
       },
     });
@@ -825,82 +944,100 @@ export function ProtocolEditor() {
         {/* Main Canvas Panel */}
         <Panel id="canvas-panel" defaultSize={getCanvasSize()} minSize="30%">
           <div className="h-full flex flex-col">
-            <div className="flex-1 relative bg-gray-50 dark:bg-slate-950">
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={handleNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onSelectionChange={handleSelectionChange}
-                onPaneContextMenu={(e) => handleContextMenu(e)}
-                onNodeContextMenu={(e, node) => handleContextMenu(e, node)}
-                onEdgeContextMenu={(e, edge) => handleContextMenu(e, edge)}
-                onMouseMove={handleMouseMove}
-                nodeTypes={nodeTypes}
-                selectionOnDrag
-                snapToGrid
-                snapGrid={[GRID_SIZE, GRID_SIZE]}
-                autoPanOnNodeDrag={false}
-                autoPanOnConnect={false}
-                onlyRenderVisibleElements
-                elevateNodesOnSelect={false}
-                zoomOnDoubleClick={false}
-                minZoom={0.1}
-                defaultViewport={storedViewport}
-                proOptions={{ hideAttribution: true }}
-              >
-                <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1.5} />
-                <Controls />
-              </ReactFlow>
-
-              <ContextMenu
-                position={contextMenu?.position || null}
-                nodeId={contextMenu?.nodeId || null}
-                edgeId={contextMenu?.edgeId || null}
-                selectedNodeCount={selectedNodes.length || (contextMenu?.nodeId ? 1 : 0)}
-                hasClipboard={clipboard.length > 0}
-                onNewTask={handleNewTask}
-                onDeleteTask={handleDelete}
-                onDeleteEdge={handleDeleteEdge}
-                onSetColor={handleSetColor}
-                onCopy={handleCopy}
-                onPaste={handlePaste}
-                onClose={() => setContextMenu(null)}
+            <div className="flex-1 flex min-h-0">
+              <TaskPalette
+                scenes={scenes}
+                presets={scenePresets}
+                selectedLabs={labs}
+                usage={taskUsage}
+                loading={scenesLoading}
+                error={scenesError}
+                onRefresh={() => setSceneReload((n) => n + 1)}
+                onSelectScene={(labName) => {
+                  if (!labs.includes(labName)) setLabs([...labs, labName]);
+                }}
+                onAdd={handlePaletteAdd}
+                onAdvanced={handleNewTask}
               />
+              <div ref={canvasRef} className="flex-1 relative bg-gray-50 dark:bg-slate-950">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={handleNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  onSelectionChange={handleSelectionChange}
+                  onPaneContextMenu={(e) => handleContextMenu(e)}
+                  onNodeContextMenu={(e, node) => handleContextMenu(e, node)}
+                  onEdgeContextMenu={(e, edge) => handleContextMenu(e, edge)}
+                  onMouseMove={handleMouseMove}
+                  onDragOver={handleCanvasDragOver}
+                  onDrop={handleCanvasDrop}
+                  nodeTypes={nodeTypes}
+                  selectionOnDrag
+                  snapToGrid
+                  snapGrid={[GRID_SIZE, GRID_SIZE]}
+                  autoPanOnNodeDrag={false}
+                  autoPanOnConnect={false}
+                  onlyRenderVisibleElements
+                  elevateNodesOnSelect={false}
+                  zoomOnDoubleClick={false}
+                  minZoom={0.1}
+                  defaultViewport={storedViewport}
+                  proOptions={{ hideAttribution: true }}
+                >
+                  <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1.5} />
+                  <Controls />
+                </ReactFlow>
 
-              {colorPickerState && (
-                <ColorPicker
-                  currentColor={taskMap.get(colorPickerState.nodeId)?.color}
-                  position={colorPickerState.position}
-                  onColorSelect={(color) => {
-                    updateTask(colorPickerState.nodeId, { color });
-                    setColorPickerState(null);
-                  }}
-                  onClose={() => setColorPickerState(null)}
+                <ContextMenu
+                  position={contextMenu?.position || null}
+                  nodeId={contextMenu?.nodeId || null}
+                  edgeId={contextMenu?.edgeId || null}
+                  selectedNodeCount={selectedNodes.length || (contextMenu?.nodeId ? 1 : 0)}
+                  hasClipboard={clipboard.length > 0}
+                  onNewTask={handleNewTask}
+                  onDeleteTask={handleDelete}
+                  onDeleteEdge={handleDeleteEdge}
+                  onSetColor={handleSetColor}
+                  onCopy={handleCopy}
+                  onPaste={handlePaste}
+                  onClose={() => setContextMenu(null)}
                 />
-              )}
 
-              <NewTaskModal
-                isOpen={isNewTaskModalOpen}
-                onClose={() => setIsNewTaskModalOpen(false)}
-                templates={taskTemplates}
-                onSelectTemplate={handleSelectTemplate}
-              />
+                {colorPickerState && (
+                  <ColorPicker
+                    currentColor={taskMap.get(colorPickerState.nodeId)?.color}
+                    position={colorPickerState.position}
+                    onColorSelect={(color) => {
+                      updateTask(colorPickerState.nodeId, { color });
+                      setColorPickerState(null);
+                    }}
+                    onClose={() => setColorPickerState(null)}
+                  />
+                )}
 
-              {confirmDialog && (
-                <ConfirmDialog
-                  isOpen={!!confirmDialog}
-                  onClose={() => setConfirmDialog(null)}
-                  onConfirm={confirmDialog.onConfirm}
-                  title={confirmDialog.title}
-                  message={confirmDialog.message}
+                <NewTaskModal
+                  isOpen={isNewTaskModalOpen}
+                  onClose={() => setIsNewTaskModalOpen(false)}
+                  templates={taskTemplates}
+                  onSelectTemplate={handleSelectTemplate}
                 />
-              )}
 
-              <ExportImageDialog isOpen={isExportDialogOpen} onClose={() => setIsExportDialogOpen(false)} />
+                {confirmDialog && (
+                  <ConfirmDialog
+                    isOpen={!!confirmDialog}
+                    onClose={() => setConfirmDialog(null)}
+                    onConfirm={confirmDialog.onConfirm}
+                    title={confirmDialog.title}
+                    message={confirmDialog.message}
+                  />
+                )}
 
-              <ToastContainer toasts={toasts} onClose={closeToast} />
+                <ExportImageDialog isOpen={isExportDialogOpen} onClose={() => setIsExportDialogOpen(false)} />
+
+                <ToastContainer toasts={toasts} onClose={closeToast} />
+              </div>
             </div>
             <ValidationErrorsPanel onSelectTask={handleSelectTaskFromError} />
           </div>
@@ -917,6 +1054,7 @@ export function ProtocolEditor() {
                 isOpen={isPropertiesPanelOpen}
                 taskNode={selectedTask}
                 taskSpec={selectedTaskSpec || null}
+                preset={selectedTask ? findTaskPreset(selectedTask, scenePresets, tasks) : undefined}
                 isMissingSpec={isSelectedTaskMissingSpec}
                 labSpecs={labSpecs}
                 selectedLabs={labs}

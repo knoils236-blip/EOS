@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import uvicorn
 
 
-EOS_BANNER = f"""Experiment Orchestration System v{importlib.metadata.version("eos")}
+EOS_BANNER = f"""实验编排系统 v{importlib.metadata.version("eos")}
 
 ███████╗ ██████╗ ███████╗
 ██╔════╝██╔═══██╗██╔════╝
@@ -178,33 +178,27 @@ async def run_eos(config: EosConfig) -> None:
 
 def start_orchestrator(
     ctx: typer.Context,
-    config_file: Annotated[
-        str, typer.Option("--config", "-c", help="Path to the EOS configuration file")
-    ] = DEFAULT_CONFIG_PATH,
-    user_dir: (
-        Annotated[str, typer.Option("--user-dir", "-u", help="The directory containing EOS user configurations")] | None
-    ) = None,
-    labs: (
-        Annotated[str, typer.Option("--labs", "-l", help="Comma-separated list of lab configurations to load")] | None
-    ) = None,
+    config_file: Annotated[str, typer.Option("--config", "-c", help="EOS 配置文件路径")] = DEFAULT_CONFIG_PATH,
+    user_dir: (Annotated[str, typer.Option("--user-dir", "-u", help="包含 EOS 用户配置的目录")] | None) = None,
+    labs: (Annotated[str, typer.Option("--labs", "-l", help="要加载的实验室配置列表，以英文逗号分隔")] | None) = None,
     protocols: (
         Annotated[
             str,
-            typer.Option("--protocols", "-e", help="Comma-separated list of protocol configurations to load"),
+            typer.Option("--protocols", "-e", help="要加载的协议配置列表，以英文逗号分隔"),
         ]
         | None
     ) = None,
-    log_level: Annotated[LogLevel, typer.Option("--log-level", "-v", help="Logging level")] = None,
-    profile: Annotated[bool, typer.Option("--profile", help="Enable function profiling report on exit")] = False,
+    log_level: Annotated[LogLevel, typer.Option("--log-level", "-v", help="日志级别")] = None,
+    profile: Annotated[bool, typer.Option("--profile", help="退出时生成函数性能分析报告")] = False,
     profile_mem: Annotated[
-        bool, typer.Option("--profile-mem", help="Also profile memory (RSS + tracemalloc). Use with --profile")
+        bool, typer.Option("--profile-mem", help="同时分析内存（RSS + tracemalloc），与 --profile 配合使用")
     ] = False,
     profile_mem_all: Annotated[
         bool,
-        typer.Option("--profile-mem-all", help="Profile all Python memory, not just EOS. Implies --profile-mem"),
+        typer.Option("--profile-mem-all", help="分析所有 Python 内存，而不仅限于 EOS；隐含启用 --profile-mem"),
     ] = False,
 ) -> None:
-    """Start the EOS orchestrator with the given configuration."""
+    """使用指定配置启动 EOS 编排器。"""
     if ctx.invoked_subcommand is not None:
         return
 
@@ -234,10 +228,7 @@ def start_orchestrator(
     log.set_level(config.log_level)
 
     if is_port_in_use(config.web_api.host, config.web_api.port):
-        log.error(
-            f"Port {config.web_api.host}:{config.web_api.port} is already in use. "
-            "EOS may already be running; refusing to start a second instance."
-        )
+        log.error(f"端口 {config.web_api.host}:{config.web_api.port} 已被占用。EOS 可能已在运行，无法启动第二个实例。")
         raise typer.Exit(1)
 
     if profile or profile_mem or profile_mem_all:

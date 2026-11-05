@@ -2,6 +2,8 @@ import traceback
 
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.configuration.entities.lab_def import LabDeviceDef
+from eos.configuration.entities.protocol_def import ProtocolDef
+from eos.configuration.entities.task_def import DeviceAssignmentDef, TaskDef
 from eos.devices.device_manager import DeviceManager
 from eos.logging.logger import log
 from eos.utils.di.di_container import inject
@@ -21,6 +23,59 @@ class LabService:
     ):
         self._configuration_manager = configuration_manager
         self._device_manager = device_manager
+
+    async def get_editor_scenes(self) -> list[dict]:
+        """Read registered scene presets without connecting to or starting equipment."""
+        cm = self._configuration_manager
+        scenes = []
+        for lab_name, loaded in sorted(cm.get_loaded_labs().items()):
+            lab = cm.package_manager.read_lab(lab_name)
+            for device_name, device in lab.devices.items():
+                device_class = cm.devices.plugin_types.get(device.type)
+                if device_class is None:
+                    continue
+                scene = device_class.editor_presets(device.init_parameters)
+                if scene is not None:
+                    scenes.append({**scene, "lab_name": lab_name, "device_name": device_name, "loaded": loaded})
+        return scenes
+
+    def check_device_plans(self, protocol: ProtocolDef) -> list[dict[str, str]]:
+        """
+        Let each statically assigned device class check its ordered steps of the protocol offline.
+        Returns [{"task", "message"}] for steps the device reports as certain to fail.
+        """
+        tasks = {task.name: task for task in protocol.tasks}
+
+        def resolve(task: TaskDef, slot: str, seen: frozenset = frozenset()) -> tuple[str, str] | None:
+            assignment = task.devices.get(slot)
+            if isinstance(assignment, DeviceAssignmentDef):
+                return assignment.lab_name, assignment.name
+            if isinstance(assignment, str) and assignment not in seen:
+                task_name, _, ref_slot = assignment.partition(".")
+                if task_name in tasks:
+                    return resolve(tasks[task_name], ref_slot, seen | {assignment})
+            return None
+
+        order = {name: index for index, name in enumerate(_topological_order(protocol.tasks))}
+        ancestors = _ancestors(protocol.tasks)
+        steps_by_device: dict[tuple[str, str], list[dict]] = {}
+        for task in sorted(protocol.tasks, key=lambda t: order[t.name]):
+            for slot in task.devices:
+                device = resolve(task, slot)
+                if device is None:
+                    continue
+                steps = steps_by_device.setdefault(device, [])
+                ordered = not steps or steps[-1]["task"] in ancestors[task.name]
+                steps.append({"task": task.name, "type": task.type, "parameters": task.parameters, "ordered": ordered})
+
+        cm = self._configuration_manager
+        errors = []
+        for (lab_name, device_name), steps in steps_by_device.items():
+            device = cm.package_manager.read_lab(lab_name).devices.get(device_name)
+            device_class = cm.devices.plugin_types.get(device.type) if device else None
+            if device_class is not None:
+                errors.extend(device_class.check_plan(device.init_parameters, steps))
+        return errors
 
     async def get_lab_devices(
         self, lab_types: set[str] | None = None, task_type: str | None = None
@@ -83,3 +138,32 @@ class LabService:
                 f"Failed to call function '{function_name}' on device '{lab_id}.{device_id}': {traceback.format_exc()}"
             )
             raise
+
+
+def _topological_order(tasks: list[TaskDef]) -> list[str]:
+    """Task names in dependency order, keeping the file order among tasks that are ready together."""
+    remaining = {task.name: set(task.dependencies) for task in tasks}
+    order = []
+    while remaining:
+        ready = [name for name, deps in remaining.items() if not deps - set(order)]
+        if not ready:  # a cycle, reported by the protocol validator
+            ready = list(remaining)
+        order.extend(ready[:1])
+        del remaining[ready[0]]
+    return order
+
+
+def _ancestors(tasks: list[TaskDef]) -> dict[str, set[str]]:
+    dependencies = {task.name: set(task.dependencies) for task in tasks}
+    result: dict[str, set[str]] = {}
+
+    def visit(name: str) -> set[str]:
+        if name not in result:
+            result[name] = set()
+            for dependency in dependencies.get(name, ()):
+                result[name] |= {dependency} | visit(dependency)
+        return result[name]
+
+    for name in dependencies:
+        visit(name)
+    return result

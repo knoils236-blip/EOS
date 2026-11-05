@@ -131,6 +131,8 @@ exclude = [
 target-version = "py311"
 line-length = 120
 
+# Chinese punctuation in localized CLI messages.
+lint.allowed-confusables = ["，", "：", "（", "）", "？", "！", "；"]
 lint.mccabe.max-complexity = 14
 lint.isort.known-first-party = ["eos", "tests"]
 

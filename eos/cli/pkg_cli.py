@@ -12,7 +12,7 @@ from eos.configuration.exceptions import EosConfigurationError
 from eos.configuration.packages import Package, discover_packages
 from eos.logging.logger import log
 
-pkg_app = typer.Typer(help="Manage EOS packages", no_args_is_help=True)
+pkg_app = typer.Typer(help="管理 EOS 软件包", no_args_is_help=True)
 
 DEFAULT_USER_DIR = "./user"
 
@@ -79,7 +79,7 @@ def _run_uv_install(pyproject: Path, extra_args: list[str]) -> None:
     try:
         run(["uv", "pip", "install", "-r", str(pyproject), *extra_args])
     except subprocess.CalledProcessError as e:
-        typer.echo(f"Failed to install dependencies from {pyproject}: {e}", err=True)
+        typer.echo(f"从 {pyproject} 安装依赖失败： {e}", err=True)
         raise typer.Exit(1) from e
 
 
@@ -274,9 +274,9 @@ __marimo__/
 def _validate_package_exists(package_dir: Path) -> None:
     """Validate that the package exists and has the expected structure."""
     if not package_dir.exists():
-        raise typer.BadParameter(f"Package directory {package_dir} does not exist")
+        raise typer.BadParameter(f"软件包目录 {package_dir} 不存在")
     if not package_dir.is_dir():
-        raise typer.BadParameter(f"{package_dir} is not a directory")
+        raise typer.BadParameter(f"{package_dir} 不是目录")
 
 
 def _add_entity(package_dir: Path, entity_type: str, name: str, files: dict[str, str]) -> None:
@@ -288,20 +288,20 @@ def _add_entity(package_dir: Path, entity_type: str, name: str, files: dict[str,
         base_dir.mkdir(parents=True, exist_ok=False)
         for filename, template in files.items():
             (base_dir / filename).write_text(template.format(name=name, class_name=class_name))
-        typer.echo(f"Successfully created {entity_type} '{name}' in {base_dir}")
+        typer.echo(f"已在 {base_dir} 创建 {entity_type} '{name}'")
     except FileExistsError:
-        typer.echo(f"Error: {entity_type.title()} '{name}' already exists", err=True)
+        typer.echo(f"错误：{entity_type.title()} '{name}' 已存在", err=True)
     except Exception as e:
-        typer.echo(f"Error creating {entity_type}: {e!s}", err=True)
+        typer.echo(f"创建 {entity_type} 时出错： {e!s}", err=True)
 
 
 @pkg_app.command(name="create")
 def create_package(
-    name: Annotated[str, typer.Argument(help="Name of the package to create")],
+    name: Annotated[str, typer.Argument(help="要创建的软件包名称")],
     user_dir: UserDirOption = None,
     config: ConfigOption = DEFAULT_CONFIG_PATH,
 ) -> None:
-    """Create a new package with the specified name in the user directory."""
+    """在用户目录中按指定名称创建软件包。"""
     resolved_user_dir = _resolve_user_dir(user_dir, config)
     package_dir = resolved_user_dir / name
     subdirs = ["devices", "tasks", "labs", "protocols"]
@@ -330,26 +330,26 @@ dependencies = [
         gitignore_path = package_dir / ".gitignore"
         gitignore_path.write_text(_GITIGNORE)
 
-        typer.echo(f"Successfully created package '{name}' in {package_dir}")
+        typer.echo(f"已在 {package_dir} 创建软件包 '{name}'")
     except FileExistsError:
-        typer.echo(f"Error: Package '{name}' already exists in {resolved_user_dir}", err=True)
+        typer.echo(f"错误：软件包 '{name}' 已存在于 {resolved_user_dir}", err=True)
     except Exception as e:
-        typer.echo(f"Error creating package: {e!s}", err=True)
+        typer.echo(f"创建软件包时出错： {e!s}", err=True)
 
 
 @pkg_app.command(name="add")
 def add_entity(
-    entity: Annotated[EntityType, typer.Argument(help="Type of entity to add")],
-    package: Annotated[str, typer.Argument(help="Name of the target package")],
-    name: Annotated[str, typer.Argument(help="Name of the entity to create")],
+    entity: Annotated[EntityType, typer.Argument(help="要添加的条目类型")],
+    package: Annotated[str, typer.Argument(help="目标软件包名称")],
+    name: Annotated[str, typer.Argument(help="要创建的条目名称")],
     user_dir: UserDirOption = None,
     config: ConfigOption = DEFAULT_CONFIG_PATH,
 ) -> None:
-    """Add a new lab, device, task, or protocol to an existing package."""
+    """向现有软件包添加实验室、设备、任务或协议。"""
     package_dir = _resolve_user_dir(user_dir, config) / package
     _validate_package_exists(package_dir)
     if entity in (EntityType.DEVICE, EntityType.TASK) and (not name.isidentifier() or keyword.iskeyword(name)):
-        typer.echo(f"Error: {entity.value.title()} name '{name}' must be a valid Python identifier", err=True)
+        typer.echo(f"错误：{entity.value.title()} 名称 '{name}' 必须为有效的 Python 标识符", err=True)
         raise typer.Exit(1)
     _add_entity(package_dir, entity.value, name, ENTITY_FILES[entity])
 
@@ -360,15 +360,15 @@ def add_entity(
 )
 def install_package(
     ctx: typer.Context,
-    all_packages: Annotated[bool, typer.Option("--all", "-a", help="Install deps for every package")] = False,
+    all_packages: Annotated[bool, typer.Option("--all", "-a", help="安装所有软件包的依赖")] = False,
     user_dir: UserDirOption = None,
     config: ConfigOption = DEFAULT_CONFIG_PATH,
 ) -> None:
-    """Install the Python dependencies of one or more EOS user packages via uv.
+    """通过 uv 安装一个或多个 EOS 用户软件包的 Python 依赖。
 
-    Pass one or more package names, or ``--all`` for every discovered package. Any arguments
-    starting with ``-`` (and everything after them) are forwarded to ``uv pip install``.
-    Example: ``eos pkg install cahoon_lab color_lab --upgrade``.
+    指定一个或多个软件包名称，或使用 --all 安装所有已发现软件包的依赖。
+    以 - 开头的参数及其后续参数将传给 uv pip install。
+    示例：eos pkg install cahoon_lab color_lab --upgrade。
     """
     # Split raw args: everything up to the first flag is a package name, the rest goes to uv.
     raw = list(ctx.args)
@@ -377,29 +377,27 @@ def install_package(
     extra = raw[split:]
 
     if not names and not all_packages:
-        raise typer.BadParameter("Provide one or more package names, or use --all.")
+        raise typer.BadParameter("请指定一个或多个软件包名称，或使用 --all。")
     if names and all_packages:
-        raise typer.BadParameter("Cannot combine package names with --all.")
+        raise typer.BadParameter("不能同时指定软件包名称和 --all。")
 
     resolved = _resolve_user_dir(user_dir, config)
     packages = _discover_or_exit(resolved)
 
     if all_packages:
         if not packages:
-            typer.echo(f"No packages found in {resolved}.", err=True)
+            typer.echo(f"在 {resolved} 中未找到软件包。", err=True)
             raise typer.Exit(1)
         selected = list(packages.values())
     else:
         missing = [n for n in names if n not in packages]
         if missing:
             available = ", ".join(sorted(packages)) or "<none>"
-            raise typer.BadParameter(
-                f"Package(s) not found in {resolved}: {', '.join(missing)}. Available: {available}"
-            )
+            raise typer.BadParameter(f"在 {resolved} 中未找到软件包：{', '.join(missing)}。可用软件包：{available}")
         selected = [packages[n] for n in names]
 
     for pkg in selected:
-        typer.echo(f"Installing {pkg.name} ({pkg.path})...")
+        typer.echo(f"正在安装 {pkg.name}（{pkg.path}）…")
         _run_uv_install(pkg.path / "pyproject.toml", extra)
 
 

@@ -26,8 +26,7 @@ import { DescriptionTooltip } from '@/components/ui/DescriptionTooltip';
 // AI Model Options
 // ============================================================================
 
-// Beacon supports the Claude Agent SDK and Ollama only. Any other prefix is rejected by the orchestrator.
-// Only the Agent SDK is preset — Ollama model names are arbitrary, so they are typed in.
+// OpenAI-compatible and Ollama model names are entered by the user.
 const AI_MODEL_OPTIONS: ComboboxOption[] = [
   { value: 'claude-agent-sdk:fable', label: 'Claude Fable', group: 'Claude Agent SDK' },
   { value: 'claude-agent-sdk:opus', label: 'Claude Opus', group: 'Claude Agent SDK' },
@@ -36,10 +35,12 @@ const AI_MODEL_OPTIONS: ComboboxOption[] = [
 
 const CLAUDE_AGENT_SDK_PREFIX = 'claude-agent-sdk:';
 const OLLAMA_PREFIX = 'ollama:';
-const SUPPORTED_MODEL_PREFIXES = [CLAUDE_AGENT_SDK_PREFIX, OLLAMA_PREFIX];
+const OPENAI_PREFIX = 'openai:';
+const SUPPORTED_MODEL_PREFIXES = [CLAUDE_AGENT_SDK_PREFIX, OLLAMA_PREFIX, OPENAI_PREFIX];
 
 const isSupportedModel = (model: string) => SUPPORTED_MODEL_PREFIXES.some((p) => model.startsWith(p));
 
+const EFFORT_LABELS = { low: '低', medium: '中', high: '高', xhigh: '很高', max: '最高' };
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 type EffortLevel = (typeof EFFORT_LEVELS)[number];
 const DEFAULT_EFFORT: EffortLevel = 'high';
@@ -150,7 +151,7 @@ export function StrategyMixSlider({
     <div className="space-y-2 px-2">
       {/* Labels sit above the track so it can span the full panel width */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-red-600">Bayesian {pBayesianPct}%</span>
+        <span className="text-sm font-semibold text-red-600">贝叶斯 {pBayesianPct}%</span>
         <span className="text-sm font-semibold text-purple-600">AI {pAiPct}%</span>
       </div>
       <input
@@ -180,6 +181,7 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
   const [additionalContext, setAdditionalContext] = React.useState(runtime_params.ai_additional_context ?? '');
   const [customParams, setCustomParams] = React.useState<Record<string, unknown>>({});
   const [isUpdating, setIsUpdating] = React.useState(false);
+  const [saveError, setSaveError] = React.useState('');
 
   // Sync with props when they update
   React.useEffect(() => {
@@ -210,15 +212,27 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
     }
     if (Object.keys(params).length === 0) return;
     setIsUpdating(true);
-    await updateOptimizerParams(campaignName, params);
-    setIsUpdating(false);
-    onRefresh?.();
+    setSaveError('');
+    try {
+      const result = await updateOptimizerParams(campaignName, params);
+      if (result.success) onRefresh?.();
+      else setSaveError(result.error ?? '保存优化器设置失败');
+    } catch {
+      setSaveError('无法保存优化器设置，请重试。');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const disabled = !isRunning || isUpdating || !isConnected;
 
   return (
     <div className="space-y-4">
+      {saveError && (
+        <p role="alert" className="text-sm text-red-600">
+          {saveError}
+        </p>
+      )}
       {is_beacon && (
         <>
           {/* Strategy Mix Slider */}
@@ -228,13 +242,13 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-purple-600">
               AI
-              <DescriptionTooltip description="Settings for the AI half of Beacon, which reasons over the protocol, run history, and your insights to propose parameters." />
+              <DescriptionTooltip description="Beacon 的 AI 设置：根据协议、运行历史和您的建议进行推理，提出参数方案。" />
             </Label>
             <div className="grid grid-cols-2 items-end gap-4">
               <div className="space-y-1">
                 <Label className="text-xs">
-                  History Size
-                  <DescriptionTooltip description="Number of past protocol runs given to the AI as context. Larger values give the AI more to reason about but cost more tokens." />
+                  历史记录数量
+                  <DescriptionTooltip description="提供给 AI 作为上下文的历史协议运行数量。数量越多，可供推理的信息越多，但消耗的 token 也越多。" />
                 </Label>
                 <Input
                   type="number"
@@ -249,13 +263,13 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
 
             <div className="space-y-1">
               <Label className="text-xs">
-                Additional Context
-                <DescriptionTooltip description="Free-form instructions passed to the AI agent on every suggestion, e.g. domain knowledge or constraints not expressible in the domain." />
+                补充上下文
+                <DescriptionTooltip description="每次生成建议时传给 AI 的补充说明，例如领域知识或无法通过优化域表达的约束。" />
               </Label>
               <Textarea
                 value={additionalContext}
                 onChange={(e) => setAdditionalContext(e.target.value)}
-                placeholder="Additional context for the AI agent..."
+                placeholder="输入 AI 的补充上下文…"
                 disabled={disabled}
                 className="text-xs min-h-[60px]"
               />
@@ -267,8 +281,8 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
       {param_schema.some((f) => f.runtime) && (
         <div className="space-y-3">
           <Label className="text-sm font-semibold">
-            Optimizer Parameters
-            <DescriptionTooltip description="Parameters declared by this optimizer via eos_param_schema()." />
+            优化器参数
+            <DescriptionTooltip description="该优化器通过 eos_param_schema() 声明的参数。" />
           </Label>
           <OptimizerParamFields
             schema={param_schema}
@@ -289,7 +303,7 @@ function RuntimePanel({ campaignName, optimizerInfo, isRunning, onRefresh }: Omi
           disabled={!hasDirtyParams || isUpdating || !isConnected}
           className="w-full"
         >
-          {isUpdating ? 'Saving...' : 'Save Changes'}
+          {isUpdating ? '正在保存…' : '保存更改'}
         </Button>
       )}
     </div>
@@ -370,6 +384,7 @@ function SubmissionPanel({
   const [showDomain, setShowDomain] = React.useState(defaultShowDomain);
   const [justSaved, setJustSaved] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -384,14 +399,14 @@ function SubmissionPanel({
           {/* Bayesian Settings */}
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-red-600">
-              Bayesian
-              <DescriptionTooltip description="Settings for the Bayesian half of Beacon, which fits a surrogate model to past results and optimizes an acquisition function over it." />
+              贝叶斯
+              <DescriptionTooltip description="Beacon 的贝叶斯设置：根据历史结果拟合代理模型，并通过优化采集函数选择参数。" />
             </Label>
             <div className="grid grid-cols-2 items-end gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">
-                  Num Initial Samples
-                  <DescriptionTooltip description="Number of protocol runs sampled by the initial sampling method before the surrogate model takes over. Higher values explore more before exploiting." />
+                  初始样本数
+                  <DescriptionTooltip description="代理模型接管前，通过初始采样方法生成的协议运行数量。数值越大，前期探索越充分。" />
                 </Label>
                 <Input
                   type="number"
@@ -404,8 +419,8 @@ function SubmissionPanel({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">
-                  Sampling Method
-                  <DescriptionTooltip description="How the initial samples are drawn. Sobol and Latin Hypercube spread points evenly across the domain, Uniform draws at random." />
+                  采样方法
+                  <DescriptionTooltip description="初始样本的生成方式。Sobol 和拉丁超立方在优化域中均匀布点，均匀随机采样则随机取点。" />
                 </Label>
                 <select
                   value={get<string>('initial_sampling_method', params.initial_sampling_method)}
@@ -413,15 +428,15 @@ function SubmissionPanel({
                   className={selectClass}
                 >
                   <option value="SOBOL">Sobol</option>
-                  <option value="UNIFORM">Uniform</option>
-                  <option value="LHS">Latin Hypercube</option>
+                  <option value="UNIFORM">均匀随机</option>
+                  <option value="LHS">拉丁超立方</option>
                 </select>
               </div>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">
-                Acquisition Function
-                <DescriptionTooltip description="BoFire acquisition function deciding which point to try next, given as a JSON object with a type field such as qLogNEI. Controls the exploration/exploitation trade-off." />
+                采集函数
+                <DescriptionTooltip description="BoFire 采集函数决定下一次尝试的点，以包含 type 字段的 JSON 对象指定，例如 qLogNEI，用于权衡探索与利用。" />
               </Label>
               <JsonTextarea
                 value={get<Record<string, unknown> | null>('acquisition_function', params.acquisition_function)}
@@ -432,13 +447,13 @@ function SubmissionPanel({
             </div>
             <div className="space-y-1">
               <Label className="text-xs">
-                Surrogate Specs
-                <DescriptionTooltip description="BoFire surrogate model specification as JSON. Leave empty to let BoFire pick a model (usually a Gaussian Process) for each output." />
+                代理模型定义
+                <DescriptionTooltip description="以 JSON 指定 BoFire 代理模型。留空时由 BoFire 为每个输出选择模型，通常为高斯过程。" />
               </Label>
               <JsonTextarea
                 value={get<Record<string, unknown> | null>('surrogate_specs', params.surrogate_specs)}
                 onChange={(v) => set('surrogate_specs', v)}
-                placeholder="Leave empty for auto-detected surrogates"
+                placeholder="留空以自动选择代理模型"
                 className="text-xs min-h-[48px] font-mono"
               />
             </div>
@@ -448,13 +463,13 @@ function SubmissionPanel({
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-purple-600">
               AI
-              <DescriptionTooltip description="Settings for the AI half of Beacon, which reasons over the protocol, run history, and your insights to propose parameters." />
+              <DescriptionTooltip description="Beacon 的 AI 设置：根据协议、运行历史和您的建议进行推理，提出参数方案。" />
             </Label>
             <div className="grid grid-cols-2 items-end gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">
-                  History Size
-                  <DescriptionTooltip description="Number of past protocol runs given to the AI as context. Larger values give the AI more to reason about but cost more tokens." />
+                  历史记录数量
+                  <DescriptionTooltip description="提供给 AI 作为上下文的历史协议运行数量。数量越多，可供推理的信息越多，但消耗的 token 也越多。" />
                 </Label>
                 <Input
                   type="number"
@@ -466,8 +481,8 @@ function SubmissionPanel({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">
-                  Retries
-                  <DescriptionTooltip description="How many times the AI is asked again when its suggestion violates the domain bounds or constraints." />
+                  重试次数
+                  <DescriptionTooltip description="AI 建议超出优化域边界或违反约束时，重新请求建议的次数。" />
                 </Label>
                 <Input
                   type="number"
@@ -480,22 +495,22 @@ function SubmissionPanel({
             </div>
             <div className="space-y-1">
               <Label className="text-xs">
-                Model
-                <DescriptionTooltip description="AI model driving the agent. Beacon supports claude-agent-sdk: and ollama: models only." />
+                模型
+                <DescriptionTooltip description="OpenAI 兼容服务使用 openai:模型名称；URL 和 API Key 在服务器配置。也支持 Claude Agent SDK 与 Ollama。" />
               </Label>
               <Combobox
                 options={AI_MODEL_OPTIONS}
                 value={currentModel}
                 onChange={(v) => set('ai_model', v)}
-                placeholder="Select a model..."
-                searchPlaceholder="Search or type an Ollama model (e.g. ollama:qwen3.5:9b)..."
+                placeholder="选择模型…"
+                searchPlaceholder="输入 openai:模型名称 或 ollama:模型名称…"
                 allowCustomValue
-                customValueHint="Custom model"
+                customValueHint="自定义模型"
                 className="text-xs h-10"
               />
               {!isSupportedModel(currentModel) && (
                 <p className="text-[11px] text-red-600 dark:text-red-400">
-                  Beacon supports {CLAUDE_AGENT_SDK_PREFIX} and {OLLAMA_PREFIX} models only.
+                  模型需以 {OPENAI_PREFIX}、{CLAUDE_AGENT_SDK_PREFIX} 或 {OLLAMA_PREFIX} 开头。
                 </p>
               )}
             </div>
@@ -503,10 +518,10 @@ function SubmissionPanel({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs">
-                    Effort
-                    <DescriptionTooltip description="Reasoning effort for the Claude Agent SDK. Higher effort produces better suggestions but takes longer." />
+                    推理强度
+                    <DescriptionTooltip description="Claude Agent SDK 的推理强度。较高强度有助于改善建议，但耗时更长。" />
                   </Label>
-                  <span className="text-xs font-medium capitalize text-purple-600">{currentEffort}</span>
+                  <span className="text-xs font-medium capitalize text-purple-600">{EFFORT_LABELS[currentEffort]}</span>
                 </div>
                 <input
                   type="range"
@@ -528,8 +543,8 @@ function SubmissionPanel({
             )}
             <div className="space-y-1">
               <Label className="text-xs">
-                Model Settings
-                <DescriptionTooltip description="Extra model settings as a JSON object, for example a temperature of 0.3." />
+                模型设置
+                <DescriptionTooltip description="以 JSON 对象指定额外模型设置，例如将 temperature 设为 0.3。" />
               </Label>
               <JsonTextarea
                 // Effort is owned by the slider — hide it here and re-merge on write so typing can't override it.
@@ -553,8 +568,8 @@ function SubmissionPanel({
             </div>
             <div className="space-y-1">
               <Label className="text-xs">
-                Additional Parameters
-                <DescriptionTooltip description="Extra task outputs given to the AI as context but excluded from the optimization objectives. Use the TASK.PARAMETER format." />
+                附加参数
+                <DescriptionTooltip description="提供给 AI 作为上下文但不纳入优化目标的额外任务输出，使用 TASK.PARAMETER 格式。" />
               </Label>
               <RawInput
                 displayValue={(
@@ -572,19 +587,19 @@ function SubmissionPanel({
                       : null
                   );
                 }}
-                placeholder="e.g. TaskName.param1, TaskName.param2"
+                placeholder="例如 TaskName.param1, TaskName.param2"
                 className="text-xs h-8"
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">
-                Additional Context
-                <DescriptionTooltip description="Free-form instructions passed to the AI agent on every suggestion, e.g. domain knowledge or constraints not expressible in the domain." />
+                补充上下文
+                <DescriptionTooltip description="每次生成建议时传给 AI 的补充说明，例如领域知识或无法通过优化域表达的约束。" />
               </Label>
               <Textarea
                 value={get<string | null>('ai_additional_context', params.ai_additional_context) ?? ''}
                 onChange={(e) => set('ai_additional_context', e.target.value || null)}
-                placeholder="Additional context for the AI agent..."
+                placeholder="输入 AI 的补充上下文…"
                 className="text-xs min-h-[60px]"
               />
             </div>
@@ -595,8 +610,8 @@ function SubmissionPanel({
       {defaults.param_schema.length > 0 && (
         <div className="space-y-3">
           <Label className="text-sm font-semibold">
-            Optimizer Parameters
-            <DescriptionTooltip description="Parameters declared by this optimizer via eos_param_schema()." />
+            优化器参数
+            <DescriptionTooltip description="该优化器通过 eos_param_schema() 声明的参数。" />
           </Label>
           <OptimizerParamFields
             schema={defaults.param_schema}
@@ -614,16 +629,16 @@ function SubmissionPanel({
           className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
         >
           {showDomain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          Domain Definition
+          优化域定义
           {isResume && (
-            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-normal">(read-only on resume)</span>
+            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-normal">（恢复运行时只读）</span>
           )}
         </button>
         {showDomain && (
           <div className="mt-3">
             {isResume && (
               <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-                Domain cannot be changed on resume — existing protocol run history depends on it.
+                恢复运行时不能修改优化域，因为已有协议运行历史依赖该定义。
               </p>
             )}
             <DomainEditor value={domain} onChange={handleDomainChange} readOnly={isResume} />
@@ -634,23 +649,32 @@ function SubmissionPanel({
       {/* Save Button (editor mode only) */}
       {onSave && (
         <div className="border-t border-gray-200 dark:border-slate-700 pt-3">
+          {saveError && (
+            <p role="alert" className="mb-2 text-sm text-red-600 dark:text-red-400">
+              保存失败：{saveError}
+            </p>
+          )}
           <Button
             variant={justSaved ? 'default' : 'primary'}
             size="sm"
             disabled={isSaving}
             onClick={async () => {
               setIsSaving(true);
+              setSaveError(null);
+              setJustSaved(false);
               try {
                 await onSave(overrides, domain);
                 setJustSaved(true);
                 setTimeout(() => setJustSaved(false), 2000);
+              } catch (error) {
+                setSaveError(error instanceof Error ? error.message : '请重试。');
               } finally {
                 setIsSaving(false);
               }
             }}
             className="w-full"
           >
-            {isSaving ? 'Saving...' : justSaved ? 'Saved!' : 'Save'}
+            {isSaving ? '正在保存…' : justSaved ? '已保存！' : '保存'}
           </Button>
         </div>
       )}
@@ -684,7 +708,7 @@ export function OptimizerPanel(props: OptimizerPanelProps) {
   }
 
   const optimizerType = props.mode === 'runtime' ? props.optimizerInfo.optimizer_type : props.defaults.optimizer_type;
-  const optimizerLabel = optimizerType === 'BeaconOptimizer' ? 'Beacon Optimizer' : optimizerType;
+  const optimizerLabel = optimizerType === 'BeaconOptimizer' ? 'Beacon 优化器' : optimizerType;
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
@@ -700,9 +724,7 @@ export function OptimizerPanel(props: OptimizerPanelProps) {
             {optimizerLabel}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {props.mode === 'runtime'
-              ? 'Tune optimizer parameters in real-time'
-              : 'Configure optimizer parameters for this campaign'}
+            {props.mode === 'runtime' ? '实时调整优化器参数' : '配置此实验计划的优化器参数'}
           </p>
         </div>
       </button>

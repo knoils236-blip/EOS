@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "pipetting_full_station_v1",
+  "source": "simulation_fixture",
+  "hardware_calibrated": false,
+  "initial_liquid_ml": {
+    "TransferBottle10ml_617": 8.0,
+    "EightPositionReactor_662": 70.0
+  },
+  "tip_indices": [1, 2],
+  "pipette_volume_ul": 100.0,
+  "syringe_volume_ul": 50.0,
+  "syringe_goal_tolerance_ul": 5.0
+}

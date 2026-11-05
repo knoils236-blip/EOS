@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { X } from 'lucide-react';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
@@ -27,7 +29,7 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
       <div className="px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">{task.name}</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Task Details</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">任务详情</p>
         </div>
         <button
           onClick={() => onOpenChange(false)}
@@ -43,23 +45,21 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
             {/* Basic Info */}
             <div className="space-y-3">
               <div>
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Type</div>
+                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">类型</div>
                 <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{task.type}</div>
               </div>
 
               <div>
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Status
-                </div>
+                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">状态</div>
                 <div className="mt-1">
-                  <Badge variant={getStatusBadgeVariant(task.status)}>{task.status}</Badge>
+                  <Badge variant={getStatusBadgeVariant(task.status)}>{statusLabel(task.status)}</Badge>
                 </div>
               </div>
 
               {task.protocol_run_name && (
                 <div>
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Protocol Run
+                    协议运行
                   </div>
                   <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{task.protocol_run_name}</div>
                 </div>
@@ -67,14 +67,14 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
 
               <div>
                 <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Priority
+                  优先级
                 </div>
                 <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{task.priority}</div>
               </div>
 
               <div>
                 <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Allocation Timeout
+                  分配超时
                 </div>
                 <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{task.allocation_timeout}s</div>
               </div>
@@ -82,24 +82,28 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
 
             {/* Timestamps */}
             <div className="border-t border-gray-200 dark:border-slate-700 pt-4 space-y-2">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">Timeline</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">时间线</div>
               <div className="space-y-1 text-xs">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Created:</span>{' '}
-                  <span className="text-gray-900 dark:text-gray-100">{new Date(task.created_at).toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">创建时间：</span>{' '}
+                  <span className="text-gray-900 dark:text-gray-100">
+                    {new Date(task.created_at).toLocaleString('zh-CN')}
+                  </span>
                 </div>
                 {task.start_time && (
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Started:</span>{' '}
+                    <span className="text-gray-500 dark:text-gray-400">开始时间：</span>{' '}
                     <span className="text-gray-900 dark:text-gray-100">
-                      {new Date(task.start_time).toLocaleString()}
+                      {new Date(task.start_time).toLocaleString('zh-CN')}
                     </span>
                   </div>
                 )}
                 {task.end_time && (
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Ended:</span>{' '}
-                    <span className="text-gray-900 dark:text-gray-100">{new Date(task.end_time).toLocaleString()}</span>
+                    <span className="text-gray-500 dark:text-gray-400">结束时间：</span>{' '}
+                    <span className="text-gray-900 dark:text-gray-100">
+                      {new Date(task.end_time).toLocaleString('zh-CN')}
+                    </span>
                   </div>
                 )}
               </div>
@@ -108,35 +112,35 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
             {/* Devices */}
             {task.devices && Object.keys(task.devices).length > 0 && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.devices} label="Devices" />
+                <JsonDisplay data={task.devices} label="设备" />
               </div>
             )}
 
             {/* Input Parameters */}
             {task.input_parameters && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.input_parameters} label="Input Parameters" />
+                <JsonDisplay data={task.input_parameters} label="输入参数" />
               </div>
             )}
 
             {/* Input Resources */}
             {task.input_resources && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.input_resources} label="Input Resources" />
+                <JsonDisplay data={task.input_resources} label="输入资源" />
               </div>
             )}
 
             {/* Output Parameters */}
             {task.output_parameters && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.output_parameters} label="Output Parameters" />
+                <JsonDisplay data={task.output_parameters} label="输出参数" />
               </div>
             )}
 
             {/* Output Resources */}
             {task.output_resources && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.output_resources} label="Output Resources" />
+                <JsonDisplay data={task.output_resources} label="输出资源" />
               </div>
             )}
 
@@ -154,7 +158,7 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
             {/* Metadata */}
             {task.meta && Object.keys(task.meta).length > 0 && (
               <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                <JsonDisplay data={task.meta} label="Metadata" />
+                <JsonDisplay data={task.meta} label="元数据" />
               </div>
             )}
           </div>

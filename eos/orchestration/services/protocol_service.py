@@ -4,6 +4,7 @@ import traceback
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.protocols.entities.protocol_run import ProtocolRun, ProtocolRunStatus, ProtocolRunSubmission
 from eos.protocols.exceptions import EosProtocolRunExecutionError
+from eos.protocols.preflight import PREFLIGHT_KEY, split_preflight
 from eos.protocols.protocol_executor_factory import ProtocolExecutorFactory
 from eos.protocols.protocol_run_manager import ProtocolRunManager
 from eos.logging.logger import log
@@ -38,6 +39,8 @@ class ProtocolService:
         self._protocol_run_submission_lock = asyncio.Lock()
         self._submitted_protocol_runs: dict[str, ProtocolExecutor] = {}
         self._protocol_run_cancellation_queue = asyncio.Queue(maxsize=100)
+        # Real runs waiting for their simulation preflight to complete, keyed by preflight run name
+        self._awaiting_preflight: dict[str, ProtocolRunSubmission] = {}
 
     async def get_protocol_run(self, db: AsyncDbSession, protocol_run_name: str) -> ProtocolRun | None:
         """Get a protocol run by its unique identifier."""
@@ -49,6 +52,13 @@ class ProtocolService:
         protocol_run_submission: ProtocolRunSubmission,
     ) -> None:
         """Submit a new protocol run for execution. The protocol run will be executed asynchronously."""
+        if PREFLIGHT_KEY in (protocol_run_submission.meta or {}):
+            preflight, real = split_preflight(protocol_run_submission)
+            await self.submit_protocol_run(db, preflight)
+            self._awaiting_preflight[preflight.name] = real
+            log.info(f"ProtocolRun '{real.name}' starts after its preflight '{preflight.name}' completes.")
+            return
+
         protocol_run_name = protocol_run_submission.name
         protocol_type = protocol_run_submission.type
 
@@ -79,7 +89,8 @@ class ProtocolService:
 
         :param protocol_run_name: The unique name of the protocol run.
         """
-        if protocol_run_name in self._submitted_protocol_runs:
+        awaiting = any(real.name == protocol_run_name for real in self._awaiting_preflight.values())
+        if protocol_run_name in self._submitted_protocol_runs or awaiting:
             await self._protocol_run_cancellation_queue.put(protocol_run_name)
 
     async def fail_running_protocol_runs(self, db: AsyncDbSession) -> None:
@@ -135,6 +146,22 @@ class ProtocolService:
             log.error(f"Failed protocol run '{protocol_run_name}'.")
             del self._submitted_protocol_runs[protocol_run_name]
 
+        await self._release_preflighted_runs(completed_protocol_runs, failed_protocol_runs)
+
+    async def _release_preflighted_runs(self, completed: list[str], failed: list[str]) -> None:
+        """Start real runs whose preflight completed; drop those whose preflight failed."""
+        for preflight_name in failed:
+            if real := self._awaiting_preflight.pop(preflight_name, None):
+                log.error(f"Preflight '{preflight_name}' failed. Protocol run '{real.name}' was not started.")
+        for preflight_name in completed:
+            if real := self._awaiting_preflight.pop(preflight_name, None):
+                log.info(f"Preflight '{preflight_name}' passed. Starting protocol run '{real.name}'.")
+                async with self._db_interface.get_async_session() as db:
+                    try:
+                        await self.submit_protocol_run(db, real)
+                    except EosProtocolRunExecutionError:
+                        log.error(f"Could not start protocol run '{real.name}' after its preflight passed.")
+
     def _get_sorted_protocol_runs(self) -> list[tuple[str, ProtocolExecutor]]:
         protocol_run_priorities = {}
         for run_name, executor in self._submitted_protocol_runs.items():
@@ -150,6 +177,12 @@ class ProtocolService:
 
         if not protocol_run_names:
             return
+
+        # Cancelling a run that waits for its preflight, or the preflight itself, cancels both
+        for preflight_name, real in list(self._awaiting_preflight.items()):
+            if preflight_name in protocol_run_names or real.name in protocol_run_names:
+                del self._awaiting_preflight[preflight_name]
+                protocol_run_names.append(preflight_name)
 
         log.warning(f"Attempting to cancel protocols: {protocol_run_names}")
 

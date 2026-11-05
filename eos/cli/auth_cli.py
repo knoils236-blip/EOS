@@ -16,7 +16,7 @@ from eos.cli.db_cli import create_db_interface
 if TYPE_CHECKING:
     from eos.configuration.eos_config import EosConfig
 
-auth_app = typer.Typer(help="Manage accounts and roles", no_args_is_help=True)
+auth_app = typer.Typer(help="管理账户和角色", no_args_is_help=True)
 console = Console()
 
 CLI_GRANTED_BY = "cli"
@@ -30,7 +30,7 @@ def _parse_role(role: str) -> Role:
         return Role(role.upper())
     except ValueError as e:
         valid = ", ".join(r.value.lower() for r in Role)
-        typer.secho(f"Invalid role '{role}'. Valid roles: {valid}", fg="red", err=True)
+        typer.secho(f"角色 '{role}' 无效，可用角色：{valid}", fg="red", err=True)
         raise typer.Exit(1) from e
 
 
@@ -55,9 +55,7 @@ def _match_user_id(users: list[dict], identifier: str) -> str:
         email = user.get("human", {}).get("email", {}).get("email", "")
         if identifier == user.get("userId") or wanted in (user.get("username", "").lower(), email.lower()):
             return user["userId"]
-    typer.secho(
-        f"No user found matching '{identifier}'. Run 'eos auth list-users' to see accounts.", fg="red", err=True
-    )
+    typer.secho(f"未找到匹配 '{identifier}' 的用户，请运行 'eos auth list-users' 查看账户。", fg="red", err=True)
     raise typer.Exit(1)
 
 
@@ -91,27 +89,27 @@ def _resolve_sub(eos_config: "EosConfig", identifier: str) -> str:
     if len(matches) == 1:
         return matches[0].sub
     if len(matches) > 1:
-        listed = ", ".join(f"{m.sub} ({m.email or 'no email'})" for m in matches)
-        typer.secho(f"'{identifier}' matches several users: {listed}. Pass a sub instead.", fg="red", err=True)
+        listed = ", ".join(f"{m.sub} ({m.email or '无邮箱'})" for m in matches)
+        typer.secho(f"'{identifier}' 匹配多个用户：{listed}。请改用 sub 指定用户。", fg="red", err=True)
         raise typer.Exit(1)
     if eos_config.auth.can_manage_accounts:
         with ZitadelClient(eos_config.auth) as client:
             return _match_user_id(client.list_users(), identifier)
-    typer.secho(f"No user matching '{identifier}'. They must sign in to EOS once first.", fg="red", err=True)
+    typer.secho(f"未找到匹配 '{identifier}' 的用户，该用户需要先登录一次 EOS。", fg="red", err=True)
     raise typer.Exit(1)
 
 
 @auth_app.command("create-user")
-@cli_command("Failed to create user")
+@cli_command("创建用户失败")
 def create_user(
     ctx: Context,
-    username: str = typer.Argument(..., help="Username (login name)"),
-    email: str = typer.Argument(..., help="Email address"),
-    given_name: str = typer.Option(None, "--given", help="Given name (defaults to username)"),
-    family_name: str = typer.Option(None, "--family", help="Family name (defaults to username)"),
-    superuser: bool = typer.Option(False, "--superuser", help="Also grant the superuser role in this instance"),
+    username: str = typer.Argument(..., help="用户名（登录名）"),
+    email: str = typer.Argument(..., help="邮箱地址"),
+    given_name: str = typer.Option(None, "--given", help="名（默认为用户名）"),
+    family_name: str = typer.Option(None, "--family", help="姓（默认为用户名）"),
+    superuser: bool = typer.Option(False, "--superuser", help="同时授予此实例的超级用户角色"),
 ) -> None:
-    """Create a Zitadel account with a temporary password that must be changed at first login."""
+    """创建 Zitadel 账户并生成临时密码，首次登录时必须修改密码。"""
     eos_config: EosConfig = ctx.obj
     password = generate_complexity_password()
     with ZitadelClient(eos_config.auth) as client:
@@ -119,18 +117,18 @@ def create_user(
     if superuser:
         asyncio.run(_insert_role(eos_config, user_id, Role.SUPERUSER, None))
 
-    typer.secho(f"Created user '{username}' (id: {user_id}){' with superuser role' if superuser else ''}", fg="green")
-    typer.echo(f"Temporary password (must be changed at first login): {password}")
+    typer.secho(f"已创建用户 '{username}'（ID：{user_id}）{'，已授予超级用户角色' if superuser else ''}", fg="green")
+    typer.echo(f"临时密码（首次登录时必须修改）： {password}")
 
 
 @auth_app.command("list-users")
-@cli_command("Failed to list users")
+@cli_command("列出用户失败")
 def list_users(ctx: Context) -> None:
-    """List Zitadel accounts in the organization."""
+    """列出组织中的 Zitadel 账户。"""
     with ZitadelClient(ctx.obj.auth) as client:
         users = client.list_users()
 
-    table = Table("ID", "Username", "Email", "State")
+    table = Table("ID", "用户名", "邮箱", "状态")
     for user in users:
         human = user.get("human", {})
         table.add_row(
@@ -143,53 +141,53 @@ def list_users(ctx: Context) -> None:
 
 
 @auth_app.command("deactivate-user")
-@cli_command("Failed to deactivate user")
-def deactivate_user(ctx: Context, user: str = typer.Argument(..., help="Username, email, or Zitadel user ID")) -> None:
-    """Deactivate a Zitadel account."""
+@cli_command("停用用户失败")
+def deactivate_user(ctx: Context, user: str = typer.Argument(..., help="用户名、邮箱或 Zitadel 用户 ID")) -> None:
+    """停用 Zitadel 账户。"""
     with ZitadelClient(ctx.obj.auth) as client:
         client.deactivate_user(_match_user_id(client.list_users(), user))
-    typer.secho(f"Deactivated user {user}", fg="green")
+    typer.secho(f"已停用用户 {user}", fg="green")
 
 
 @auth_app.command("reactivate-user")
-@cli_command("Failed to reactivate user")
-def reactivate_user(ctx: Context, user: str = typer.Argument(..., help="Username, email, or Zitadel user ID")) -> None:
-    """Reactivate a deactivated Zitadel account."""
+@cli_command("重新启用用户失败")
+def reactivate_user(ctx: Context, user: str = typer.Argument(..., help="用户名、邮箱或 Zitadel 用户 ID")) -> None:
+    """重新启用已停用的 Zitadel 账户。"""
     with ZitadelClient(ctx.obj.auth) as client:
         client.reactivate_user(_match_user_id(client.list_users(), user))
-    typer.secho(f"Reactivated user {user}", fg="green")
+    typer.secho(f"已重新启用用户 {user}", fg="green")
 
 
 @auth_app.command("assign-role")
-@cli_command("Failed to assign role")
+@cli_command("分配角色失败")
 def assign_role(
     ctx: Context,
-    user: str = typer.Argument(..., help="Username, email, or Zitadel user ID"),
-    role: str = typer.Argument(..., help="Role: superuser, lab_admin, editor, submitter, or viewer"),
-    lab: str = typer.Option(None, "--lab", help="Lab name (required for lab_admin)"),
+    user: str = typer.Argument(..., help="用户名、邮箱或 Zitadel 用户 ID"),
+    role: str = typer.Argument(..., help="角色：superuser、lab_admin、editor、submitter 或 viewer"),
+    lab: str = typer.Option(None, "--lab", help="实验室名称（lab_admin 角色必填）"),
 ) -> None:
-    """Assign a local role to a user in this EOS instance."""
+    """为用户分配此 EOS 实例的本地角色。"""
     parsed_role = _parse_role(role)
     if (parsed_role == Role.LAB_ADMIN) != (lab is not None):
-        typer.secho("--lab is required for lab_admin and not allowed for other roles", fg="red", err=True)
+        typer.secho("lab_admin 角色必须指定 --lab，其他角色不允许使用此选项", fg="red", err=True)
         raise typer.Exit(1)
 
     sub = _resolve_sub(ctx.obj, user)
     if asyncio.run(_insert_role(ctx.obj, sub, parsed_role, lab)):
-        typer.secho(f"Assigned {role} to {user}" + (f" for lab '{lab}'" if lab else ""), fg="green")
+        typer.secho(f"已为 {user} 分配 {role}" + (f"，实验室为 '{lab}'" if lab else ""), fg="green")
     else:
-        typer.secho("Role is already assigned", fg="yellow")
+        typer.secho("该角色已分配", fg="yellow")
 
 
 @auth_app.command("revoke-role")
-@cli_command("Failed to revoke role")
+@cli_command("撤销角色失败")
 def revoke_role(
     ctx: Context,
-    user: str = typer.Argument(..., help="Username, email, or Zitadel user ID"),
-    role: str = typer.Argument(..., help="Role: superuser, lab_admin, editor, submitter, or viewer"),
-    lab: str = typer.Option(None, "--lab", help="Lab name (for lab_admin)"),
+    user: str = typer.Argument(..., help="用户名、邮箱或 Zitadel 用户 ID"),
+    role: str = typer.Argument(..., help="角色：superuser、lab_admin、editor、submitter 或 viewer"),
+    lab: str = typer.Option(None, "--lab", help="实验室名称（用于 lab_admin）"),
 ) -> None:
-    """Revoke a local role from a user in this EOS instance."""
+    """撤销用户在此 EOS 实例中的本地角色。"""
     parsed_role = _parse_role(role)
     sub = _resolve_sub(ctx.obj, user)
 
@@ -202,16 +200,16 @@ def revoke_role(
             )
 
     asyncio.run(_revoke())
-    typer.secho(f"Revoked {role} from {user}", fg="green")
+    typer.secho(f"已撤销用户 {user} 的 {role} 角色", fg="green")
 
 
 @auth_app.command("list-roles")
-@cli_command("Failed to list roles")
+@cli_command("列出角色失败")
 def list_roles(
     ctx: Context,
-    user: str = typer.Argument(None, help="Filter by username, email, or Zitadel user ID"),
+    user: str = typer.Argument(None, help="按用户名、邮箱或 Zitadel 用户 ID 筛选"),
 ) -> None:
-    """List local role assignments in this EOS instance."""
+    """列出此 EOS 实例中的本地角色分配。"""
     names = asyncio.run(_identity_names(ctx.obj))
     sub_filter = _resolve_sub(ctx.obj, user) if user else None
 
@@ -224,7 +222,7 @@ def list_roles(
             return list(result.scalars().all())
 
     roles = asyncio.run(_list())
-    table = Table("ID", "User", "Role", "Lab", "Granted by", "Created at")
+    table = Table("ID", "用户", "角色", "实验室", "授权者", "创建时间")
     for role in roles:
         table.add_row(
             str(role.id),

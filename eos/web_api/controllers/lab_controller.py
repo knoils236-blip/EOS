@@ -28,6 +28,11 @@ class LabController(Controller):
         """Get labs."""
         return await orchestrator.loading.list_labs()
 
+    @get("/editor-scenes")
+    async def get_editor_scenes(self, orchestrator: Orchestrator) -> list[dict[str, Any]]:
+        """List scene-specific editing presets; this never executes a device operation."""
+        return await orchestrator.labs.get_editor_scenes()
+
     @get("/{lab_name:str}/device/{device_name:str}/report")
     async def get_device_report(self, lab_name: str, device_name: str, orchestrator: Orchestrator) -> dict[str, Any]:
         """Get a report for a specific device."""

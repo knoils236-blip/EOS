@@ -46,6 +46,15 @@ class ProtocolGraphBuilder:
         graph.add_edge(last_task, "End")
 
     def _add_task_nodes_and_edges(self, graph: nx.DiGraph) -> None:
+        names = {task.name for task in self._protocol.tasks}
+        unknown = [
+            f"Task '{task.name}' depends on unknown task '{dep}'."
+            for task in self._protocol.tasks
+            for dep in task.dependencies
+            if dep not in names
+        ]
+        if unknown:
+            raise EosTaskGraphError("\n".join(unknown))
         for task in self._protocol.tasks:
             graph.add_node(task.name, node_type="task", task=task)
             for dep in task.dependencies:

@@ -1,0 +1,13 @@
+name: matterix_lab
+desc: Matterix (Isaac Sim) digital-twin laboratory reached through the Matterix SiLA 2 bridge
+
+simulated: true
+devices:
+  matterix:
+    type: matterix_workstation
+    computer: eos_computer
+    init_parameters:
+      address: 127.0.0.1
+      port: 65200
+      insecure: true
+      scene_id: franka_beaker

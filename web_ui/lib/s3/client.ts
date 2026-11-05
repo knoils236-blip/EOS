@@ -12,6 +12,13 @@ const bucket = process.env.EOS_S3_BUCKET || 'eos';
 
 let _client: S3Client | null = null;
 
+export class InvalidS3KeyError extends Error {
+  constructor() {
+    super('S3 对象键无效');
+    this.name = 'InvalidS3KeyError';
+  }
+}
+
 function getClient(): S3Client {
   if (!_client) {
     _client = new S3Client({
@@ -129,12 +136,22 @@ export async function searchFiles(query: string, prefix: string = '', maxResults
   return results;
 }
 
-export async function getFileStream(key: string): Promise<{ stream: Readable; size: number; contentType: string }> {
+export async function getFileStream(
+  key: string,
+  range?: string
+): Promise<{
+  stream: Readable;
+  size: number;
+  contentType: string;
+  contentRange: string | null;
+  acceptRanges: string;
+}> {
   const client = getClient();
 
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
+    ...(range ? { Range: range } : {}),
   });
 
   const response = await client.send(command);
@@ -143,7 +160,77 @@ export async function getFileStream(key: string): Promise<{ stream: Readable; si
     stream: response.Body as Readable,
     size: response.ContentLength ?? 0,
     contentType: response.ContentType ?? 'application/octet-stream',
+    contentRange: response.ContentRange ?? null,
+    acceptRanges: response.AcceptRanges ?? 'bytes',
   };
+}
+
+export function normalizeByteRange(value: string | null): string | undefined {
+  if (!value) return undefined;
+  const range = value.trim();
+  if (!/^bytes=(?:\d+-\d*|-\d+)$/.test(range)) {
+    throw new RangeError('仅支持单段 HTTP Range');
+  }
+  return range;
+}
+
+export function downloadResponseShape({
+  fileName,
+  size,
+  contentType,
+  contentRange,
+  acceptRanges,
+  inline,
+}: {
+  fileName: string;
+  size: number;
+  contentType: string;
+  contentRange: string | null;
+  acceptRanges: string;
+  inline: boolean;
+}): { status: number; headers: Record<string, string> } {
+  return {
+    status: contentRange ? 206 : 200,
+    headers: {
+      'Content-Type': contentType,
+      'Content-Length': String(size),
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+      'Accept-Ranges': acceptRanges,
+      'X-Content-Type-Options': 'nosniff',
+      ...(contentRange ? { 'Content-Range': contentRange } : {}),
+    },
+  };
+}
+
+export function resolveInlineContentType(contentType: string, fileName: string): string | null {
+  const normalized = contentType.split(';', 1)[0].trim().toLowerCase();
+  if (['application/octet-stream', 'binary/octet-stream'].includes(normalized) && /\.mp4$/i.test(fileName)) {
+    return 'video/mp4';
+  }
+  if (normalized.startsWith('video/')) return contentType;
+  if (
+    ['application/json', 'text/json', 'application/x-ndjson', 'application/jsonl', 'text/plain'].includes(
+      normalized
+    )
+  ) {
+    return contentType;
+  }
+  if (['application/octet-stream', 'binary/octet-stream'].includes(normalized) && /\.(?:json|jsonl|txt|log)$/i.test(fileName)) {
+    return 'text/plain; charset=utf-8';
+  }
+  return null;
+}
+
+export function assertSafeS3Key(key: string): void {
+  if (
+    !key ||
+    key.startsWith('/') ||
+    key.includes('\\') ||
+    key.includes('\0') ||
+    key.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')
+  ) {
+    throw new InvalidS3KeyError();
+  }
 }
 
 export async function uploadFile(

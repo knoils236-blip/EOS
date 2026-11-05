@@ -56,6 +56,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
         # Beacon-specific
         ai_model: str = "claude-agent-sdk:sonnet",
         ai_api_key: str | None = None,
+        ai_base_url: str | None = None,
         p_bayesian: float = 0.5,
         p_ai: float = 0.5,
         ai_retries: int = 3,
@@ -77,6 +78,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
         # Keep AI configuration for enabling the agent at runtime.
         self._ai_model = ai_model
         self._ai_api_key = ai_api_key
+        self._ai_base_url = ai_base_url
         self._ai_retries = ai_retries
         self._ai_model_settings = ai_model_settings
         self._protocol_context: str | None = None
@@ -107,6 +109,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
         self._state_lock = asyncio.Lock()
         self._journal: list[str] = []
         self._sample_journals: list[tuple[tuple, str | None]] = []  # (input_fingerprint, journal)
+        self._sampling_decision: dict[str, Any] | None = None
         self._num_samples_reported: int = 0
 
         # Only create the AI agent when needed
@@ -141,6 +144,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
             domain=self._domain,
             model=self._ai_model,
             api_key=self._ai_api_key,
+            base_url=self._ai_base_url,
             retries=self._ai_retries,
             model_settings=self._ai_model_settings,
             additional_context=self._ai_additional_context,
@@ -183,8 +187,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
                 )
             except Exception as e:
                 log.warning(
-                    f"Beacon AI failed ({type(e).__name__}: {e}), falling back to {type(self._optimizer).__name__}",
-                    exc_info=True,
+                    f"Beacon AI failed ({type(e).__name__}), falling back to {type(self._optimizer).__name__}",
                 )
                 async with self._state_lock:
                     self._insights = insights + self._insights
@@ -193,12 +196,29 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
                 async with self._state_lock:
                     self._journal.append(journal_entry)
                     self._tag_sample_journals(df, journal_entry)
+                    self._sampling_decision = {"method": "ai", "reason": journal_entry, "model": self._ai_model}
                 return df
 
         log.info(f"Beacon sampling {num_protocol_runs} protocol run(s) via {type(self._optimizer).__name__}")
         async with self._state_lock:
+            initial_design = isinstance(self._optimizer, BayesianSequentialOptimizer) and (
+                self._optimizer.get_num_samples_reported() < self._num_initial_samples
+            )
             df = await asyncio.to_thread(self._optimizer.sample, num_protocol_runs)
             self._tag_sample_journals(df, None)
+            method = "bayesian" if isinstance(self._optimizer, BayesianSequentialOptimizer) else "optimizer"
+            if initial_design:
+                method = "initial_design"
+            reason = (
+                "按初始采样方案生成条件，用于建立第一批观测。"
+                if initial_design
+                else "由优化器在已登记的参数范围内提出。"
+            )
+            self._sampling_decision = {
+                "method": method + "_fallback" if use_ai else method,
+                "reason": "AI 建议不可用。" + reason if use_ai else reason,
+                "optimizer_type": type(self._optimizer).__name__,
+            }
         return df
 
     async def report(self, inputs_df: pd.DataFrame, outputs_df: pd.DataFrame) -> None:
@@ -321,6 +341,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
             "journal": list(self._journal),
             "insights": list(self._insights),
             "runtime_params": self.get_runtime_params(),
+            "sampling_decision": self._sampling_decision,
         }
 
     def restore_meta(self, meta: dict[str, Any]) -> None:
@@ -329,6 +350,7 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
 
         self._journal = list(meta.get("journal", []))
         self._insights = list(meta.get("insights", []))
+        self._sampling_decision = meta.get("sampling_decision")
 
     def _get_best_results(self) -> list[dict[str, Any]]:
         if self._num_samples_reported == 0:

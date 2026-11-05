@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Feature SiLA2Version="1.0" FeatureVersion="1.0" MaturityLevel="Draft"
+         Originator="org.chemos" Category="simulation" xmlns="http://www.sila-standard.org">
+  <Identifier>Matterix</Identifier>
+  <DisplayName>Matterix Digital Workstation</DisplayName>
+  <Description>Simulated workstation with durable single-shot and continuous-session execution.</Description>
+  <Command>
+    <Identifier>GetCapabilities</Identifier><DisplayName>Get Capabilities</DisplayName>
+    <Description>List registered simulation capabilities and editable parameter schemas.</Description>
+    <Observable>No</Observable>
+    <Response><Identifier>Result</Identifier><DisplayName>Capabilities</DisplayName>
+      <Description>JSON list of registered capabilities.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>CreateSession</Identifier><DisplayName>Create Session</DisplayName>
+    <Description>Create the single active continuous simulation session.</Description>
+    <Observable>No</Observable>
+    <Parameter><Identifier>Request</Identifier><DisplayName>Request</DisplayName>
+      <Description>JSON: session_id, experiment_id and scene_id.</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>Session State</DisplayName>
+      <Description>JSON session state or rejected response.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>GetSession</Identifier><DisplayName>Get Session</DisplayName>
+    <Description>Read one persisted simulation session.</Description>
+    <Observable>No</Observable>
+    <Parameter><Identifier>SessionId</Identifier><DisplayName>Session ID</DisplayName>
+      <Description>Previously created session ID.</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>Session State</DisplayName>
+      <Description>JSON session state or rejected response.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>ListSessions</Identifier><DisplayName>List Sessions</DisplayName>
+    <Description>List persisted simulation sessions in newest-first order.</Description>
+    <Observable>No</Observable>
+    <Response><Identifier>State</Identifier><DisplayName>Session States</DisplayName>
+      <Description>JSON list of session states.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>ResetSession</Identifier><DisplayName>Reset Session</DisplayName>
+    <Description>Reset the same worker environment and advance its generation.</Description>
+    <Observable>No</Observable>
+    <Parameter><Identifier>SessionId</Identifier><DisplayName>Session ID</DisplayName>
+      <Description>Idle or frozen session to reset.</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>Session State</DisplayName>
+      <Description>JSON session state or rejected response.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>EndSession</Identifier><DisplayName>End Session</DisplayName>
+    <Description>End an idle or frozen session and release the workstation.</Description>
+    <Observable>No</Observable>
+    <Parameter><Identifier>SessionId</Identifier><DisplayName>Session ID</DisplayName>
+      <Description>Session to end.</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>Session State</DisplayName>
+      <Description>JSON session state or rejected response.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>SubmitTask</Identifier><DisplayName>Submit Task</DisplayName>
+    <Description>Submit an idempotent capability task and observe progress.</Description>
+    <Observable>Yes</Observable>
+    <Parameter><Identifier>Request</Identifier><DisplayName>Request</DisplayName>
+      <Description>JSON: request_id, session_id, capability_id and parameters.</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>Result</Identifier><DisplayName>Result</DisplayName>
+      <Description>JSON task state; failures and submission rejections are explicit.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+    <IntermediateResponse><Identifier>Event</Identifier><DisplayName>Event</DisplayName>
+      <Description>JSON current task state with latest observation.</Description>
+      <DataType><Basic>String</Basic></DataType></IntermediateResponse>
+  </Command>
+  <Command>
+    <Identifier>RunWorkflow</Identifier><DisplayName>Run Workflow</DisplayName>
+    <Description>Submit an idempotent request and observe progress. Inspect Result.status for simulation outcome.</Description>
+    <Observable>Yes</Observable>
+    <Parameter><Identifier>Request</Identifier><DisplayName>Request</DisplayName>
+      <Description>JSON: request_id, workflow_id, optional sample_id and record_video (boolean, default false).</Description>
+      <DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>Result</Identifier><DisplayName>Result</DisplayName>
+      <Description>JSON execution state; simulation failures and submission rejections are explicit.</Description>
+      <DataType><Basic>String</Basic></DataType></Response>
+    <IntermediateResponse><Identifier>Event</Identifier><DisplayName>Event</DisplayName>
+      <Description>JSON current execution state with latest observation.</Description>
+      <DataType><Basic>String</Basic></DataType></IntermediateResponse>
+  </Command>
+  <Command>
+    <Identifier>GetRunState</Identifier><DisplayName>Get Run State</DisplayName>
+    <Description>Read persisted status, latest observation and final result.</Description><Observable>No</Observable>
+    <Parameter><Identifier>RequestId</Identifier><DisplayName>Request ID</DisplayName>
+      <Description>Previously submitted request ID.</Description><DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>State</DisplayName>
+      <Description>JSON state or rejected response.</Description><DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>CancelRun</Identifier><DisplayName>Cancel Run</DisplayName>
+    <Description>Request cooperative cancellation followed by bounded process termination.</Description><Observable>No</Observable>
+    <Parameter><Identifier>RequestId</Identifier><DisplayName>Request ID</DisplayName>
+      <Description>Request to cancel.</Description><DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>State</Identifier><DisplayName>State</DisplayName>
+      <Description>JSON state. Cancelling is not terminal until the worker exits.</Description><DataType><Basic>String</Basic></DataType></Response>
+  </Command>
+  <Command>
+    <Identifier>GetRunArchive</Identifier><DisplayName>Get Run Archive</DisplayName>
+    <Description>Download evidence of a terminal run and its session, including failed and cancelled runs.</Description>
+    <Observable>No</Observable>
+    <Parameter><Identifier>RequestId</Identifier><DisplayName>Request ID</DisplayName>
+      <Description>Registered terminal request.</Description><DataType><Basic>String</Basic></DataType></Parameter>
+    <Response><Identifier>Archive</Identifier><DisplayName>Archive</DisplayName>
+      <Description>ZIP containing result, events, samples, provenance and simulator log.</Description>
+      <DataType><Basic>Binary</Basic></DataType></Response>
+  </Command>
+</Feature>

@@ -1,0 +1,91 @@
+type: ai_pip_a
+desc: "Closed-loop restore - aspirate 80 uL from the big bottle and dispense it back, then recap, return and eject"
+
+labs:
+  - matterix_pipetting_lab
+
+tasks:
+  - name: begin
+    type: Matterix Begin Experiment
+    timeout: 240
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: mount_tip
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [begin]
+    parameters:
+      capability_id: station_skill_mount_tip
+      parameters: {timeout_s: 120, tip_index: 1, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: pick_big_bottle
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [mount_tip]
+    parameters:
+      capability_id: station_skill_big_bottle_pick
+      parameters: {timeout_s: 120, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: decap_big_bottle
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [pick_big_bottle]
+    parameters:
+      capability_id: station_skill_big_bottle_decap
+      parameters: {timeout_s: 120, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: aspirate_80
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [decap_big_bottle]
+    parameters:
+      capability_id: station_skill_aspirate_from
+      parameters: {timeout_s: 120, zone: 大开盖区, volume_ul: 80.0, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: dispense_80
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [aspirate_80]
+    parameters:
+      capability_id: station_skill_dispense_to
+      parameters: {timeout_s: 120, zone: 大开盖区, volume_ul: 80.0, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: eject_tip
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [dispense_80]
+    parameters:
+      capability_id: station_skill_eject_tip
+      parameters: {timeout_s: 120, dwell_s: 1.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: recap_big_bottle
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [eject_tip]
+    parameters:
+      capability_id: station_skill_big_bottle_recap
+      parameters: {timeout_s: 120, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: place_big_bottle
+    type: Matterix Capability
+    timeout: 660
+    dependencies: [recap_big_bottle]
+    parameters:
+      capability_id: station_skill_big_bottle_place
+      parameters: {timeout_s: 120, hold_s: 0.5}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}
+  - name: end
+    type: Matterix End Experiment
+    timeout: 240
+    dependencies: [place_big_bottle]
+    parameters: {expected_phase: 0}
+    devices:
+      matterix: {lab_name: matterix_pipetting_lab, name: matterix}

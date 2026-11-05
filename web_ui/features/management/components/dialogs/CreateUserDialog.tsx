@@ -20,10 +20,10 @@ interface CreateUserDialogProps {
 const EMPTY_FORM = { username: '', email: '', givenName: '', familyName: '' };
 type BaseRole = 'NONE' | 'VIEWER' | 'SUBMITTER' | 'EDITOR';
 const ROLE_OPTIONS: { value: BaseRole; label: string }[] = [
-  { value: 'NONE', label: 'None' },
-  { value: 'VIEWER', label: 'Viewer' },
-  { value: 'SUBMITTER', label: 'Submitter' },
-  { value: 'EDITOR', label: 'Editor' },
+  { value: 'NONE', label: '无' },
+  { value: 'VIEWER', label: '查看者' },
+  { value: 'SUBMITTER', label: '提交者' },
+  { value: 'EDITOR', label: '编辑者' },
 ];
 
 export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDialogProps) {
@@ -54,7 +54,7 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
 
   const handleSubmit = async () => {
     if (!form.username || !form.email) {
-      setError('Username and email are required');
+      setError('用户名和邮箱为必填项');
       return;
     }
     setIsSubmitting(true);
@@ -77,7 +77,7 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
     if (result.success) {
       setTemporaryPassword(result.temporaryPassword ?? null);
     } else {
-      setError(result.error ?? 'Failed to create user');
+      setError(result.error ?? '创建用户失败');
     }
   };
 
@@ -98,40 +98,39 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
     <Modal
       open={open}
       onOpenChange={(next) => !next && handleClose()}
-      title={temporaryPassword ? 'User created' : 'Create user'}
+      title={temporaryPassword ? '用户已创建' : '创建用户'}
       closeDisabled={isSubmitting}
     >
       {temporaryPassword ? (
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Share this temporary password with the user. They must change it at first sign-in. It will not be shown
-            again.
+            请将此临时密码告知用户，用户首次登录时必须修改密码。关闭后将不再显示。
           </p>
           <div className="flex items-center gap-2 p-3 rounded-md bg-gray-100 dark:bg-slate-800 font-mono text-sm">
             <span className="flex-1 break-all">{temporaryPassword}</span>
             <button
               onClick={() => navigator.clipboard.writeText(temporaryPassword)}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              aria-label="Copy password"
+              aria-label="复制密码"
             >
               <Copy className="w-4 h-4" />
             </button>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleClose}>Done</Button>
+            <Button onClick={handleClose}>完成</Button>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          {field('username', 'Username')}
-          {field('email', 'Email', 'email')}
+          {field('username', '用户名')}
+          {field('email', '邮箱', 'email')}
           <div className="grid grid-cols-2 gap-3">
-            {field('givenName', 'Given name')}
-            {field('familyName', 'Family name')}
+            {field('givenName', '名')}
+            {field('familyName', '姓')}
           </div>
 
           <div className="space-y-1.5">
-            <Label>Role</Label>
+            <Label>角色</Label>
             <Select value={role} onValueChange={(v) => setRole(v as BaseRole)} disabled={isSubmitting || superuser}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue />
@@ -148,14 +147,14 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
 
           {labNames.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Lab admin of</Label>
+              <Label>管理的实验室</Label>
               <MultiCombobox
                 options={labOptions}
                 value={adminLabs}
                 onChange={setAdminLabs}
-                placeholder="Select labs…"
-                searchPlaceholder="Search labs…"
-                emptyText="No labs found"
+                placeholder="选择实验室…"
+                searchPlaceholder="搜索实验室…"
+                emptyText="未找到实验室"
                 disabled={isSubmitting || superuser}
               />
             </div>
@@ -172,9 +171,9 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
             <span className="text-sm">
               <span className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
                 <ShieldCheck className="h-3.5 w-3.5 text-yellow-500" />
-                Superuser
+                超级用户
               </span>
-              <span className="text-gray-500 dark:text-gray-400">Full access; overrides the roles above.</span>
+              <span className="text-gray-500 dark:text-gray-400">拥有全部权限，覆盖上述角色设置。</span>
             </span>
           </label>
 
@@ -182,10 +181,10 @@ export function CreateUserDialog({ open, onOpenChange, labNames }: CreateUserDia
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              取消
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create user'}
+              {isSubmitting ? '正在创建…' : '创建用户'}
             </Button>
           </div>
         </div>

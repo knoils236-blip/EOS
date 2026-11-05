@@ -1,5 +1,7 @@
 'use client';
 
+import { ASSIGNMENT_MODE_LABELS } from '@/lib/labels';
+
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ResourceAssignment as ResourceAssignmentType, ResourceSpec } from '@/lib/types/protocol';
 import type { LabSpec } from '@/lib/api/specs';
@@ -99,7 +101,7 @@ export function ResourceAssignment({
                     : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                 }`}
               >
-                {mode}
+                {ASSIGNMENT_MODE_LABELS[mode]}
               </button>
             ))}
           </div>
@@ -126,11 +128,8 @@ export function ResourceAssignment({
             onChange={(e) => onHoldChange(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 dark:border-slate-500"
           />
-          <span
-            className="text-sm text-gray-700 dark:text-gray-300"
-            title="Prevent this resource from being released until successor tasks complete"
-          >
-            Hold for successors
+          <span className="text-sm text-gray-700 dark:text-gray-300" title="在后续任务完成前保留此资源">
+            保留至后续任务完成
           </span>
         </label>
       )}
@@ -150,20 +149,20 @@ function StaticMode({
       getAvailableResources(labSpecs, selectedLabs, resourceSpec.type).map((r) => ({
         value: r.resourceName,
         label: r.resourceName,
-        description: r.labName ? `Lab: ${r.labName}` : undefined,
+        description: r.labName ? `实验室：${r.labName}` : undefined,
       })),
     [labSpecs, selectedLabs, resourceSpec.type]
   );
 
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Resource</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">资源</label>
       <Combobox
         options={resourceOptions}
         value={value && isStaticResourceAssignment(value) ? value : ''}
         onChange={onChange}
-        placeholder="Select or type resource name..."
-        emptyText={`No ${resourceSpec.type} resources in selected labs`}
+        placeholder="选择或输入资源名称…"
+        emptyText={`暂无 ${resourceSpec.type} 个资源可用于所选实验室`}
       />
     </div>
   );
@@ -173,7 +172,7 @@ function DynamicMode({ resourceSpec }: Pick<ResourceAssignmentProps, 'resourceSp
   return (
     <div className="border border-gray-200 dark:border-slate-700 rounded-md p-2">
       <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-700 px-2.5 py-1.5 rounded-md">
-        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Resource Type:</span>
+        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">资源类型：</span>
         <span className="text-sm text-gray-900 dark:text-white">{resourceSpec.type}</span>
       </div>
     </div>
@@ -183,7 +182,7 @@ function DynamicMode({ resourceSpec }: Pick<ResourceAssignmentProps, 'resourceSp
 function ReferenceMode({ value, onChange }: Pick<ResourceAssignmentProps, 'value' | 'onChange'>) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Task Reference</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">任务引用</label>
       <input
         type="text"
         value={typeof value === 'string' ? value : ''}

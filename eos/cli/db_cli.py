@@ -21,12 +21,12 @@ from eos.database.alembic_commands import (
 if TYPE_CHECKING:
     from alembic.config import Config
 
-db_app = typer.Typer(help="Manage the EOS database", no_args_is_help=True)
+db_app = typer.Typer(help="管理 EOS 数据库", no_args_is_help=True)
 
 # Load the config once into ctx.obj for every db subcommand.
 db_app.callback(invoke_without_command=True)(config_callback)
 
-ConfirmOption = typer.Option(False, "--force", "-f", "--yes", help="Skip the confirmation prompt")
+ConfirmOption = typer.Option(False, "--force", "-f", "--yes", help="跳过确认提示")
 
 
 def create_db_interface(eos_config: EosConfig) -> AbstractSqlDbInterface:
@@ -56,111 +56,111 @@ def setup_alembic(eos_config: EosConfig) -> "Config":
 
     migrations_path = Path(__file__).parent.parent / "database" / "_migrations" / "alembic.ini"
     if not migrations_path.exists():
-        raise FileNotFoundError(f"Alembic configuration not found at: {migrations_path}")
+        raise FileNotFoundError(f"未找到 Alembic 配置： {migrations_path}")
 
     return Config(str(migrations_path))
 
 
 @db_app.command("init")
-@cli_command("Failed to initialize database")
+@cli_command("初始化数据库失败")
 def initialize_database(ctx: Context) -> None:
-    """Initialize the database and create all tables."""
+    """初始化数据库并创建所有表。"""
     initialize_database_core(ctx.obj)
-    typer.secho("Database initialized successfully", fg="green")
+    typer.secho("数据库初始化成功", fg="green")
 
 
 @db_app.command()
-@cli_command("Failed to create migration")
+@cli_command("创建迁移失败")
 def migrate(
     ctx: Context,
-    message: str = typer.Argument(..., help="Migration message"),
-    autogenerate: bool = typer.Option(True, "--autogenerate", "-a", help="Detect schema changes automatically"),
+    message: str = typer.Argument(..., help="迁移说明"),
+    autogenerate: bool = typer.Option(True, "--autogenerate", "-a", help="自动检测数据库结构变更"),
 ) -> None:
-    """Create a new database migration."""
+    """创建新的数据库迁移。"""
     setup_alembic(ctx.obj)
     alembic_upgrade("head")
     alembic_revision(message=message, autogenerate=autogenerate)
-    typer.secho(f"Created new migration: {message}", fg="green")
+    typer.secho(f"已创建迁移： {message}", fg="green")
 
 
 @db_app.command()
-@cli_command("Failed to upgrade database")
+@cli_command("升级数据库失败")
 def upgrade(
     ctx: Context,
-    revision: str = typer.Option("head", "--revision", "-r", help="Target revision (default: head)"),
+    revision: str = typer.Option("head", "--revision", "-r", help="目标版本（默认：head）"),
 ) -> None:
-    """Upgrade the database to the given revision."""
+    """将数据库升级至指定版本。"""
     setup_alembic(ctx.obj)
     alembic_upgrade(revision)
-    typer.secho(f"Successfully upgraded to: {revision}", fg="green")
+    typer.secho(f"已成功升级至： {revision}", fg="green")
 
 
 @db_app.command()
-@cli_command("Failed to downgrade database")
+@cli_command("降级数据库失败")
 def downgrade(
     ctx: Context,
-    revision: str = typer.Option("-1", "--revision", "-r", help="Target revision (default: -1)"),
+    revision: str = typer.Option("-1", "--revision", "-r", help="目标版本（默认：-1）"),
     force: bool = ConfirmOption,
 ) -> None:
-    """Downgrade the database to the given revision."""
-    if not force and not typer.confirm(f"Downgrade to {revision}?"):
+    """将数据库降级至指定版本。"""
+    if not force and not typer.confirm(f"是否降级至 {revision}？"):
         raise typer.Exit()
     setup_alembic(ctx.obj)
     alembic_downgrade(revision)
-    typer.secho(f"Successfully downgraded to: {revision}", fg="green")
+    typer.secho(f"已成功降级至： {revision}", fg="green")
 
 
 @db_app.command()
-@cli_command("Failed to show history")
+@cli_command("显示历史记录失败")
 def history(ctx: Context) -> None:
-    """Show the migration history."""
+    """显示迁移历史。"""
     from alembic import command
 
     command.history(setup_alembic(ctx.obj))
 
 
 @db_app.command()
-@cli_command("Failed to show current revision")
+@cli_command("显示当前版本失败")
 def current(ctx: Context) -> None:
-    """Show the current revision."""
+    """显示当前版本。"""
     from alembic import command
 
     command.current(setup_alembic(ctx.obj))
 
 
 @db_app.command()
-@cli_command("Failed to clear database")
+@cli_command("清空数据库失败")
 def clear(ctx: Context, force: bool = ConfirmOption) -> None:
-    """Clear all data from the database tables while preserving the schema."""
+    """清空数据库表中的所有数据并保留表结构。"""
     import eos.database.models  # noqa: F401  (register models before clearing)
 
-    if not force and not typer.confirm("WARNING: this will delete *all* data but keep the schema - continue?"):
+    if not force and not typer.confirm("警告：此操作将删除全部数据，仅保留表结构。是否继续？"):
         raise typer.Exit()
     asyncio.run(create_db_interface(ctx.obj).clear_db())
-    typer.secho("Cleared all data from database tables", fg="green")
+    typer.secho("已清空数据库表中的所有数据", fg="green")
 
 
 @db_app.command()
-@cli_command("Failed to stamp database")
+@cli_command("标记数据库版本失败")
 def stamp(
     ctx: Context,
-    revision: str = typer.Argument(..., help="Target revision to stamp (e.g. 'head', revision hash)"),
+    revision: str = typer.Argument(..., help="要标记的目标版本（例如 'head' 或版本哈希）"),
     force: bool = ConfirmOption,
 ) -> None:
-    """Stamp the database with a revision without running migrations."""
-    if not force and not typer.confirm(f"Stamp database to {revision}?"):
+    """标记数据库版本，不执行迁移。"""
+    if not force and not typer.confirm(f"是否将数据库版本标记为 {revision}？"):
         raise typer.Exit()
     setup_alembic(ctx.obj)
     alembic_stamp(revision)
-    typer.secho(f"Successfully stamped to: {revision}", fg="green")
+    typer.secho(f"已成功标记为： {revision}", fg="green")
 
 
 @db_app.command("check")
-@cli_command("Failed to check database connection")
+@cli_command("检查数据库连接失败")
 def check_connection(ctx: Context) -> None:
-    """Test database connectivity."""
+    """测试数据库连接。"""
     if asyncio.run(create_db_interface(ctx.obj).check_connection()):
-        typer.secho("Database connection OK", fg="green")
+        typer.secho("数据库连接正常", fg="green")
     else:
-        typer.secho("Database connection FAILED", fg="red", err=True)
+        typer.secho("数据库连接失败", fg="red", err=True)
         raise typer.Exit(1)

@@ -1,4 +1,5 @@
 import 'server-only';
+import { roleLabel } from '@/lib/labels';
 import { cache } from 'react';
 import { getUserRoles } from '@/lib/db/queries';
 import { env } from '@/lib/env';
@@ -29,7 +30,7 @@ export function isSuperuser(roles: RoleName[]): boolean {
 /** Get the session user with their local roles. Throws if unauthenticated. */
 export async function requireUser(): Promise<SessionUser & { roles: RoleName[] }> {
   const user = await getSessionUser();
-  if (!user) throw new AuthorizationError('Not authenticated');
+  if (!user) throw new AuthorizationError('尚未登录');
   return { ...user, roles: await rolesFor(user.sub) };
 }
 
@@ -40,13 +41,13 @@ export async function requireUser(): Promise<SessionUser & { roles: RoleName[] }
 export async function requireRole(minimum: RequirableRole): Promise<SessionUser> {
   const user = await requireUser();
   if (isSuperuser(user.roles) || rolesSatisfy(user.roles, minimum)) return user;
-  throw new AuthorizationError(`Requires the ${minimum.toLowerCase()} role`);
+  throw new AuthorizationError(`需要${roleLabel(minimum)}角色`);
 }
 
 /** Require the local superuser role for this instance. */
 export async function requireSuperuser(): Promise<SessionUser> {
   const user = await requireUser();
-  if (!isSuperuser(user.roles)) throw new AuthorizationError('Requires the superuser role');
+  if (!isSuperuser(user.roles)) throw new AuthorizationError('需要超级用户角色');
   return user;
 }
 
@@ -71,7 +72,7 @@ export async function requireRoleResponse(minimum: RequirableRole): Promise<Resp
     await requireRole(minimum);
     return null;
   } catch (error) {
-    const message = error instanceof AuthorizationError ? error.message : 'Forbidden';
+    const message = error instanceof AuthorizationError ? error.message : '禁止访问';
     return Response.json({ error: message }, { status: 403 });
   }
 }

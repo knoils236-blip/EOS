@@ -26,24 +26,24 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'EOS - Experiment Orchestration System',
+    default: 'EOS - 实验编排系统',
     template: '%s - EOS',
   },
-  description: 'Visual graph editor and protocol orchestration system for robotics and automation',
+  description: '用于机器人与自动化的可视化流程编辑器和实验编排系统',
   keywords: ['protocol', 'orchestration', 'robotics', 'automation', 'workflow', 'editor'],
   authors: [{ name: 'EOS Team' }],
   creator: 'EOS Team',
   openGraph: {
     type: 'website',
-    locale: 'en_US',
+    locale: 'zh_CN',
     siteName: 'EOS',
-    title: 'EOS - Experiment Orchestration System',
-    description: 'Visual graph editor and protocol orchestration system for robotics and automation',
+    title: 'EOS - 实验编排系统',
+    description: '用于机器人与自动化的可视化流程编辑器和实验编排系统',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'EOS - Experiment Orchestration System',
-    description: 'Visual graph editor and protocol orchestration system for robotics and automation',
+    title: 'EOS - 实验编排系统',
+    description: '用于机器人与自动化的可视化流程编辑器和实验编排系统',
   },
   robots: {
     index: true,
@@ -59,7 +59,7 @@ export default async function RootLayout({
   const user = await loadCurrentUser();
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <UserProvider user={user}>
           <ClientLayout>{children}</ClientLayout>

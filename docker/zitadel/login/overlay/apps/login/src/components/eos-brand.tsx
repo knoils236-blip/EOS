@@ -13,7 +13,7 @@ export function EosBrand() {
         unoptimized
         className="h-24 w-auto rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10"
       />
-      <p className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Experiment Orchestration System</p>
+      <p className="mt-4 text-lg font-medium text-gray-900 dark:text-white">实验编排系统</p>
     </div>
   );
 }

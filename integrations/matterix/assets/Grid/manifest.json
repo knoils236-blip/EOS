@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "source_root": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Environments/Grid",
+  "files": {
+    "default_environment.usd": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Environments/Grid/default_environment.usd",
+      "size_bytes": 17624,
+      "sha256": "78e9a1e72a8838a13d0f65c49cd487ab92e89233cd128b057730b5b5b4ca2164"
+    },
+    "Materials/Textures/Wireframe_blue.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Environments/Grid/Materials/Textures/Wireframe_blue.png",
+      "size_bytes": 111895,
+      "dimensions": [4096, 4096],
+      "sha256": "940b96ee8c8e53bd1acbc770d4ca0ac98bed9c96439ab386d1b27dbc9790cc4e"
+    },
+    "Materials/Textures/WireframeBlur_basecolor.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_basecolor.png",
+      "size_bytes": 436257,
+      "dimensions": [4096, 4096],
+      "sha256": "deab39088eaf39ed7be951966c5e6bd5e58b90ab64743b0cdc8e5579fd5a99d9"
+    },
+    "Materials/Textures/WireframeBlur_blue.png": {
+      "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_blue.png",
+      "size_bytes": 1474958,
+      "dimensions": [4096, 4096],
+      "sha256": "44fc0e82007bb0bd94631cd7ec45986a71ed74b9413899fbffac13efe151be4b"
+    }
+  },
+  "external_references": {
+    "default_environment.usd": [
+      "OmniPBR.mdl",
+      "Materials/Textures/Wireframe_blue.png",
+      "Materials/Textures/WireframeBlur_basecolor.png",
+      "Materials/Textures/WireframeBlur_blue.png"
+    ]
+  },
+  "builtin_mdl_dependencies": ["OmniPBR.mdl"]
+}

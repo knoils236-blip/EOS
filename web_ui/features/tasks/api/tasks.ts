@@ -43,7 +43,7 @@ export async function getTasks(options: TableQueryOptions = {}): Promise<Paginat
     };
   } catch (error) {
     console.error('Failed to fetch tasks:', error);
-    throw new Error('Failed to fetch tasks from database');
+    throw new Error('获取数据库中的任务失败');
   }
 }
 
@@ -53,10 +53,10 @@ export async function submitTask(definition: TaskDefinition): Promise<ActionResu
     revalidatePath('/tasks');
     return { success: true };
   } catch (error) {
-    console.error('Failed to submit task:', error);
+    console.error('提交任务失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to submit task',
+      error: error instanceof Error ? error.message : '提交任务失败',
     };
   }
 }
@@ -68,10 +68,10 @@ export async function cancelTask(taskName: string, protocolRunName?: string | nu
     revalidatePath('/tasks');
     return { success: true };
   } catch (error) {
-    console.error('Failed to cancel task:', error);
+    console.error('取消任务失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel task',
+      error: error instanceof Error ? error.message : '取消任务失败',
     };
   }
 }

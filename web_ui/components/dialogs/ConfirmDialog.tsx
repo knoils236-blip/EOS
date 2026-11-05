@@ -21,8 +21,8 @@ const ConfirmDialogComponent = ({
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText = '确认',
+  cancelText = '取消',
   variant = 'warning',
 }: ConfirmDialogProps) => {
   const handleConfirm = () => {

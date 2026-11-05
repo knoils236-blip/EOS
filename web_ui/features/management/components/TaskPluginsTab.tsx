@@ -22,25 +22,25 @@ export function TaskPluginsTab({ initialTaskPlugins }: TaskPluginsTabProps) {
   const columns: DataTableColumnDef<TaskPluginInfo>[] = [
     {
       accessorKey: 'type',
-      header: 'Task Type',
+      header: '任务类型',
       cell: ({ row }) => <div className="font-medium">{row.getValue('type')}</div>,
     },
     packageColumn<TaskPluginInfo>(initialTaskPlugins),
     {
       accessorKey: 'description',
-      header: 'Description',
+      header: '说明',
       cell: ({ row }) => {
         const description = row.getValue('description') as string | undefined;
         return (
           <div className="text-gray-600 dark:text-gray-400">
-            {description || <span className="italic text-gray-400 dark:text-gray-500">No description</span>}
+            {description || <span className="italic text-gray-400 dark:text-gray-500">暂无说明</span>}
           </div>
         );
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => (
         <Button
           variant="outline"
@@ -49,7 +49,7 @@ export function TaskPluginsTab({ initialTaskPlugins }: TaskPluginsTabProps) {
           disabled={!isConnected}
         >
           <RefreshCw className="h-4 w-4 mr-1" />
-          Reload
+          重新加载
         </Button>
       ),
     },
@@ -79,7 +79,7 @@ export function TaskPluginsTab({ initialTaskPlugins }: TaskPluginsTabProps) {
   const bulkActions = selectedRows.length > 0 && (
     <Button variant="primary" size="sm" onClick={handleReloadSelected} disabled={!isConnected}>
       <RefreshCw className="h-4 w-4 mr-1" />
-      Reload Selected
+      重新加载所选项
     </Button>
   );
 
@@ -88,7 +88,7 @@ export function TaskPluginsTab({ initialTaskPlugins }: TaskPluginsTabProps) {
       <DataTable
         columns={columns}
         data={initialTaskPlugins}
-        searchPlaceholder="Search task types..."
+        searchPlaceholder="搜索任务类型…"
         enableRowSelection
         onSelectionChange={setSelectedRows}
         bulkActions={bulkActions}
@@ -97,9 +97,9 @@ export function TaskPluginsTab({ initialTaskPlugins }: TaskPluginsTabProps) {
       <ConfirmationDialog
         open={reloadDialogOpen}
         onOpenChange={setReloadDialogOpen}
-        title="Reload Tasks"
-        description="Are you sure you want to reload these tasks? The task code will be refreshed."
-        confirmLabel="Reload"
+        title="重新加载任务"
+        description="确定要重新加载这些任务吗？任务代码将刷新。"
+        confirmLabel="重新加载"
         variant="default"
         items={selectedRows.map((row) => row.type)}
         onConfirm={handleReloadConfirm}

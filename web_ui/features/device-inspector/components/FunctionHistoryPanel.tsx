@@ -29,7 +29,7 @@ export function FunctionHistoryPanel() {
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString();
+    return date.toLocaleTimeString('zh-CN');
   };
 
   const formatDuration = (duration: number | undefined) => {
@@ -47,7 +47,7 @@ export function FunctionHistoryPanel() {
           className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300"
         >
           {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-          Call History
+          调用历史
           {callHistory.length > 0 && (
             <Badge variant="default" className="ml-2">
               {callHistory.length}
@@ -58,7 +58,7 @@ export function FunctionHistoryPanel() {
         {callHistory.length > 0 && (
           <Button variant="outline" size="sm" onClick={clearCallHistory}>
             <Trash2 className="h-4 w-4 mr-2" />
-            Clear
+            清空
           </Button>
         )}
       </div>
@@ -68,7 +68,7 @@ export function FunctionHistoryPanel() {
         <ScrollArea className="max-h-96">
           <div className="p-4">
             {callHistory.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">No function calls yet</div>
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">暂无函数调用记录</div>
             ) : (
               <div className="space-y-2">
                 {callHistory.map((call) => {
@@ -107,7 +107,7 @@ export function FunctionHistoryPanel() {
                                 <Clock className="h-3 w-3" />
                                 {formatTimestamp(call.timestamp)}
                               </div>
-                              {call.duration !== undefined && <div>Duration: {formatDuration(call.duration)}</div>}
+                              {call.duration !== undefined && <div>耗时： {formatDuration(call.duration)}</div>}
                             </div>
                           </div>
                         </div>
@@ -128,7 +128,7 @@ export function FunctionHistoryPanel() {
                           {Object.keys(call.parameters).length > 0 && (
                             <div>
                               <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 mt-3">
-                                Parameters
+                                参数
                               </div>
                               <JsonDisplay data={call.parameters} />
                             </div>
@@ -137,7 +137,7 @@ export function FunctionHistoryPanel() {
                           {/* Result */}
                           <div>
                             <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                              {success ? 'Result' : 'Error'}
+                              {success ? '结果' : '错误'}
                             </div>
                             {success ? (
                               typeof call.result.result === 'object' && call.result.result !== null ? (
@@ -148,7 +148,7 @@ export function FunctionHistoryPanel() {
                                 </pre>
                               )
                             ) : (
-                              <ErrorBox error={call.result.error || 'Unknown error'} />
+                              <ErrorBox error={call.result.error || '未知错误'} />
                             )}
                           </div>
                         </div>

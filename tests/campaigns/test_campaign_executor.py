@@ -5,6 +5,7 @@ from eos.campaigns.campaign_executor import CampaignExecutor
 from eos.campaigns.entities.campaign import CampaignStatus, CampaignSubmission
 from eos.campaigns.exceptions import EosCampaignExecutionError
 from eos.protocols.exceptions import EosProtocolRunExecutionError
+from eos.protocols.protocol_executor import ProtocolExecutor
 from tests.fixtures import *
 
 CAMPAIGN_CONFIG = {
@@ -257,3 +258,117 @@ class TestCampaignExecutor:
             await campaign_executor_setup.cancel_campaign()
 
         campaign_executor_setup.cleanup()
+
+    def _executor_with(self, campaign_executor_setup, **updates) -> CampaignExecutor:
+        executor = campaign_executor_setup
+        executor._campaign_submission = executor._campaign_submission.model_copy(update=updates)
+        return executor
+
+    @staticmethod
+    def _fail_protocol_runs(monkeypatch, should_fail):
+        """Make matching protocol runs fail the way a failed task does: marked FAILED, devices released."""
+        original = ProtocolExecutor.progress_protocol_run
+
+        async def progress_protocol_run(self, db):
+            if should_fail(self._protocol_run_name):
+                await self._fail_protocol_run(db, error_message="Simulated instrument error")
+                raise EosProtocolRunExecutionError("Simulated instrument error")
+            return await original(self, db)
+
+        monkeypatch.setattr(ProtocolExecutor, "progress_protocol_run", progress_protocol_run)
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_tolerated_failure_continues_campaign(
+        self, campaign_executor_setup, campaign_manager, task_executor, monkeypatch, db_interface
+    ):
+        executor = self._executor_with(campaign_executor_setup, max_protocol_runs=3, max_failed_protocol_runs=1)
+        first_run = f"{CAMPAIGN_CONFIG['CAMPAIGN_NAME']}_run_1"
+        self._fail_protocol_runs(monkeypatch, lambda name: name == first_run)
+
+        async with db_interface.get_async_session() as db:
+            await executor.start_campaign(db)
+        while not await executor.progress_campaign():
+            await task_executor.process_tasks()
+            await asyncio.sleep(0.01)
+
+        async with db_interface.get_async_session() as db:
+            campaign = await campaign_manager.get_campaign(db, CAMPAIGN_CONFIG["CAMPAIGN_NAME"])
+        assert campaign.status == CampaignStatus.COMPLETED
+        assert campaign.protocol_runs_completed == 2
+        assert executor._failed_protocol_runs == [first_run]
+        # The failed run reaches the optimizer as a NaN observation, but not the Pareto front
+        assert await executor.optimizer.get_num_samples_reported.remote() == 3
+        solutions = await executor.optimizer.get_optimal_solutions.remote()
+        assert not solutions["compute_multiplication_objective.objective"].isna().any()
+
+        executor.cleanup()
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_campaign_fails_when_failure_budget_exceeded(
+        self, campaign_executor_setup, campaign_manager, task_executor, monkeypatch, db_interface
+    ):
+        executor = self._executor_with(campaign_executor_setup, max_protocol_runs=5, max_failed_protocol_runs=1)
+        self._fail_protocol_runs(monkeypatch, lambda name: True)
+
+        async with db_interface.get_async_session() as db:
+            await executor.start_campaign(db)
+        with pytest.raises(EosCampaignExecutionError):
+            for _ in range(2000):
+                await executor.progress_campaign()
+                await task_executor.process_tasks()
+                await asyncio.sleep(0.01)
+
+        assert len(executor._failed_protocol_runs) == 1
+        async with db_interface.get_async_session() as db:
+            campaign = await campaign_manager.get_campaign(db, CAMPAIGN_CONFIG["CAMPAIGN_NAME"])
+        assert campaign.status == CampaignStatus.FAILED
+
+        executor.cleanup()
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_resume_keeps_tolerated_failures(
+        self,
+        campaign_executor_setup,
+        campaign_manager,
+        campaign_optimizer_manager,
+        task_manager,
+        protocol_run_manager,
+        protocol_executor_factory,
+        db_interface,
+        task_executor,
+        monkeypatch,
+    ):
+        executor = self._executor_with(campaign_executor_setup, max_failed_protocol_runs=2)
+        first_run = f"{CAMPAIGN_CONFIG['CAMPAIGN_NAME']}_run_1"
+        self._fail_protocol_runs(monkeypatch, lambda name: name == first_run)
+
+        async with db_interface.get_async_session() as db:
+            await executor.start_campaign(db)
+        await self.wait_for_campaign_progress(executor, campaign_manager, task_executor, db_interface, 2)
+        await executor.cancel_campaign()
+        executor.cleanup()
+
+        resumed_executor = CampaignExecutor(
+            executor._campaign_submission.model_copy(update={"resume": True}),
+            campaign_manager,
+            campaign_optimizer_manager,
+            task_manager,
+            protocol_executor_factory,
+            protocol_run_manager,
+            db_interface,
+        )
+        async with db_interface.get_async_session() as db:
+            await resumed_executor.start_campaign(db)
+        while resumed_executor.optimizer is None:
+            await resumed_executor.progress_campaign()
+            await asyncio.sleep(0.01)
+
+        assert resumed_executor._failed_protocol_runs == [first_run]
+        # Two completed runs plus the failed run replayed as a NaN observation
+        assert await resumed_executor.optimizer.get_num_samples_reported.remote() == 3
+
+        await resumed_executor.cancel_campaign()
+        resumed_executor.cleanup()

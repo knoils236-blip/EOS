@@ -1,0 +1,127 @@
+type: matterix_full_station
+desc: 七阶段移液站流程，独占工作站并核验初态；移液和针筒体积可分别设置（默认 100/100/50 µL）
+
+labs:
+  - matterix_pipetting_lab
+
+tasks:
+  - name: begin
+    type: Matterix Begin Experiment
+    timeout: 240
+    devices:
+      matterix:
+        lab_name: matterix_pipetting_lab
+        name: matterix
+        hold: true
+
+  - name: open_door
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_open_door
+    dependencies:
+      - begin
+    devices:
+      matterix:
+        ref: begin.matterix
+        hold: true
+
+  - name: prepare_vial
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_prepare_vial
+    dependencies:
+      - open_door
+    devices:
+      matterix:
+        ref: open_door.matterix
+        hold: true
+
+  - name: transfer_small
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_transfer_small
+      parameters:
+        volume_ul: 100
+    dependencies:
+      - prepare_vial
+    devices:
+      matterix:
+        ref: prepare_vial.matterix
+        hold: true
+
+  - name: open_bottle
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_open_bottle
+    dependencies:
+      - transfer_small
+    devices:
+      matterix:
+        ref: transfer_small.matterix
+        hold: true
+
+  - name: transfer_big
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_transfer_big
+      parameters:
+        volume_ul: 100
+    dependencies:
+      - open_bottle
+    devices:
+      matterix:
+        ref: open_bottle.matterix
+        hold: true
+
+  - name: syringe_transfer
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_syringe_transfer
+      parameters:
+        volume_ul: 50
+    dependencies:
+      - transfer_big
+    devices:
+      matterix:
+        ref: transfer_big.matterix
+        hold: true
+
+  - name: close_door
+    type: Matterix Capability
+    duration: 90
+    timeout: 660
+    retries: 0
+    parameters:
+      capability_id: station_full_station_close_door
+    dependencies:
+      - syringe_transfer
+    devices:
+      matterix:
+        ref: syringe_transfer.matterix
+        hold: true
+
+  - name: finish
+    type: Matterix End Experiment
+    timeout: 60
+    dependencies:
+      - close_door
+    devices:
+      matterix: close_door.matterix

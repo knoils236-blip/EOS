@@ -25,15 +25,15 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
   const columns: DataTableColumnDef<PackageInfo>[] = [
     {
       accessorKey: 'name',
-      header: 'Package Name',
+      header: '软件包名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
     },
     {
       accessorKey: 'active',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const active = row.getValue('active') as boolean;
-        return <Badge variant={active ? 'success' : 'default'}>{active ? 'Loaded' : 'Unloaded'}</Badge>;
+        return <Badge variant={active ? 'success' : 'default'}>{active ? '已加载' : '已卸载'}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -45,7 +45,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const pkg = row.original;
         return (
@@ -58,7 +58,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
                 disabled={!isConnected}
               >
                 <Download className="h-4 w-4 mr-1" />
-                Load
+                加载
               </Button>
             )}
             {pkg.active && (
@@ -69,7 +69,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
                 disabled={!isConnected}
               >
                 <Upload className="h-4 w-4 mr-1" />
-                Unload
+                卸载
               </Button>
             )}
           </div>
@@ -119,24 +119,23 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
     switch (currentAction) {
       case 'load':
         return {
-          title: 'Load Packages',
-          description: 'Are you sure you want to load these packages? Their entities will become available for use.',
-          confirmLabel: 'Load',
+          title: '加载软件包',
+          description: '确定要加载这些软件包吗？加载后即可使用其中的条目。',
+          confirmLabel: '加载',
           variant: 'default' as const,
         };
       case 'unload':
         return {
-          title: 'Unload Packages',
-          description:
-            'Are you sure you want to unload these packages? Their entities will no longer be available. Packages with loaded labs or protocols cannot be unloaded.',
-          confirmLabel: 'Unload',
+          title: '卸载软件包',
+          description: '确定要卸载这些软件包吗？卸载后其中的条目将不可用。包含已加载实验室或协议的软件包无法卸载。',
+          confirmLabel: '卸载',
           variant: 'destructive' as const,
         };
       default:
         return {
           title: '',
           description: '',
-          confirmLabel: 'Confirm',
+          confirmLabel: '确认',
           variant: 'default' as const,
         };
     }
@@ -164,7 +163,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
           disabled={!selectedRows.some((row) => !row.active) || !isConnected}
         >
           <Download className="h-4 w-4 mr-1" />
-          Load Selected
+          加载所选项
         </Button>
       )}
       {selectedRows.some((row) => row.active) && (
@@ -175,7 +174,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
           disabled={!selectedRows.some((row) => row.active) || !isConnected}
         >
           <Upload className="h-4 w-4 mr-1" />
-          Unload Selected
+          卸载所选项
         </Button>
       )}
     </>
@@ -188,7 +187,7 @@ export function PackagesTab({ initialPackages, canManage }: PackagesTabProps) {
       <DataTable
         columns={visibleColumns}
         data={initialPackages}
-        searchPlaceholder="Search packages..."
+        searchPlaceholder="搜索软件包…"
         enableRowSelection={canManage}
         onSelectionChange={setSelectedRows}
         bulkActions={bulkActions}

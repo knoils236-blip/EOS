@@ -1,6 +1,12 @@
+import asyncio
+import re
+
 from eos.configuration.configuration_manager import ConfigurationManager
+from eos.configuration.constants import PROTOCOL_CONFIG_FILE_NAME
+from eos.configuration.entities.protocol_def import ProtocolDef
+from eos.configuration.entities.lab_def import LabDeviceDef
 from eos.configuration.entities.task_def import DeviceAssignmentDef, DynamicDeviceAssignmentDef
-from eos.configuration.exceptions import EosConfigurationError
+from eos.configuration.exceptions import EosConfigurationError, EosMissingConfigurationError
 from eos.configuration.packages import EntityType
 from eos.resources.resource_manager import ResourceManager
 from eos.devices.device_manager import DeviceManager
@@ -14,6 +20,9 @@ from eos.tasks.entities.task import TaskStatus, Task
 from eos.tasks.task_manager import TaskManager
 from eos.utils.async_rlock import AsyncRLock
 from eos.utils.di.di_container import inject
+
+
+PROTOCOL_TYPE_PATTERN = re.compile(r"[a-z][a-z0-9_]{0,63}")
 
 
 class LoadingService:
@@ -177,13 +186,98 @@ class LoadingService:
         """Return a dictionary of lab types and a boolean indicating whether they are loaded."""
         return self._configuration_manager.get_loaded_labs()
 
-    async def load_protocols(self, db: AsyncDbSession, protocol_types: set[str]) -> None:
-        """Load one or more protocols into the orchestrator."""
+    async def load_protocols(
+        self, db: AsyncDbSession, protocol_types: set[str], *, load_dependencies: bool = True
+    ) -> None:
+        """Load protocols after initializing their missing lab dependencies."""
         if not protocol_types:
             return
 
-        self._configuration_manager.load_protocols(protocol_types)
-        await self._configuration_manager.def_sync.mark_protocols_loaded(db, protocol_types, True)
+        async with self._loading_lock:
+            await self._load_protocol_labs(db, protocol_types, load_dependencies)
+            self._configuration_manager.load_protocols(protocol_types)
+            await self._configuration_manager.def_sync.mark_protocols_loaded(db, protocol_types, True)
+
+    async def _load_protocol_labs(self, db: AsyncDbSession, protocol_types: set[str], load_dependencies: bool) -> None:
+        cm = self._configuration_manager
+        required = {lab for name in protocol_types for lab in cm.package_manager.read_protocol(name).labs}
+        missing = required - cm.labs.keys()
+        if not missing:
+            return
+        unknown = missing - cm.get_loaded_labs().keys()
+        if unknown:
+            raise EosConfigurationError(f"协议依赖的实验室定义不存在：{', '.join(sorted(unknown))}。请检查协议引用。")
+        if not load_dependencies:
+            raise EosConfigurationError(
+                f"请由超级用户先在系统管理中加载实验室：{', '.join(sorted(missing))}，然后再加载协议。"
+            )
+        previous_labs = await self._check_matterix_scene_switch(db, required)
+        previous_protocols = self._get_protocols_for_labs(previous_labs)
+        original_labs = set(cm.labs)
+        if previous_labs:
+            await self.unload_labs(db, previous_labs)
+        try:
+            await self.load_labs(db, missing)
+        except Exception:
+            if previous_labs:
+                try:
+                    newly_loaded = set(cm.labs) - original_labs
+                    if newly_loaded:
+                        await self.unload_labs(db, newly_loaded)
+                    await self.load_labs(db, previous_labs)
+                    await self.load_protocols(db, previous_protocols, load_dependencies=False)
+                except Exception:
+                    log.error(
+                        f"Failed to restore Matterix labs {previous_labs} after scene switch failed", exc_info=True
+                    )
+            raise
+
+    async def _check_matterix_scene_switch(self, db: AsyncDbSession, required: set[str]) -> set[str]:
+        """Replace unowned idle or terminated sessions, preserving unfinished experiments."""
+        cm = self._configuration_manager
+        endpoints = {}
+        for lab_name in sorted(required):
+            for device in cm.package_manager.read_lab(lab_name).devices.values():
+                endpoint = _matterix_endpoint(device)
+                if endpoint is not None:
+                    if endpoint in endpoints:
+                        raise EosConfigurationError("一个协议加载请求不能同时使用同一 Matterix bridge 的多个设备。")
+                    endpoints[endpoint] = lab_name
+
+        conflicts = {
+            (lab_name, device_name)
+            for lab_name, lab in cm.labs.items()
+            if lab_name not in required
+            for device_name, device in lab.devices.items()
+            if _matterix_endpoint(device) in endpoints
+        }
+        for lab_name, device_name in sorted(conflicts):
+            await self._check_lab_usage(db, lab_name)
+            actor = self._device_manager.get_device_actor(lab_name, device_name)
+            async with asyncio.timeout(5):
+                report = await actor.report.remote()
+            execution = report.get("execution") or report
+            session = execution["session"]
+            if (
+                report["blocked"]
+                or execution["blocked"]
+                or execution["experiment_owner"] is not None
+                or session["status"] not in {"idle", "ended", "interrupted"}
+                or session["active_task_id"] is not None
+            ):
+                detail = (
+                    f"Matterix 实验室 '{lab_name}' 无法切换场景：会话状态={session['status']}，"
+                    f"实验={execution['experiment_owner']}，活动任务={session['active_task_id']}。"
+                )
+                if session.get("error"):
+                    detail += f"底层错误：{session['error']}。"
+                detail += (
+                    "会话已终止，请先重新加载设备。"
+                    if session["status"] in {"ended", "interrupted"}
+                    else "请先完成实验；故障实验需显式恢复后再切换。"
+                )
+                raise EosProtocolInUseError(detail)
+        return {name for name, _ in conflicts}
 
     async def unload_protocols(self, db: AsyncDbSession, protocol_types: set[str]) -> None:
         """Unload one or more protocols from the orchestrator."""
@@ -193,8 +287,53 @@ class LoadingService:
         self._configuration_manager.unload_protocols(protocol_types)
         await self._configuration_manager.def_sync.mark_protocols_loaded(db, protocol_types, False)
 
+    async def save_protocol(
+        self, db: AsyncDbSession, package_name: str, protocol: ProtocolDef, protocol_yaml: str, *, overwrite: bool
+    ) -> bool:
+        """
+        Write a validated protocol into a package and register its definition. It is also loaded when all its labs
+        are loaded, so it can run at once; loading never initializes labs here. Returns whether it is loaded.
+        """
+        cm = self._configuration_manager
+        package = cm.package_manager.get_package(package_name)
+        if package is None:
+            raise EosConfigurationError(f"Unknown package '{package_name}'")
+        if not PROTOCOL_TYPE_PATTERN.fullmatch(protocol.type):
+            raise EosConfigurationError("Protocol type must be lowercase snake_case, e.g. 'mixture_screen'")
+        try:
+            existing = cm.package_manager.find_package_for_entity(protocol.type, EntityType.PROTOCOL)
+        except EosMissingConfigurationError:
+            existing = None
+        if existing is not None and (existing.name != package_name or not overwrite):
+            raise EosConfigurationError(
+                f"Protocol '{protocol.type}' already exists in package '{existing.name}'"
+                + ("" if existing.name != package_name else "; pass overwrite to replace it")
+            )
+        loaded = protocol.type in cm.protocols
+        if loaded:
+            await self._check_protocol_usage(db, protocol.type)
+
+        path = package.get_entity_dir(EntityType.PROTOCOL) / protocol.type / PROTOCOL_CONFIG_FILE_NAME
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(protocol_yaml, encoding="utf-8")
+        cm.package_manager.refresh()
+        await cm.def_sync.sync_protocol_defs(db, {protocol.type})
+
+        if not set(protocol.labs) <= cm.labs.keys():
+            return False
+        if loaded:
+            await self.reload_protocols(db, {protocol.type}, load_dependencies=False)
+        else:
+            await self.load_protocols(db, {protocol.type}, load_dependencies=False)
+        return True
+
     async def reload_protocols(
-        self, db: AsyncDbSession, protocol_types: set[str], *, if_unused: bool = False
+        self,
+        db: AsyncDbSession,
+        protocol_types: set[str],
+        *,
+        if_unused: bool = False,
+        load_dependencies: bool = True,
     ) -> set[str]:
         """Reload protocols. With ``if_unused``, silently skip in-use or not-loaded ones. Returns reloaded set."""
         async with self._loading_lock:
@@ -215,6 +354,7 @@ class LoadingService:
             if not to_reload:
                 return to_reload
 
+            await self._load_protocol_labs(db, to_reload, load_dependencies)
             self._configuration_manager.unload_protocols(to_reload)
             await self._configuration_manager.def_sync.mark_protocols_loaded(db, to_reload, False)
             self._configuration_manager.load_protocols(to_reload)
@@ -397,15 +537,15 @@ class LoadingService:
 
     async def _check_protocol_runs_using_lab(self, db: AsyncDbSession, lab_name: str) -> list:
         """
-        Check if any running protocols are using a lab.
+        Check if any running or suspended protocols are using a lab.
 
         :param db: Database session
         :param lab_name: The lab to check
         :return: List of protocols using the lab
         """
-        running_protocol_runs = await self._protocol_run_manager.get_protocol_runs(
-            db, status=ProtocolRunStatus.RUNNING.value
-        )
+        running_protocol_runs = []
+        for status in (ProtocolRunStatus.RUNNING, ProtocolRunStatus.SUSPENDED):
+            running_protocol_runs.extend(await self._protocol_run_manager.get_protocol_runs(db, status=status.value))
         return [
             protocol_run
             for protocol_run in running_protocol_runs
@@ -522,6 +662,16 @@ class LoadingService:
             task_names = ", ".join(task.name for task in active_tasks)
             log.error(f"Cannot modify task type '{task_type}' as it has active instances: {task_names}")
             raise EosProtocolInUseError(f"Task type '{task_type}' has active instances")
+
+
+def _matterix_endpoint(device: LabDeviceDef) -> tuple[str, int] | None:
+    parameters = device.init_parameters
+    if device.type == "matterix_workstation":
+        if parameters.get("address") is not None and parameters.get("port") is not None:
+            return parameters["address"], parameters["port"]
+    elif device.type == "mixture_workstation" and parameters.get("backend") == "matterix":
+        return parameters.get("address", "127.0.0.1"), parameters.get("port", 65200)
+    return None
 
 
 def _may_use_devices(

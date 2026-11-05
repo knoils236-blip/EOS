@@ -28,15 +28,15 @@ function NoAccessScreen() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
       <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm text-center">
         <ShieldAlert className="w-10 h-10 mx-auto mb-4 text-amber-500" />
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No access</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">无访问权限</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Your account has no roles yet. Ask an administrator to assign you a role.
+          您的账户尚未分配角色，请联系管理员为您分配角色。
         </p>
         <button
           onClick={() => signOutUser()}
           className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
         >
-          Sign out
+          退出登录
         </button>
       </div>
     </div>

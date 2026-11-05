@@ -11,13 +11,8 @@ import {
   createEntity,
   deleteEntity,
   renameEntity,
+  isSafeRelPath,
 } from '@/lib/filesystem/operations';
-
-// Reject path traversal, leading/trailing slash, empty segments, '.' / '..'.
-function isSafeRelPath(p: string): boolean {
-  if (!p || p.startsWith('/') || p.endsWith('/')) return false;
-  return p.split('/').every((seg) => seg.length > 0 && seg !== '.' && seg !== '..');
-}
 
 // Parse `[ 'packages', pkg, type, ...entityName ]`. entityName may span multiple segments.
 function parseEntityPath(
@@ -40,7 +35,7 @@ function validateYaml(content: string): ValidationResult {
     errors.push({
       line: err.mark?.line,
       column: err.mark?.column,
-      message: err.message || 'YAML parsing error',
+      message: err.message || 'YAML 解析错误',
       severity: 'error' as const,
     });
   }
@@ -82,25 +77,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       if (url.searchParams.has('mtimes')) {
         const mtime = await getEntityMtimeOnly(packageName, entityType, entityName);
         if (mtime === null) {
-          return NextResponse.json({ error: 'Entity not found' }, { status: 404 });
+          return NextResponse.json({ error: '未找到条目' }, { status: 404 });
         }
         return NextResponse.json({ mtime });
       }
 
       const files = await readEntityFiles(packageName, entityType, entityName);
       if (!files) {
-        return NextResponse.json({ error: 'Entity not found' }, { status: 404 });
+        return NextResponse.json({ error: '未找到条目' }, { status: 404 });
       }
       return NextResponse.json(files);
     }
 
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: '未找到' }, { status: 404 });
   } catch (error) {
     console.error('GET error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器内部错误' }, { status: 500 });
   }
 }
 
@@ -118,19 +110,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       const result = await writeEntityFiles(entity.packageName, entity.entityType, entity.entityName, body);
 
       if (result.conflict) {
-        return NextResponse.json({ error: 'File modified externally', mtime: result.mtime }, { status: 409 });
+        return NextResponse.json({ error: '文件已被外部修改', mtime: result.mtime }, { status: 409 });
       }
 
       return NextResponse.json({ success: true, mtime: result.mtime });
     }
 
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: '未找到' }, { status: 404 });
   } catch (error) {
     console.error('PUT error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器内部错误' }, { status: 500 });
   }
 }
 
@@ -146,7 +135,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const [, packageName, entityType] = pathSegments;
       const body: { entityName: string } = await request.json();
       if (!isSafeRelPath(body.entityName)) {
-        return NextResponse.json({ error: 'Invalid entity name' }, { status: 400 });
+        return NextResponse.json({ error: '条目名称无效' }, { status: 400 });
       }
       await createEntity(packageName, entityType as EntityType, body.entityName);
       return NextResponse.json({ success: true });
@@ -159,13 +148,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: '未找到' }, { status: 404 });
   } catch (error) {
     console.error('POST error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器内部错误' }, { status: 500 });
   }
 }
 
@@ -183,13 +169,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: '未找到' }, { status: 404 });
   } catch (error) {
     console.error('DELETE error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器内部错误' }, { status: 500 });
   }
 }
 
@@ -205,18 +188,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (entity) {
       const body: { newName: string } = await request.json();
       if (!isSafeRelPath(body.newName)) {
-        return NextResponse.json({ error: 'Invalid new name' }, { status: 400 });
+        return NextResponse.json({ error: '新名称无效' }, { status: 400 });
       }
       await renameEntity(entity.packageName, entity.entityType, entity.entityName, body.newName);
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: '未找到' }, { status: 404 });
   } catch (error) {
     console.error('PATCH error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : '服务器内部错误' }, { status: 500 });
   }
 }

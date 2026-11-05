@@ -45,7 +45,7 @@ const AlertDialogComponent = ({ isOpen, onClose, title, message, variant = 'succ
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-white dark:text-slate-900 bg-blue-600 dark:bg-yellow-500 rounded-md hover:bg-blue-700 dark:hover:bg-yellow-600 transition-colors"
             >
-              OK
+              确定
             </button>
           </div>
         </Dialog.Content>

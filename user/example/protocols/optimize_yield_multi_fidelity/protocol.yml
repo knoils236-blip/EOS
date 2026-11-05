@@ -1,0 +1,13 @@
+type: optimize_yield_multi_fidelity
+desc: Find the temperature with the highest yield, mixing cheap simulations with slow real experiments
+
+labs:
+  - multiplication_lab
+
+tasks:
+  - name: measure
+    type: Measure Yield
+    duration: 2
+    parameters:
+      temperature: eos_dynamic
+      fidelity: eos_dynamic

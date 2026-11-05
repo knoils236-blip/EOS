@@ -21,8 +21,8 @@ export async function getDeviceIntrospection(labName: string, deviceName: string
     )) as DeviceIntrospection;
     return response;
   } catch (error) {
-    console.error('Failed to fetch device introspection:', error);
-    throw new Error('Failed to fetch device introspection');
+    console.error('获取设备接口信息失败：', error);
+    throw new Error('获取设备接口信息失败');
   }
 }
 
@@ -47,7 +47,7 @@ export async function callDeviceFunction(
     console.error(`Failed to call device function ${functionName}:`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to call device function',
+      error: error instanceof Error ? error.message : '调用设备函数失败',
     };
   }
 }
@@ -60,8 +60,8 @@ export async function getDeviceState(labName: string, deviceName: string): Promi
     const response = (await orchestratorGet(`/labs/${labName}/device/${deviceName}/report`)) as DeviceReport;
     return response;
   } catch (error) {
-    console.error('Failed to fetch device state:', error);
-    throw new Error('Failed to fetch device state');
+    console.error('获取设备状态失败：', error);
+    throw new Error('获取设备状态失败');
   }
 }
 
@@ -82,10 +82,10 @@ export async function reloadDevice(labName: string, deviceName: string): Promise
       success: true,
     };
   } catch (error) {
-    console.error('Failed to reload device:', error);
+    console.error('重新加载设备失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reload device',
+      error: error instanceof Error ? error.message : '重新加载设备失败',
     };
   }
 }
@@ -114,7 +114,7 @@ export async function getDeviceStatus(
       status,
     };
   } catch (error) {
-    console.error('Failed to fetch device status:', error);
-    throw new Error('Failed to fetch device status');
+    console.error('获取设备状态失败：', error);
+    throw new Error('获取设备状态失败');
   }
 }

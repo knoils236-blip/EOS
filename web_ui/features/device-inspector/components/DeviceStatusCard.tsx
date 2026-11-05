@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -31,7 +33,7 @@ export function DeviceStatusCard({ device, deviceInfo, onStatusUpdate }: DeviceS
       setLiveStatus(status.status);
       setLastUpdated(new Date());
     } catch (_error) {
-      console.error('Failed to fetch live status:', _error);
+      console.error('获取实时状态失败：', _error);
       // Fall back to device info status if available
       if (deviceInfo) {
         setLiveStatus(deviceInfo.status);
@@ -51,17 +53,17 @@ export function DeviceStatusCard({ device, deviceInfo, onStatusUpdate }: DeviceS
     try {
       const result = await reloadDevice(device.labName, device.deviceName);
       if (result.success) {
-        toast.success(`Device ${device.deviceName} reloaded successfully`);
+        toast.success(`设备 ${device.deviceName} 已重新加载`);
         // Wait a bit for the device to reload, then fetch status
         setTimeout(() => {
           fetchLiveStatus();
           onStatusUpdate?.();
         }, 1000);
       } else {
-        toast.error(result.error || 'Failed to reload device');
+        toast.error(result.error || '重新加载设备失败');
       }
     } catch {
-      toast.error('Failed to reload device');
+      toast.error('重新加载设备失败');
     } finally {
       setIsReloading(false);
     }
@@ -91,18 +93,18 @@ export function DeviceStatusCard({ device, deviceInfo, onStatusUpdate }: DeviceS
         <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 truncate">{device.deviceName}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Lab: <span className="font-medium">{device.labName}</span>
+            实验室： <span className="font-medium">{device.labName}</span>
           </p>
           {deviceInfo && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Type: <span className="font-medium">{deviceInfo.type}</span>
+              类型： <span className="font-medium">{deviceInfo.type}</span>
             </p>
           )}
         </div>
 
         <Button variant="outline" size="sm" onClick={handleReload} disabled={isReloading || !isConnected}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isReloading ? 'animate-spin' : ''}`} />
-          Reload
+          重新加载
         </Button>
       </div>
 
@@ -111,17 +113,17 @@ export function DeviceStatusCard({ device, deviceInfo, onStatusUpdate }: DeviceS
       {/* Status */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">状态</span>
           {isLoadingStatus ? (
             <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
           ) : (
-            <Badge variant={getStatusVariant(displayStatus)}>{displayStatus}</Badge>
+            <Badge variant={getStatusVariant(displayStatus)}>{statusLabel(displayStatus)}</Badge>
           )}
         </div>
 
         {deviceInfo?.computer && (
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Computer</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">计算机</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">{deviceInfo.computer}</span>
           </div>
         )}
@@ -129,9 +131,9 @@ export function DeviceStatusCard({ device, deviceInfo, onStatusUpdate }: DeviceS
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>Last updated</span>
+            <span>最近更新</span>
           </div>
-          <span>{lastUpdated.toLocaleTimeString()}</span>
+          <span>{lastUpdated.toLocaleTimeString('zh-CN')}</span>
         </div>
       </div>
     </div>

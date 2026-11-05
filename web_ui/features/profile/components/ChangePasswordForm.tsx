@@ -24,11 +24,11 @@ export function ChangePasswordForm() {
     setSuccess(false);
 
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setError(`New password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      setError(`新密码至少需要 ${MIN_PASSWORD_LENGTH} 个字符`);
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
+      setError('两次输入的新密码不一致');
       return;
     }
 
@@ -42,14 +42,14 @@ export function ChangePasswordForm() {
       setNewPassword('');
       setConfirmPassword('');
     } else {
-      setError(result.error ?? 'Failed to change password');
+      setError(result.error ?? '修改密码失败');
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="currentPassword">Current password</Label>
+        <Label htmlFor="currentPassword">当前密码</Label>
         <Input
           id="currentPassword"
           type="password"
@@ -61,7 +61,7 @@ export function ChangePasswordForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="newPassword">New password</Label>
+        <Label htmlFor="newPassword">新密码</Label>
         <Input
           id="newPassword"
           type="password"
@@ -73,7 +73,7 @@ export function ChangePasswordForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="confirmPassword">Confirm new password</Label>
+        <Label htmlFor="confirmPassword">确认新密码</Label>
         <Input
           id="confirmPassword"
           type="password"
@@ -89,12 +89,12 @@ export function ChangePasswordForm() {
       {success && (
         <p className="flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300">
           <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-          Password changed.
+          密码已修改。
         </p>
       )}
 
       <Button type="submit" variant="primary" disabled={isSubmitting}>
-        {isSubmitting ? 'Changing…' : 'Change password'}
+        {isSubmitting ? '正在修改…' : '修改密码'}
       </Button>
     </form>
   );

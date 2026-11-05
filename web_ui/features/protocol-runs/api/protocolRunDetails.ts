@@ -11,6 +11,9 @@ import {
 } from '@/lib/db/queries';
 import type { ProtocolRun, Task, TaskStatus, TaskDeviceConfig } from '@/lib/types/api';
 import { requireRole } from '@/lib/auth/authz';
+import { orchestratorGet } from '@/lib/api/orchestrator';
+import { parseMatterixExecutionDetail, parseMatterixProtocolExecutionDetail } from '../utils/matterixExecution';
+import type { MatterixExecutionDetail, MatterixProtocolExecutionDetail } from '../types/matterixExecution';
 
 export interface TaskStatusInfo {
   name: string;
@@ -77,8 +80,8 @@ export async function getProtocolRunDetails(protocolRunName: string): Promise<{
       tasks: taskRows.map(transformDbTask),
     };
   } catch (error) {
-    console.error('Failed to fetch protocol run details:', error);
-    throw new Error('Failed to fetch protocol run details');
+    console.error('获取协议运行详情失败：', error);
+    throw new Error('获取协议运行详情失败');
   }
 }
 
@@ -88,8 +91,8 @@ export async function getProtocolRunTasks(protocolRunName: string): Promise<Task
     const taskRows = await getTasksByProtocolRun(protocolRunName);
     return taskRows.map(transformDbTask);
   } catch (error) {
-    console.error('Failed to fetch protocol run tasks:', error);
-    throw new Error('Failed to fetch protocol run tasks');
+    console.error('获取协议运行任务失败：', error);
+    throw new Error('获取协议运行任务失败');
   }
 }
 
@@ -103,8 +106,8 @@ export async function getTaskStatuses(protocolRunName: string): Promise<TaskStat
       status: row.status as TaskStatus,
     }));
   } catch (error) {
-    console.error('Failed to fetch task statuses:', error);
-    throw new Error('Failed to fetch task statuses');
+    console.error('获取任务状态失败：', error);
+    throw new Error('获取任务状态失败');
   }
 }
 
@@ -115,8 +118,37 @@ export async function getTaskDetails(taskName: string, protocolRunName: string):
     if (!taskRow) return null;
     return transformDbTask(taskRow);
   } catch (error) {
-    console.error('Failed to fetch task details:', error);
-    throw new Error('Failed to fetch task details');
+    console.error('获取任务详情失败：', error);
+    throw new Error('获取任务详情失败');
+  }
+}
+
+export async function getMatterixExecutionDetail(
+  protocolRunName: string,
+  taskName: string
+): Promise<MatterixExecutionDetail> {
+  await requireRole('VIEWER');
+  try {
+    const response = await orchestratorGet(
+      `/matterix/${encodeURIComponent(protocolRunName)}/${encodeURIComponent(taskName)}`
+    );
+    return parseMatterixExecutionDetail(response);
+  } catch (error) {
+    console.error('获取 Matterix 执行详情失败：', error);
+    throw new Error(error instanceof Error ? error.message : '获取 Matterix 执行详情失败');
+  }
+}
+
+export async function getMatterixProtocolExecutionDetail(
+  protocolRunName: string
+): Promise<MatterixProtocolExecutionDetail> {
+  await requireRole('VIEWER');
+  try {
+    const response = await orchestratorGet(`/matterix/${encodeURIComponent(protocolRunName)}`);
+    return parseMatterixProtocolExecutionDetail(response);
+  } catch (error) {
+    console.error('获取 Matterix 协议执行详情失败：', error);
+    throw new Error(error instanceof Error ? error.message : '获取 Matterix 协议执行详情失败');
   }
 }
 
@@ -144,7 +176,7 @@ export async function getProtocolRunWithTaskStatuses(protocolRunName: string): P
       })),
     };
   } catch (error) {
-    console.error('Failed to fetch protocol run with task statuses:', error);
-    throw new Error('Failed to fetch protocol run with task statuses');
+    console.error('获取协议运行及任务状态失败：', error);
+    throw new Error('获取协议运行及任务状态失败');
   }
 }

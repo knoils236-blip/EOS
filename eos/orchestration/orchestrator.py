@@ -4,6 +4,7 @@ import os
 
 import ray
 import time
+from ray._private import ray_constants
 
 from eos.campaigns.campaign_executor_factory import CampaignExecutorFactory
 from eos.campaigns.campaign_manager import CampaignManager
@@ -30,6 +31,7 @@ from eos.database.postgresql_db_interface import PostgresqlDbInterface
 from eos.database.sqlite_db_interface import SqliteDbInterface
 from eos.allocation.allocation_manager import AllocationManager
 from eos.scheduling.abstract_scheduler import AbstractScheduler
+from eos.scheduling.duration_estimator import TaskDurationEstimator
 from eos.scheduling.scheduler_factory import SchedulerFactory
 from eos.tasks.task_executor import TaskExecutor
 from eos.tasks.task_manager import TaskManager
@@ -145,6 +147,9 @@ class Orchestrator(metaclass=Singleton):
         scheduler = SchedulerFactory.create_scheduler(self._scheduler_config.type)
         if self._scheduler_config.parameters:
             await scheduler.update_parameters(self._scheduler_config.parameters)
+        if self._scheduler_config.learn_durations:
+            log.info("Scheduler plans with task durations learned from completed tasks.")
+            scheduler.use_duration_estimator(TaskDurationEstimator(db_interface))
         di.register(AbstractScheduler, scheduler)
 
         # Execution ###############################################
@@ -190,6 +195,10 @@ class Orchestrator(metaclass=Singleton):
             num_cpus = min(8, os.cpu_count() or 8)
             # Ray enables token auth for new local clusters and warns about it on every start
             logging.getLogger("ray._private.authentication.authentication_token_setup").setLevel(logging.ERROR)
+            # Ray binds to the default-route IP (e.g. a VPN tun0); if that interface drops, the node is declared dead.
+            # A local cluster only talks to itself, so use loopback. Ray reads this flag at import, hence the override.
+            # shortcut: patches a private Ray constant, recheck when upgrading Ray
+            ray_constants.ENABLE_RAY_CLUSTER = False
             ray.init(namespace="eos", num_cpus=num_cpus, resources={"eos": 1000}, include_dashboard=False)
             log.info("Initialized local Ray cluster.")
 

@@ -162,7 +162,7 @@ function InputFeatureCard({
         </Button>
       )}
       <div>
-        <Label className="text-xs">Key</Label>
+        <Label className="text-xs">键</Label>
         <Input
           value={input.key}
           onChange={(e) => onChange(index, { ...input, key: e.target.value })}
@@ -172,7 +172,7 @@ function InputFeatureCard({
         />
       </div>
       <div>
-        <Label className="text-xs">Type</Label>
+        <Label className="text-xs">类型</Label>
         <select
           value={input.type}
           onChange={(e) => {
@@ -186,16 +186,16 @@ function InputFeatureCard({
           disabled={readOnly}
           className={selectClass}
         >
-          <option value="ContinuousInput">Continuous</option>
-          <option value="DiscreteInput">Discrete</option>
-          <option value="CategoricalInput">Categorical</option>
+          <option value="ContinuousInput">连续</option>
+          <option value="DiscreteInput">离散</option>
+          <option value="CategoricalInput">分类</option>
         </select>
       </div>
 
       {input.type === 'ContinuousInput' && (
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <Label className="text-xs">Lower bound</Label>
+            <Label className="text-xs">下界</Label>
             <Input
               type="number"
               value={input.bounds?.[0] ?? 0}
@@ -207,7 +207,7 @@ function InputFeatureCard({
             />
           </div>
           <div>
-            <Label className="text-xs">Upper bound</Label>
+            <Label className="text-xs">上界</Label>
             <Input
               type="number"
               value={input.bounds?.[1] ?? 1}
@@ -219,14 +219,14 @@ function InputFeatureCard({
             />
           </div>
           <div>
-            <Label className="text-xs">Step size</Label>
+            <Label className="text-xs">步长</Label>
             <Input
               type="number"
               value={input.stepsize ?? ''}
               onChange={(e) =>
                 onChange(index, { ...input, stepsize: e.target.value ? parseFloat(e.target.value) : null })
               }
-              placeholder="Optional"
+              placeholder="可选"
               disabled={readOnly}
               className="text-xs h-8"
             />
@@ -236,7 +236,7 @@ function InputFeatureCard({
 
       {input.type === 'DiscreteInput' && (
         <div>
-          <Label className="text-xs">Values (comma-separated)</Label>
+          <Label className="text-xs">数值（以英文逗号分隔）</Label>
           <RawInput
             displayValue={(input.values ?? []).join(', ')}
             onRawChange={(text) =>
@@ -257,7 +257,7 @@ function InputFeatureCard({
 
       {input.type === 'CategoricalInput' && (
         <div>
-          <Label className="text-xs">Categories (comma-separated)</Label>
+          <Label className="text-xs">类别（以英文逗号分隔）</Label>
           <RawInput
             displayValue={(input.categories ?? []).join(', ')}
             onRawChange={(text) =>
@@ -305,7 +305,7 @@ function OutputFeatureCard({
         </Button>
       )}
       <div>
-        <Label className="text-xs">Key</Label>
+        <Label className="text-xs">键</Label>
         <Input
           value={output.key}
           onChange={(e) => onChange(index, { ...output, key: e.target.value })}
@@ -315,7 +315,7 @@ function OutputFeatureCard({
         />
       </div>
       <div>
-        <Label className="text-xs">Type</Label>
+        <Label className="text-xs">类型</Label>
         <select
           value={output.type}
           onChange={(e) => {
@@ -325,14 +325,14 @@ function OutputFeatureCard({
           disabled={readOnly}
           className={selectClass}
         >
-          <option value="ContinuousOutput">Continuous</option>
-          <option value="CategoricalOutput">Categorical</option>
+          <option value="ContinuousOutput">连续</option>
+          <option value="CategoricalOutput">分类</option>
         </select>
       </div>
 
       {output.type === 'CategoricalOutput' && (
         <div>
-          <Label className="text-xs">Categories (comma-separated)</Label>
+          <Label className="text-xs">类别（以英文逗号分隔）</Label>
           <RawInput
             displayValue={(output.categories ?? []).join(', ')}
             onRawChange={(text) =>
@@ -353,7 +353,7 @@ function OutputFeatureCard({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-xs">Objective</Label>
+          <Label className="text-xs">目标</Label>
           <select
             value={output.objective.type}
             onChange={(e) => {
@@ -368,13 +368,13 @@ function OutputFeatureCard({
             disabled={readOnly}
             className={selectClass}
           >
-            <option value="MinimizeObjective">Minimize</option>
-            <option value="MaximizeObjective">Maximize</option>
-            <option value="CloseToTargetObjective">Close to Target</option>
+            <option value="MinimizeObjective">最小化</option>
+            <option value="MaximizeObjective">最大化</option>
+            <option value="CloseToTargetObjective">接近目标值</option>
           </select>
         </div>
         <div>
-          <Label className="text-xs">Weight (w)</Label>
+          <Label className="text-xs">权重（w）</Label>
           <Input
             type="number"
             step="0.1"
@@ -393,7 +393,7 @@ function OutputFeatureCard({
       {output.objective.type === 'CloseToTargetObjective' && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label className="text-xs">Target value</Label>
+            <Label className="text-xs">目标值</Label>
             <Input
               type="number"
               value={output.objective.target_value ?? 0}
@@ -408,7 +408,7 @@ function OutputFeatureCard({
             />
           </div>
           <div>
-            <Label className="text-xs">Exponent</Label>
+            <Label className="text-xs">指数</Label>
             <Input
               type="number"
               value={output.objective.exponent ?? 2}
@@ -456,20 +456,20 @@ function ConstraintCard({
         </Button>
       )}
       <div>
-        <Label className="text-xs">Type</Label>
+        <Label className="text-xs">类型</Label>
         <select
           value={constraint.type}
           onChange={(e) => onChange(index, { ...constraint, type: e.target.value as DomainConstraint['type'] })}
           disabled={readOnly}
           className={selectClass}
         >
-          <option value="LinearEqualityConstraint">Linear Equality (=)</option>
-          <option value="LinearInequalityConstraint">{'Linear Inequality (<=)'}</option>
+          <option value="LinearEqualityConstraint">线性等式（=）</option>
+          <option value="LinearInequalityConstraint">{'线性不等式（≤）'}</option>
         </select>
       </div>
 
       <div>
-        <Label className="text-xs">Features (comma-separated keys)</Label>
+        <Label className="text-xs">特征（键名以英文逗号分隔）</Label>
         <RawInput
           displayValue={constraint.features.join(', ')}
           onRawChange={(text) => {
@@ -488,7 +488,7 @@ function ConstraintCard({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-xs">Coefficients (comma-separated)</Label>
+          <Label className="text-xs">系数（以英文逗号分隔）</Label>
           <RawInput
             displayValue={constraint.coefficients.join(', ')}
             onRawChange={(text) =>
@@ -506,7 +506,7 @@ function ConstraintCard({
           />
         </div>
         <div>
-          <Label className="text-xs">RHS</Label>
+          <Label className="text-xs">右侧常数</Label>
           <Input
             type="number"
             value={constraint.rhs}
@@ -589,7 +589,7 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
       {/* Inputs */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Inputs</Label>
+          <Label className="text-sm font-medium">输入</Label>
           {!readOnly && (
             <Button
               variant="outline"
@@ -597,13 +597,11 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
               onClick={() => onChange({ ...value, inputs: [...value.inputs, makeDefaultInput()] })}
               className="h-7 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" /> Add Input
+              <Plus className="h-3 w-3" /> 添加输入
             </Button>
           )}
         </div>
-        {value.inputs.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic">No inputs defined</p>
-        )}
+        {value.inputs.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500 italic">尚未定义输入</p>}
         {value.inputs.map((input, i) => (
           <InputFeatureCard
             key={`input-${i}`}
@@ -619,7 +617,7 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
       {/* Outputs */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Outputs</Label>
+          <Label className="text-sm font-medium">输出</Label>
           {!readOnly && (
             <Button
               variant="outline"
@@ -627,13 +625,11 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
               onClick={() => onChange({ ...value, outputs: [...value.outputs, makeDefaultOutput()] })}
               className="h-7 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" /> Add Output
+              <Plus className="h-3 w-3" /> 添加输出
             </Button>
           )}
         </div>
-        {value.outputs.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic">No outputs defined</p>
-        )}
+        {value.outputs.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500 italic">尚未定义输出</p>}
         {value.outputs.map((output, i) => (
           <OutputFeatureCard
             key={`output-${i}`}
@@ -649,7 +645,7 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
       {/* Constraints */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Constraints</Label>
+          <Label className="text-sm font-medium">约束</Label>
           {!readOnly && (
             <Button
               variant="outline"
@@ -657,12 +653,12 @@ export function DomainEditor({ value, onChange, readOnly }: DomainEditorProps) {
               onClick={() => onChange({ ...value, constraints: [...value.constraints, makeDefaultConstraint()] })}
               className="h-7 text-xs gap-1"
             >
-              <Plus className="h-3 w-3" /> Add Constraint
+              <Plus className="h-3 w-3" /> 添加约束
             </Button>
           )}
         </div>
         {value.constraints.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic">No constraints defined</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic">尚未定义约束</p>
         )}
         {value.constraints.map((constraint, i) => (
           <ConstraintCard

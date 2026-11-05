@@ -35,7 +35,7 @@ export const ValidationErrorsPanel = memo(function ValidationErrorsPanel({ onSel
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
           <span className="text-xs font-semibold text-red-700 dark:text-red-400">
-            {validationErrors.length} validation {validationErrors.length === 1 ? 'error' : 'errors'}
+            {validationErrors.length} 个验证错误
           </span>
         </div>
         <button

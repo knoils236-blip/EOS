@@ -24,7 +24,7 @@ export function ErrorBox({ error, className = '' }: ErrorBoxProps) {
       <button
         onClick={handleCopy}
         className="absolute top-2 right-2 p-1 rounded hover:bg-red-100 dark:hover:bg-red-800/50 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-300 transition-colors"
-        title="Copy error"
+        title="复制错误"
       >
         {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
       </button>

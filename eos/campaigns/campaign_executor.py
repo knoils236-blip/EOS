@@ -12,7 +12,7 @@ from eos.campaigns.campaign_optimizer_manager import CampaignOptimizerManager
 from eos.campaigns.entities.campaign import OPTIMIZER_META_KEY, CampaignStatus, Campaign, CampaignSubmission
 from eos.campaigns.exceptions import EosCampaignExecutionError
 from eos.protocols.entities.protocol_run import ProtocolRunStatus, ProtocolRunSubmission
-from eos.protocols.exceptions import EosProtocolRunCancellationError
+from eos.protocols.exceptions import EosProtocolRunCancellationError, EosProtocolRunExecutionError
 from eos.protocols.protocol_executor_factory import ProtocolExecutorFactory
 from eos.protocols.protocol_run_manager import ProtocolRunManager
 from eos.logging.logger import log
@@ -81,6 +81,7 @@ class CampaignExecutor:
         self._campaign_status: CampaignStatus | None = None
         self._protocol_executors: dict[str, ProtocolExecutor] = {}
         self._pending_protocol_run_cancellations: set[str] = set()
+        self._failed_protocol_runs: list[str] = []  # Tolerated failures (max_failed_protocol_runs)
 
         # Optimizer state
         self._optimizer: ActorHandle | None = None
@@ -142,8 +143,15 @@ class CampaignExecutor:
         """Resume an existing campaign by restoring its state."""
         await self._campaign_manager.update_campaign_submission(db, self._campaign_submission)
 
-        await self._campaign_manager.delete_non_completed_campaign_protocol_runs(db, self._campaign_name)
+        tolerates_failures = self._campaign_submission.max_failed_protocol_runs > 0
+        await self._campaign_manager.delete_non_completed_campaign_protocol_runs(
+            db, self._campaign_name, keep_failed=tolerates_failures
+        )
         await self._sync_protocol_runs_completed_counter(db)
+        if tolerates_failures:
+            self._failed_protocol_runs = await self._campaign_manager.get_campaign_protocol_run_names(
+                db, self._campaign_name, status=ProtocolRunStatus.FAILED
+            )
 
         if self._campaign_submission.optimize:
             self._optimizer_state = OptimizerState.NEEDS_RESTORATION
@@ -257,10 +265,12 @@ class CampaignExecutor:
                 if protocol_runs_completed is None:
                     raise EosCampaignExecutionError(f"Campaign '{self._campaign_name}' not found in database")
 
-                if self._is_campaign_completed(protocol_runs_completed):
+                # Tolerated failures use up the protocol run budget like completed runs
+                protocol_runs_done = protocol_runs_completed + len(self._failed_protocol_runs)
+                if self._is_campaign_completed(protocol_runs_done):
                     return await self._complete_campaign(db)
 
-                await self._create_protocol_runs(db, protocol_runs_completed)
+                await self._create_protocol_runs(db, protocol_runs_done)
                 return False
 
         except Exception as e:
@@ -271,13 +281,34 @@ class CampaignExecutor:
         """Progress all running protocol runs and process completed ones."""
         async with self._db_interface.get_async_session() as db:
             completed_protocol_runs = []
+            failed_protocol_runs = []
             for run_name, executor in self._protocol_executors.items():
-                complete = await executor.progress_protocol_run(db)
+                try:
+                    complete = await executor.progress_protocol_run(db)
+                except EosProtocolRunExecutionError as e:
+                    max_failed = self._campaign_submission.max_failed_protocol_runs
+                    if len(self._failed_protocol_runs) >= max_failed:
+                        if max_failed == 0:
+                            raise
+                        raise EosCampaignExecutionError(
+                            f"CMP '{self._campaign_name}' - Protocol run '{run_name}' failed after "
+                            f"{max_failed} tolerated failures (max_failed_protocol_runs)"
+                        ) from e
+                    self._failed_protocol_runs.append(run_name)
+                    failed_protocol_runs.append(run_name)
+                    log.warning(
+                        f"CMP '{self._campaign_name}' - Protocol run '{run_name}' failed; continuing "
+                        f"({len(self._failed_protocol_runs)}/{max_failed} tolerated failures)."
+                    )
+                    continue
                 if complete:
                     completed_protocol_runs.append(run_name)
 
             if completed_protocol_runs and self._campaign_submission.optimize:
                 await self._process_results_for_optimization(db, completed_protocol_runs)
+            if failed_protocol_runs and self._campaign_submission.optimize:
+                await self._ensure_optimizer_initialized(db)
+                self._queued_reports.append(await self._collect_failed_protocol_run_results(db, failed_protocol_runs))
 
             for _ in completed_protocol_runs:
                 await self._campaign_manager.increment_iteration(db, self._campaign_name)
@@ -286,7 +317,7 @@ class CampaignExecutor:
         await self._try_resolve_pending_report()
         await self._try_flush_reports()
 
-        for run_name in completed_protocol_runs:
+        for run_name in completed_protocol_runs + failed_protocol_runs:
             del self._protocol_executors[run_name]
 
     async def cancel_campaign(self) -> None:
@@ -409,7 +440,12 @@ class CampaignExecutor:
 
             parameters = self._get_protocol_run_parameters(iteration)
             if parameters is not None:
-                await self._create_single_protocol_run(db, protocol_run_name, parameters)
+                await self._create_single_protocol_run(
+                    db,
+                    protocol_run_name,
+                    parameters,
+                    decision={"method": "provided", "reason": "使用提交的固定参数或逐轮参数表。"},
+                )
                 effective_in_flight += 1
                 continue
 
@@ -426,7 +462,7 @@ class CampaignExecutor:
             return
 
     async def _create_single_protocol_run(
-        self, db: AsyncDbSession, protocol_run_name: str, parameters: dict[str, Any]
+        self, db: AsyncDbSession, protocol_run_name: str, parameters: dict[str, Any], decision: dict | None = None
     ) -> None:
         """Create and start a single protocol run."""
         protocol_run_submission = ProtocolRunSubmission(
@@ -435,6 +471,7 @@ class CampaignExecutor:
             owner=self._campaign_submission.owner,
             priority=self._campaign_submission.priority,
             parameters=parameters,
+            meta={"decision": decision} if decision else None,
         )
 
         protocol_executor = self._protocol_executor_factory.create(
@@ -513,6 +550,13 @@ class CampaignExecutor:
             ) from e
 
         result = []
+        decision = (meta or {}).get("sampling_decision") or {
+            "method": "optimizer",
+            "reason": "由已配置的优化器提出；未记录本轮的具体解释。",
+        }
+        async with self._db_interface.get_async_session() as db:
+            for protocol_run_name, _ in pending.protocol_runs:
+                await self._protocol_run_manager.set_sampling_decision(db, protocol_run_name, decision)
         for (protocol_run_name, base_params), record in zip(pending.protocol_runs, records, strict=True):
             run_params = dict_utils.unflatten_dict(record)
             _merge_protocol_run_params(base_params, run_params)
@@ -633,6 +677,11 @@ class CampaignExecutor:
             report_df = pd.concat([outputs_df, pd.DataFrame(additional)], axis=1) if additional else outputs_df
             await self._optimizer.report.remote(inputs_df, report_df)
 
+        if self._failed_protocol_runs:
+            await self._optimizer.report.remote(
+                *await self._collect_failed_protocol_run_results(db, self._failed_protocol_runs)
+            )
+
         log.info(
             f"CMP '{self._campaign_name}' - Restored optimizer state from {len(completed_protocol_run_names)} "
             f"completed protocols."
@@ -670,6 +719,21 @@ class CampaignExecutor:
                 additional[key].append(task.output_parameters[parameter_name] if task else None)
 
         return pd.DataFrame(inputs), pd.DataFrame(outputs), additional
+
+    async def _collect_failed_protocol_run_results(
+        self, db: AsyncDbSession, protocol_run_names: list[str]
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Inputs of failed protocol runs with NaN outputs, so the optimizer can learn the infeasible region."""
+        inputs = {input_name: [] for input_name in self._optimizer_input_names}
+        for protocol_run_name in protocol_run_names:
+            protocol_run = await self._protocol_run_manager.get_protocol_run(db, protocol_run_name)
+            for input_name in self._optimizer_input_names:
+                task_name, parameter_name = input_name.split(".")
+                inputs[input_name].append(protocol_run.parameters.get(task_name, {}).get(parameter_name))
+
+        report_names = self._optimizer_output_names + self._optimizer_additional_parameters
+        outputs = {name: [float("nan")] * len(protocol_run_names) for name in report_names}
+        return pd.DataFrame(inputs), pd.DataFrame(outputs)
 
     async def _save_optimizer_meta_dict(self, meta: dict[str, Any]) -> None:
         """Save pre-fetched optimizer meta (journal, insights), preserving optimizer_config."""

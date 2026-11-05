@@ -69,8 +69,8 @@ export function DeviceInspector({ initialDevices }: DeviceInspectorProps) {
           /* Empty state */
           <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <Microscope className="h-16 w-16 mb-4 opacity-50" />
-            <p className="text-lg font-medium">Select a device to inspect</p>
-            <p className="text-sm">Choose a device from the list to view its state and call functions</p>
+            <p className="text-lg font-medium">选择要检查的设备</p>
+            <p className="text-sm">从列表中选择设备，查看状态并调用函数</p>
           </div>
         )}
       </div>

@@ -85,7 +85,7 @@ const validateTaskReference = (ref: string): ValidationResult => {
   const parts = ref.split('.');
   return parts.length === 2 && parts[0] && parts[1]
     ? { valid: true }
-    : { valid: false, error: 'Invalid format. Use: task_name.output_name' };
+    : { valid: false, error: '格式无效，请使用 task_name.output_name' };
 };
 
 const checkLabExists = (
@@ -93,8 +93,8 @@ const checkLabExists = (
   selectedLabs: string[],
   labSpecs: Record<string, LabSpec>
 ): ValidationResult => {
-  if (!selectedLabs.includes(labName)) return { valid: false, error: `Lab "${labName}" not selected in protocol` };
-  if (!labSpecs[labName]) return { valid: false, error: `Lab "${labName}" not found` };
+  if (!selectedLabs.includes(labName)) return { valid: false, error: `实验室“${labName}”未在协议中选择` };
+  if (!labSpecs[labName]) return { valid: false, error: `实验室“${labName}" not found` };
   return { valid: true };
 };
 
@@ -104,21 +104,21 @@ export const validateDeviceAssignment = (
   labSpecs: Record<string, LabSpec>,
   selectedLabs: string[]
 ): ValidationResult => {
-  if (!assignment) return { valid: false, error: 'Device assignment required' };
+  if (!assignment) return { valid: false, error: '请分配设备' };
 
   if (isTaskReferenceAssignment(assignment)) return validateTaskReference(assignment);
 
   if (isStaticDeviceAssignment(assignment)) {
     const { lab_name, name } = assignment;
-    if (!lab_name || !name) return { valid: false, error: 'Lab and device name required' };
+    if (!lab_name || !name) return { valid: false, error: '实验室和设备名称为必填项' };
 
     const labCheck = checkLabExists(lab_name, selectedLabs, labSpecs);
     if (!labCheck.valid) return labCheck;
 
     const device = labSpecs[lab_name].devices?.[name];
-    if (!device) return { valid: false, error: `Device "${name}" not found in lab "${lab_name}"` };
+    if (!device) return { valid: false, error: `设备“${name}”不存在于实验室“${lab_name}"` };
     if (device.type !== deviceSpec.type)
-      return { valid: false, error: `Type mismatch: expected "${deviceSpec.type}", got "${device.type}"` };
+      return { valid: false, error: `类型不匹配：预期为“${deviceSpec.type}”，实际为“${device.type}"` };
 
     return { valid: true };
   }
@@ -127,7 +127,7 @@ export const validateDeviceAssignment = (
     const { device_type, allowed_labs, allowed_devices } = assignment;
 
     if (device_type !== deviceSpec.type)
-      return { valid: false, error: `Type mismatch: expected "${deviceSpec.type}", got "${device_type}"` };
+      return { valid: false, error: `类型不匹配：预期为“${deviceSpec.type}”，实际为“${device_type}"` };
 
     if (allowed_labs) {
       for (const lab of allowed_labs) {
@@ -138,13 +138,13 @@ export const validateDeviceAssignment = (
 
     if (allowed_devices) {
       for (const { lab_name, name } of allowed_devices) {
-        if (!labSpecs[lab_name]) return { valid: false, error: `Lab "${lab_name}" not found` };
+        if (!labSpecs[lab_name]) return { valid: false, error: `实验室“${lab_name}" not found` };
         const device = labSpecs[lab_name].devices?.[name];
-        if (!device) return { valid: false, error: `Device "${name}" not found in lab "${lab_name}"` };
+        if (!device) return { valid: false, error: `设备“${name}”不存在于实验室“${lab_name}"` };
         if (device.type !== device_type)
           return {
             valid: false,
-            error: `Device "${name}" has wrong type: expected "${device_type}", got "${device.type}"`,
+            error: `设备“${name}”的类型不正确：预期为“${device_type}”，实际为“${device.type}"`,
           };
       }
     }
@@ -152,7 +152,7 @@ export const validateDeviceAssignment = (
     return { valid: true };
   }
 
-  return { valid: false, error: 'Invalid device assignment format' };
+  return { valid: false, error: '设备分配格式无效' };
 };
 
 export const validateResourceAssignment = (
@@ -161,7 +161,7 @@ export const validateResourceAssignment = (
   labSpecs: Record<string, LabSpec>,
   selectedLabs: string[]
 ): ValidationResult => {
-  if (!assignment) return { valid: false, error: 'Resource assignment required' };
+  if (!assignment) return { valid: false, error: '请分配资源' };
 
   if (isTaskReferenceAssignment(assignment)) return validateTaskReference(assignment);
 
@@ -169,26 +169,26 @@ export const validateResourceAssignment = (
     const { resource_type } = assignment;
     return resource_type === resourceSpec.type
       ? { valid: true }
-      : { valid: false, error: `Type mismatch: expected "${resourceSpec.type}", got "${resource_type}"` };
+      : { valid: false, error: `类型不匹配：预期为“${resourceSpec.type}”，实际为“${resource_type}"` };
   }
 
   if (isStaticResourceAssignment(assignment)) {
     const resourceName = assignment as string;
-    if (!resourceName.trim()) return { valid: false, error: 'Resource name cannot be empty' };
+    if (!resourceName.trim()) return { valid: false, error: '资源名称不能为空' };
 
     for (const labName of selectedLabs) {
       const resource = labSpecs[labName]?.resources?.[resourceName];
       if (resource) {
         return resource.type === resourceSpec.type
           ? { valid: true }
-          : { valid: false, error: `Type mismatch: expected "${resourceSpec.type}", got "${resource.type}"` };
+          : { valid: false, error: `类型不匹配：预期为“${resourceSpec.type}”，实际为“${resource.type}"` };
       }
     }
 
-    return { valid: false, error: `Resource "${resourceName}" not found in selected labs` };
+    return { valid: false, error: `资源“${resourceName}”不存在于所选实验室` };
   }
 
-  return { valid: false, error: 'Invalid resource assignment format' };
+  return { valid: false, error: '资源分配格式无效' };
 };
 
 // Serialization

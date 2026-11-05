@@ -178,7 +178,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
         return await response.json();
       } catch (error) {
         showToast('error', errorMsg);
-        setError(error instanceof Error ? error.message : 'Unknown error');
+        setError(error instanceof Error ? error.message : '未知错误');
         return null;
       } finally {
         setLoading(false);
@@ -191,7 +191,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
     async (packageName: string) => {
       const tree = await fetchWithError<EntityTree>(
         `/api/filesystem/packages/${encodeURIComponent(packageName)}`,
-        'Failed to load package entities'
+        '加载软件包条目失败'
       );
       if (tree) setEntityTree(packageName, tree);
     },
@@ -221,7 +221,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
           useEditorStore.getState().deleteCache(cacheKey);
           clearSelection();
           useEditorStore.getState().resetProtocol();
-          showToast('error', `${selectedEntityName} no longer exists on disk`);
+          showToast('error', `${selectedEntityName} 在磁盘上已不存在`);
           return;
         }
 
@@ -242,8 +242,8 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
         }
       } catch (error) {
         if (cancelled) return;
-        showToast('error', 'Failed to load entity files');
-        setError(error instanceof Error ? error.message : 'Unknown error');
+        showToast('error', '加载条目文件失败');
+        setError(error instanceof Error ? error.message : '未知错误');
         setLoading(false);
       }
     }
@@ -319,7 +319,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
 
     const validEntityTypes: EntityType[] = ['devices', 'tasks', 'labs', 'protocols'];
     if (!validEntityTypes.includes(entityType)) {
-      showToast('error', `Invalid entity type: ${entityType}`);
+      showToast('error', `条目类型无效：${entityType}`);
       return;
     }
 
@@ -414,7 +414,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
           return;
         }
 
-        if (!response.ok) throw new Error('Failed to save files');
+        if (!response.ok) throw new Error('保存文件失败');
 
         const data = await response.json();
         markSaved(data.mtime);
@@ -423,10 +423,10 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
         if (selectedEntityType === 'tasks' || selectedEntityType === 'protocols') {
           await reloadEntity(selectedEntityType, selectedEntityName, undefined, { ifUnused: true });
         }
-        showToast('success', 'Saved successfully');
+        showToast('success', '保存成功');
       } catch (error) {
         console.error('Error saving files:', error);
-        showToast('error', 'Failed to save files');
+        showToast('error', '保存文件失败');
       } finally {
         setIsSaving(false);
         setLoading(false);
@@ -492,15 +492,15 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create entity');
+        throw new Error(error.error || '创建条目失败');
       }
 
-      showToast('success', `Created ${entityName}`);
+      showToast('success', `已创建 ${entityName}`);
       await fetchEntityTree(packageName);
       refreshPackages();
     } catch (error) {
       console.error('Error creating entity:', error);
-      showToast('error', error instanceof Error ? error.message : 'Failed to create entity');
+      showToast('error', error instanceof Error ? error.message : '创建条目失败');
     } finally {
       setLoading(false);
     }
@@ -514,9 +514,9 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
         { method: 'DELETE' }
       );
 
-      if (!response.ok) throw new Error('Failed to delete entity');
+      if (!response.ok) throw new Error('删除条目失败');
 
-      showToast('success', `Deleted ${entityName}`);
+      showToast('success', `已删除 ${entityName}`);
 
       const cacheKey = `${packageName}/${entityType}/${entityName}`;
       useEditorStore.getState().deleteCache(cacheKey);
@@ -530,7 +530,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
       refreshPackages();
     } catch (error) {
       console.error('Error deleting entity:', error);
-      showToast('error', 'Failed to delete entity');
+      showToast('error', '删除条目失败');
     } finally {
       setLoading(false);
     }
@@ -555,10 +555,10 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to rename entity');
+        throw new Error(error.error || '重命名条目失败');
       }
 
-      showToast('success', `Renamed ${oldName} to ${newName}`);
+      showToast('success', `已重命名 ${oldName} 为 ${newName}`);
 
       if (selectedPackage === packageName && selectedEntityType === entityType && selectedEntityName === oldName) {
         useEditorStore.setState({ selectedEntityName: newName });
@@ -579,7 +579,7 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
       refreshPackages();
     } catch (error) {
       console.error('Error renaming entity:', error);
-      showToast('error', error instanceof Error ? error.message : 'Failed to rename entity');
+      showToast('error', error instanceof Error ? error.message : '重命名条目失败');
     } finally {
       setLoading(false);
     }
@@ -590,14 +590,14 @@ export function EditorClient({ initialPackages, taskSpecs, labSpecs, initialSele
     // before refetching, so task/lab spec changes (renames, new types) propagate.
     const result = await refreshPackages();
     if (!result.success) {
-      showToast('error', result.error || 'Failed to refresh packages');
+      showToast('error', result.error || '刷新软件包失败');
       return;
     }
-    const packages = await fetchWithError<Package[]>('/api/filesystem/packages', 'Failed to refresh packages');
+    const packages = await fetchWithError<Package[]>('/api/filesystem/packages', '刷新软件包失败');
     if (packages) {
       setPackages(packages);
       await refreshSpecs();
-      showToast('success', `Refreshed: ${packages.length} package(s)`);
+      showToast('success', `已刷新：${packages.length} 个软件包`);
     }
   }, [fetchWithError, setPackages, showToast, refreshSpecs]);
 

@@ -12,6 +12,53 @@ Install the SiLA 2 Python package and supporting packages:
 
     uv sync --group sila2
 
+Instruments with SiLA Servers
+-----------------------------
+The recommended way to add an instrument is to give it its own SiLA 2 server, usually a daemon on the
+computer wired to the instrument, and register it in EOS with ``SilaDevice``. The SiLA feature definition is
+the instrument's contract; the EOS device only holds the endpoint. The device needs no code beyond its type:
+
+:bdg-primary:`devices/medusa/device.py`
+
+.. code-block:: python
+
+    from eos.integrations.sila import SilaDevice
+
+
+    class Medusa(SilaDevice, type="medusa"):
+        """Robotic synthesis platform."""
+
+Set the endpoint in the lab definition, either ``address`` and ``port`` or ``server_name`` for SiLA
+discovery. Because EOS talks to the instrument over the network, the device actor can run on the EOS
+computer:
+
+:bdg-primary:`lab.yml`
+
+.. code-block:: yaml
+
+    devices:
+      medusa:
+        type: medusa
+        computer: eos_computer
+        init_parameters:
+          address: 192.168.1.20
+          port: 65001
+          insecure: true
+
+``SilaDevice`` connects during initialization and reads the server name, so an unreachable instrument fails
+lab loading. Tasks call the instrument with ``SilaClientContext.connect``. The dynamic ``sila2.client.SilaClient``
+needs no generated code; a generated client class adds type hints:
+
+.. code-block:: python
+
+    from sila2.client import SilaClient
+
+    async with SilaClientContext.connect(medusa, SilaClient) as client:
+        client.MedusaController.RunJob(Job=job_json)
+
+``SilaDevice`` works with servers built with older ``sila2`` versions, such as the ChemOS 2.0 servers
+(``sila2`` 0.10). TLS connections without ``insecure`` use the system trust store.
+
 Hosting SiLA Servers
 --------------------
 
@@ -219,3 +266,9 @@ Manual Lock Control
         client.lock(timeout=90)  # Lock with auto-generated UUID
         response = client.Feature.Command()
         client.unlock()
+
+Errors
+------
+A SiLA error raised inside a task fails the task. SiLA ``DefinedExecutionError`` objects cannot be passed
+between Ray processes, so EOS records them as ``EosTaskExecutionError`` with the original type, error
+identifier and message, e.g. ``DefinedExecutionError: DeviceCrashed: controller crashed``.

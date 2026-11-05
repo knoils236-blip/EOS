@@ -17,7 +17,7 @@ export async function getPackages(): Promise<PackageInfo[]> {
       active,
     }));
   } catch (error) {
-    console.error('Failed to fetch packages:', error);
+    console.error('获取软件包失败：', error);
     return [];
   }
 }
@@ -36,10 +36,10 @@ export async function loadPackages(packageNames: string[]): Promise<ActionResult
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to load packages:', error);
+    console.error('加载软件包失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to load packages',
+      error: error instanceof Error ? error.message : '加载软件包失败',
     };
   }
 }
@@ -58,10 +58,10 @@ export async function unloadPackages(packageNames: string[]): Promise<ActionResu
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to unload packages:', error);
+    console.error('卸载软件包失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to unload packages',
+      error: error instanceof Error ? error.message : '卸载软件包失败',
     };
   }
 }

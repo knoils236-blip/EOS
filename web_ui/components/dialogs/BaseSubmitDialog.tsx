@@ -24,7 +24,7 @@ export function BaseSubmitDialog({
   open,
   onOpenChange,
   title,
-  submitLabel = 'Submit',
+  submitLabel = '提交',
   children,
   isSubmitting,
   error,
@@ -57,7 +57,7 @@ export function BaseSubmitDialog({
               <Dialog.Close asChild>
                 <button className="rounded-sm opacity-70 ring-offset-white dark:ring-offset-slate-900 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 text-gray-900 dark:text-gray-400">
                   <X className="h-4 w-4" />
-                  <span className="sr-only">Close</span>
+                  <span className="sr-only">关闭</span>
                 </button>
               </Dialog.Close>
             </div>
@@ -73,11 +73,11 @@ export function BaseSubmitDialog({
             <div className="flex justify-end gap-3 pt-4">
               <Dialog.Close asChild>
                 <Button type="button" variant="outline">
-                  Cancel
+                  取消
                 </Button>
               </Dialog.Close>
               <Button type="submit" variant="primary" disabled={isSubmitting || !isConnected}>
-                {!isConnected ? 'Orchestrator Offline' : isSubmitting ? 'Submitting...' : submitLabel}
+                {!isConnected ? '编排器离线' : isSubmitting ? '正在提交…' : submitLabel}
               </Button>
             </div>
           </form>

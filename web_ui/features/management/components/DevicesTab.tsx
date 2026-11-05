@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { RefreshCw, Eye } from 'lucide-react';
 import { DataTable, DataTableColumnDef } from '@/components/data-table/DataTable';
@@ -31,12 +33,12 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
   const columns: DataTableColumnDef<Device>[] = [
     {
       accessorKey: 'name',
-      header: 'Device Name',
+      header: '设备名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
     },
     {
       accessorKey: 'lab_name',
-      header: 'Lab',
+      header: '实验室',
       cell: ({ row }) => <div className="text-gray-700 dark:text-gray-300">{row.getValue('lab_name')}</div>,
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -45,20 +47,20 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
     },
     {
       accessorKey: 'type',
-      header: 'Type',
+      header: '类型',
       cell: ({ row }) => <div className="text-gray-600 dark:text-gray-400">{row.getValue('type')}</div>,
     },
     {
       accessorKey: 'computer',
-      header: 'Computer',
+      header: '计算机',
       cell: ({ row }) => <div className="text-gray-600 dark:text-gray-400">{row.getValue('computer')}</div>,
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
-        return <Badge variant={status === 'ACTIVE' ? 'success' : 'default'}>{status}</Badge>;
+        return <Badge variant={status === 'ACTIVE' ? 'success' : 'default'}>{statusLabel(status)}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -67,7 +69,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const device = row.original;
         return (
@@ -82,7 +84,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
               }}
             >
               <Eye className="h-4 w-4 mr-1" />
-              View
+              查看
             </Button>
             <Button
               variant="outline"
@@ -94,7 +96,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
               }}
             >
               <RefreshCw className="h-4 w-4 mr-1" />
-              Reload
+              重新加载
             </Button>
           </div>
         );
@@ -112,8 +114,8 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
       const report = await getDeviceReport(device.lab_name, device.name);
       setDeviceReport(report);
     } catch (error) {
-      console.error('Failed to fetch device report:', error);
-      setDeviceReport({ error: 'Failed to load device report' });
+      console.error('获取设备报告失败：', error);
+      setDeviceReport({ error: '加载设备报告失败' });
     } finally {
       setLoadingReport(false);
     }
@@ -157,7 +159,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
   const bulkActions = selectedRows.length > 0 && (
     <Button variant="primary" size="sm" onClick={handleReloadSelected} disabled={!isConnected}>
       <RefreshCw className="h-4 w-4 mr-1" />
-      Reload Selected
+      重新加载所选项
     </Button>
   );
 
@@ -166,7 +168,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
       <DataTable
         columns={columns}
         data={initialDevices}
-        searchPlaceholder="Search devices..."
+        searchPlaceholder="搜索设备…"
         enableRowSelection
         onSelectionChange={setSelectedRows}
         bulkActions={bulkActions}
@@ -175,9 +177,9 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
       <ConfirmationDialog
         open={reloadDialogOpen}
         onOpenChange={setReloadDialogOpen}
-        title="Reload Devices"
-        description="Are you sure you want to reload these devices? The device plugins will be refreshed and reinitialize."
-        confirmLabel="Reload"
+        title="重新加载设备"
+        description="确定要重新加载这些设备吗？设备插件将刷新并重新初始化。"
+        confirmLabel="重新加载"
         variant="default"
         items={selectedRows.map((row) => `${row.lab_name}.${row.name}`)}
         onConfirm={handleReloadConfirm}
@@ -190,7 +192,7 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
             <>
               <SheetHeader>
                 <SheetTitle>{selectedDevice.name}</SheetTitle>
-                <SheetDescription>Device in {selectedDevice.lab_name}</SheetDescription>
+                <SheetDescription>所在实验室的设备： {selectedDevice.lab_name}</SheetDescription>
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
@@ -198,25 +200,25 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
                 <div className="space-y-3">
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      Type
+                      类型
                     </div>
                     <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{selectedDevice.type}</div>
                   </div>
 
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      Computer
+                      计算机
                     </div>
                     <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">{selectedDevice.computer}</div>
                   </div>
 
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      Status
+                      状态
                     </div>
                     <div className="mt-1">
                       <Badge variant={selectedDevice.status === 'ACTIVE' ? 'success' : 'default'}>
-                        {selectedDevice.status}
+                        {statusLabel(selectedDevice.status)}
                       </Badge>
                     </div>
                   </div>
@@ -225,23 +227,23 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
                 {/* Metadata */}
                 {selectedDevice.meta && Object.keys(selectedDevice.meta).length > 0 && (
                   <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Metadata</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">元数据</div>
                     <JsonDisplay data={selectedDevice.meta} />
                   </div>
                 )}
 
                 {/* Device Report */}
                 <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Device Report</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">设备报告</div>
                   {loadingReport ? (
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      Loading report...
+                      正在加载报告…
                     </div>
                   ) : deviceReport ? (
                     <JsonDisplay data={deviceReport} />
                   ) : (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 italic">No report available</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 italic">暂无报告</div>
                   )}
                 </div>
               </div>

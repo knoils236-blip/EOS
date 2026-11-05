@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { MoreHorizontal, X, Copy } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -75,7 +77,7 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
     try {
       const result = await cancelTask(taskToCancel.name, taskToCancel.protocolRunName);
       if (!result.success) {
-        alert(`Failed to cancel task: ${result.error}`);
+        alert(`取消任务失败：${result.error}`);
       }
     } finally {
       setCancellingTask(null);
@@ -100,20 +102,20 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
   const columns: DataTableColumnDef<Task>[] = [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: '名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'type',
-      header: 'Type',
+      header: '类型',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'protocol_run_name',
-      header: 'Protocol Run',
+      header: '协议运行',
       cell: ({ row }) => {
         const exp = row.getValue('protocol_run_name') as string | null;
         return exp ? exp : <span className="text-gray-400">-</span>;
@@ -123,10 +125,10 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
-        return <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>;
+        return <Badge variant={getStatusBadgeVariant(status)}>{statusLabel(status)}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -135,21 +137,21 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
     },
     {
       accessorKey: 'priority',
-      header: 'Priority',
+      header: '优先级',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'created_at',
-      header: 'Created',
+      header: '创建时间',
       cell: ({ row }) => {
         const date = new Date(row.getValue('created_at'));
-        return date.toLocaleString();
+        return date.toLocaleString('zh-CN');
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const task = row.original;
         const canCancel = task.status === 'RUNNING' || task.status === 'CREATED';
@@ -158,7 +160,7 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">打开菜单</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenu.Trigger>
@@ -169,7 +171,7 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
                   onClick={() => handleCloneTask(task)}
                 >
                   <Copy className="h-4 w-4" />
-                  <span>Clone</span>
+                  <span>克隆</span>
                 </DropdownMenu.Item>
                 {canCancel && (
                   <DropdownMenu.Item
@@ -180,7 +182,7 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
                     disabled={cancellingTask === task.name || !isConnected || !canSubmit}
                   >
                     <X className="h-4 w-4" />
-                    <span>{cancellingTask === task.name ? 'Cancelling...' : 'Cancel Task'}</span>
+                    <span>{cancellingTask === task.name ? '正在取消…' : '取消任务'}</span>
                   </DropdownMenu.Item>
                 )}
               </DropdownMenu.Content>
@@ -205,26 +207,26 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
       <div className={`space-y-4 ${detailPanelOpen ? 'flex-1 min-w-0' : 'w-full'}`}>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tasks</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">View and manage tasks</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">任务</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">查看和管理任务</p>
           </div>
           <Button
             variant="primary"
             disabled={!isConnected || !canSubmit}
-            title={!isConnected ? 'Orchestrator offline' : undefined}
+            title={!isConnected ? '编排器离线' : undefined}
             onClick={() => {
               setTaskToClone(null);
               setSubmitDialogOpen(true);
             }}
           >
-            Submit Task
+            提交任务
           </Button>
         </div>
 
         <DataTable
           columns={columns}
           data={serverTable.data}
-          searchPlaceholder="Search tasks..."
+          searchPlaceholder="搜索任务…"
           onRowClick={handleRowClick}
           toolbarActions={toolbarActions}
           manualPagination
@@ -253,50 +255,52 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
           <div className="flex items-start justify-between mb-6 gap-2">
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white break-words">{selectedTask.name}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Task Details</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">任务详情</p>
             </div>
             <button
               onClick={() => setDetailPanelOpen(false)}
               className="flex-shrink-0 rounded-sm opacity-70 ring-offset-white dark:ring-offset-slate-900 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 text-gray-900 dark:text-gray-400"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">关闭</span>
             </button>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <DetailField label="Type" value={selectedTask.type} />
+              <DetailField label="类型" value={selectedTask.type} />
               <DetailField
-                label="Status"
-                value={<Badge variant={getStatusBadgeVariant(selectedTask.status)}>{selectedTask.status}</Badge>}
+                label="状态"
+                value={
+                  <Badge variant={getStatusBadgeVariant(selectedTask.status)}>{statusLabel(selectedTask.status)}</Badge>
+                }
               />
               {selectedTask.status === 'FAILED' && selectedTask.error_message && (
                 <ErrorBox error={selectedTask.error_message} />
               )}
               {selectedTask.protocol_run_name && (
-                <DetailField label="Protocol Run" value={selectedTask.protocol_run_name} />
+                <DetailField label="协议运行" value={selectedTask.protocol_run_name} />
               )}
-              <DetailField label="Priority" value={selectedTask.priority} />
-              <DetailField label="Allocation Timeout" value={`${selectedTask.allocation_timeout}s`} />
+              <DetailField label="优先级" value={selectedTask.priority} />
+              <DetailField label="分配超时" value={`${selectedTask.allocation_timeout}s`} />
             </div>
 
             <div className={SECTION_DIVIDER}>
-              <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">Timeline</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">时间线</div>
               <TimelineSection
                 entries={[
-                  { label: 'Created', timestamp: selectedTask.created_at ?? null },
-                  { label: 'Started', timestamp: selectedTask.start_time ?? null },
-                  { label: 'Ended', timestamp: selectedTask.end_time ?? null },
+                  { label: '创建时间', timestamp: selectedTask.created_at ?? null },
+                  { label: '开始时间', timestamp: selectedTask.start_time ?? null },
+                  { label: '结束时间', timestamp: selectedTask.end_time ?? null },
                 ]}
               />
             </div>
 
-            <ConditionalJsonSection data={selectedTask.devices} label="Devices" />
-            <ConditionalJsonSection data={selectedTask.input_parameters} label="Input Parameters" />
-            <ConditionalJsonSection data={selectedTask.input_resources} label="Input Resources" />
-            <ConditionalJsonSection data={selectedTask.output_parameters} label="Output Parameters" />
-            <ConditionalJsonSection data={selectedTask.output_resources} label="Output Resources" />
+            <ConditionalJsonSection data={selectedTask.devices} label="设备" />
+            <ConditionalJsonSection data={selectedTask.input_parameters} label="输入参数" />
+            <ConditionalJsonSection data={selectedTask.input_resources} label="输入资源" />
+            <ConditionalJsonSection data={selectedTask.output_parameters} label="输出参数" />
+            <ConditionalJsonSection data={selectedTask.output_resources} label="输出资源" />
 
             {selectedTask.output_file_names && selectedTask.output_file_names.length > 0 && (
               <div className={SECTION_DIVIDER}>
@@ -308,7 +312,7 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
               </div>
             )}
 
-            <ConditionalJsonSection data={selectedTask.meta} label="Metadata" />
+            <ConditionalJsonSection data={selectedTask.meta} label="元数据" />
           </div>
         </div>
       )}
@@ -317,10 +321,10 @@ export function TasksTable({ initialData, taskSpecs, labSpecs }: TasksTableProps
         isOpen={taskToCancel !== null}
         onClose={() => setTaskToCancel(null)}
         onConfirm={handleCancelTask}
-        title="Cancel Task"
-        message={`Are you sure you want to cancel task "${taskToCancel?.name}"?`}
-        confirmText="Cancel Task"
-        cancelText="Keep Running"
+        title="取消任务"
+        message={`确定要取消任务“${taskToCancel?.name}"?`}
+        confirmText="取消任务"
+        cancelText="继续运行"
         variant="danger"
       />
     </div>

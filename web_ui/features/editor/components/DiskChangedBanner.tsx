@@ -16,7 +16,7 @@ export function DiskChangedBanner({ onReload }: DiskChangedBannerProps) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 text-sm">
       <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-      <span className="flex-1">File has been modified externally.</span>
+      <span className="flex-1">文件已被外部修改。</span>
       <button
         onClick={() => {
           onReload?.();
@@ -24,10 +24,10 @@ export function DiskChangedBanner({ onReload }: DiskChangedBannerProps) {
         }}
         className="text-xs font-medium underline hover:no-underline"
       >
-        Reload from disk
+        从磁盘重新加载
       </button>
       <button onClick={() => setDiskChanged(false)} className="text-xs font-medium underline hover:no-underline ml-2">
-        Dismiss
+        关闭提示
       </button>
     </div>
   );

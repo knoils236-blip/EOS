@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Bot,
   ChevronLeft,
   ChevronRight,
   SquarePen,
@@ -55,49 +56,54 @@ export function Sidebar() {
     {
       href: '/editor',
       icon: SquarePen,
-      label: 'Editor',
+      label: '编辑器',
     },
     {
       href: '/tasks',
       icon: ListChecks,
-      label: 'Tasks',
+      label: '任务',
     },
     {
       href: '/protocol-runs',
       icon: FlaskConical,
-      label: 'Protocol Runs',
+      label: '协议运行',
     },
     {
       href: '/campaigns',
       icon: Target,
-      label: 'Campaigns',
+      label: '实验计划',
     },
     {
       href: '/resources',
       icon: Box,
-      label: 'Resources',
+      label: '资源',
     },
     {
       href: '/files',
       icon: FolderOpen,
-      label: 'Files',
+      label: '文件',
     },
     {
       href: '/devices/inspect',
       icon: Microscope,
-      label: 'Device Inspector',
+      label: '设备检查器',
     },
     {
       href: '/simulator',
       icon: GanttChart,
-      label: 'Simulator',
+      label: '模拟器',
+    },
+    {
+      href: '/ai-lab',
+      icon: Bot,
+      label: 'AI 协作',
     },
     ...(user.isAdmin
       ? [
           {
             href: '/management',
             icon: Settings,
-            label: 'Management',
+            label: '系统管理',
           },
         ]
       : []),
@@ -106,7 +112,7 @@ export function Sidebar() {
           {
             href: '/profile',
             icon: CircleUser,
-            label: 'Profile',
+            label: '个人资料',
           },
         ]
       : []),
@@ -128,7 +134,7 @@ export function Sidebar() {
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="mx-2 mb-4 p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-md transition-colors duration-200 flex items-center justify-center"
-        aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+        aria-label={isExpanded ? '收起侧边栏' : '展开侧边栏'}
       >
         {isExpanded ? (
           <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -202,7 +208,7 @@ export function Sidebar() {
                       ? 'bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-yellow-400'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
                   }`}
-                  aria-label="Toggle logs"
+                  aria-label="切换日志面板"
                 >
                   <Terminal className="w-5 h-5 flex-shrink-0" />
                 </button>
@@ -214,7 +220,7 @@ export function Sidebar() {
                   sideOffset={20}
                   collisionPadding={10}
                 >
-                  Logs
+                  日志
                   <Tooltip.Arrow className="fill-gray-900 dark:fill-slate-700" />
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -227,7 +233,7 @@ export function Sidebar() {
                   ? 'bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-yellow-400'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
               }`}
-              aria-label="Toggle logs"
+              aria-label="切换日志面板"
             >
               <Terminal className="w-5 h-5 flex-shrink-0" />
               <span
@@ -235,7 +241,7 @@ export function Sidebar() {
                   isExpanded ? 'opacity-100' : 'opacity-0 w-0'
                 }`}
               >
-                Logs
+                日志
               </span>
             </button>
           )}
@@ -253,9 +259,7 @@ export function Sidebar() {
                     onClick={checkNow}
                     disabled={isChecking}
                     className="w-full p-3 rounded-md flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                    aria-label={
-                      isConnected ? 'Orchestrator online — click to recheck' : 'Orchestrator offline — click to recheck'
-                    }
+                    aria-label={isConnected ? '编排器在线，点击重新检查' : '编排器离线，点击重新检查'}
                   >
                     {isConnected ? (
                       <Wifi className={`w-5 h-5 text-green-500 ${isChecking ? 'animate-pulse' : ''}`} />
@@ -271,7 +275,7 @@ export function Sidebar() {
                     sideOffset={20}
                     collisionPadding={10}
                   >
-                    {isConnected ? 'Orchestrator online — click to recheck' : 'Orchestrator offline — click to recheck'}
+                    {isConnected ? '编排器在线，点击重新检查' : '编排器离线，点击重新检查'}
                     <Tooltip.Arrow className="fill-gray-900 dark:fill-slate-700" />
                   </Tooltip.Content>
                 </Tooltip.Portal>
@@ -281,9 +285,7 @@ export function Sidebar() {
                 onClick={checkNow}
                 disabled={isChecking}
                 className="w-full p-3 rounded-md flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label={
-                  isConnected ? 'Orchestrator online — click to recheck' : 'Orchestrator offline — click to recheck'
-                }
+                aria-label={isConnected ? '编排器在线，点击重新检查' : '编排器离线，点击重新检查'}
               >
                 {isConnected ? (
                   <Wifi className={`w-5 h-5 flex-shrink-0 text-green-500 ${isChecking ? 'animate-pulse' : ''}`} />
@@ -295,7 +297,7 @@ export function Sidebar() {
                     isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}
                 >
-                  {isConnected ? 'Online' : 'Offline'}
+                  {isConnected ? '在线' : '离线'}
                 </span>
               </button>
             )}
@@ -307,7 +309,7 @@ export function Sidebar() {
                   <button
                     onClick={toggleTheme}
                     className="w-full p-3 rounded-md transition-all duration-200 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800"
-                    aria-label={currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                    aria-label={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
                   >
                     {currentTheme === 'light' ? (
                       <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -323,7 +325,7 @@ export function Sidebar() {
                     sideOffset={20}
                     collisionPadding={10}
                   >
-                    {currentTheme === 'light' ? 'Dark mode' : 'Light mode'}
+                    {currentTheme === 'light' ? '深色模式' : '浅色模式'}
                     <Tooltip.Arrow className="fill-gray-900 dark:fill-slate-700" />
                   </Tooltip.Content>
                 </Tooltip.Portal>
@@ -332,7 +334,7 @@ export function Sidebar() {
               <button
                 onClick={toggleTheme}
                 className="w-full p-3 rounded-md transition-all duration-200 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
-                aria-label={currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                aria-label={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
               >
                 {currentTheme === 'light' ? (
                   <Moon className="w-5 h-5 flex-shrink-0" />
@@ -340,7 +342,7 @@ export function Sidebar() {
                   <Sun className="w-5 h-5 flex-shrink-0" />
                 )}
                 <span className="transition-opacity duration-300 whitespace-nowrap">
-                  {currentTheme === 'light' ? 'Dark mode' : 'Light mode'}
+                  {currentTheme === 'light' ? '深色模式' : '浅色模式'}
                 </span>
               </button>
             )}
@@ -353,7 +355,7 @@ export function Sidebar() {
                     <button
                       onClick={() => signOutUser()}
                       className="w-full p-3 rounded-md transition-all duration-200 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800"
-                      aria-label="Sign out"
+                      aria-label="退出登录"
                     >
                       <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </button>
@@ -365,7 +367,7 @@ export function Sidebar() {
                       sideOffset={20}
                       collisionPadding={10}
                     >
-                      Sign out{user.name ? ` (${user.name})` : ''}
+                      退出登录{user.name ? ` (${user.name})` : ''}
                       <Tooltip.Arrow className="fill-gray-900 dark:fill-slate-700" />
                     </Tooltip.Content>
                   </Tooltip.Portal>
@@ -374,10 +376,10 @@ export function Sidebar() {
                 <button
                   onClick={() => signOutUser()}
                   className="w-full p-3 rounded-md transition-all duration-200 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
-                  aria-label="Sign out"
+                  aria-label="退出登录"
                 >
                   <LogOut className="w-5 h-5 flex-shrink-0" />
-                  <span className="transition-opacity duration-300 whitespace-nowrap">Sign out</span>
+                  <span className="transition-opacity duration-300 whitespace-nowrap">退出登录</span>
                 </button>
               ))}
           </div>

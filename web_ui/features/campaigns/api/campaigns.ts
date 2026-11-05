@@ -26,6 +26,7 @@ export async function getCampaigns(options: TableQueryOptions = {}): Promise<Pag
         priority: campaign.priority,
         max_protocol_runs: campaign.maxProtocolRuns,
         max_concurrent_protocol_runs: campaign.maxConcurrentProtocolRuns,
+        max_failed_protocol_runs: campaign.maxFailedProtocolRuns,
         optimize: campaign.optimize,
         optimizer_ip: campaign.optimizerIp ?? undefined,
         global_parameters: campaign.globalParameters,
@@ -44,8 +45,8 @@ export async function getCampaigns(options: TableQueryOptions = {}): Promise<Pag
       offset: result.offset,
     };
   } catch (error) {
-    console.error('Failed to fetch campaigns:', error);
-    throw new Error('Failed to fetch campaigns from database');
+    console.error('获取实验计划失败：', error);
+    throw new Error('获取数据库中的实验计划失败');
   }
 }
 
@@ -55,10 +56,10 @@ export async function submitCampaign(definition: CampaignDefinition): Promise<Ac
     revalidatePath('/campaigns');
     return { success: true };
   } catch (error) {
-    console.error('Failed to submit campaign:', error);
+    console.error('提交实验计划失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to submit campaign',
+      error: error instanceof Error ? error.message : '提交实验计划失败',
     };
   }
 }
@@ -69,10 +70,10 @@ export async function cancelCampaign(campaignName: string): Promise<ActionResult
     revalidatePath('/campaigns');
     return { success: true };
   } catch (error) {
-    console.error('Failed to cancel campaign:', error);
+    console.error('取消实验计划失败：', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel campaign',
+      error: error instanceof Error ? error.message : '取消实验计划失败',
     };
   }
 }

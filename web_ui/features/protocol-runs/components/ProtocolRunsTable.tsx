@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { MoreHorizontal, X, Copy, Activity } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -23,7 +25,7 @@ import { useOrchestratorConnected } from '@/contexts/OrchestratorStatusContext';
 import { useUser } from '@/contexts/UserContext';
 
 const PROTOCOL_RUNS_POLLING_INTERVALS = [
-  { label: 'Off', value: 0 },
+  { label: '关闭', value: 0 },
   { label: '1s', value: 1000 },
   { label: '5s', value: 5000 },
   { label: '10s', value: 10000 },
@@ -81,7 +83,7 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
     try {
       const result = await cancelProtocolRun(protocolRunToCancel);
       if (!result.success) {
-        alert(`Failed to cancel protocol run: ${result.error}`);
+        alert(`取消协议运行失败：${result.error}`);
       }
     } finally {
       setCancellingProtocolRun(null);
@@ -111,20 +113,20 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
   const columns: DataTableColumnDef<ProtocolRun>[] = [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: '名称',
       cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'type',
-      header: 'Type',
+      header: '类型',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'campaign',
-      header: 'Campaign',
+      header: '实验计划',
       cell: ({ row }) => {
         const campaign = row.getValue('campaign') as string | null;
         return campaign ? (
@@ -138,16 +140,16 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
     },
     {
       accessorKey: 'owner',
-      header: 'Owner',
+      header: '负责人',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: '状态',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
-        return <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>;
+        return <Badge variant={getStatusBadgeVariant(status)}>{statusLabel(status)}</Badge>;
       },
       enableColumnFilter: true,
       filterType: 'multiselect',
@@ -156,21 +158,21 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
     },
     {
       accessorKey: 'priority',
-      header: 'Priority',
+      header: '优先级',
       enableColumnFilter: true,
       filterType: 'text',
     },
     {
       accessorKey: 'created_at',
-      header: 'Created',
+      header: '创建时间',
       cell: ({ row }) => {
         const date = new Date(row.getValue('created_at'));
-        return date.toLocaleString();
+        return date.toLocaleString('zh-CN');
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '操作',
       cell: ({ row }) => {
         const protocolRun = row.original;
         const canCancel = protocolRun.status === 'RUNNING' || protocolRun.status === 'CREATED';
@@ -182,14 +184,14 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
               size="sm"
               className="h-8 w-8 p-0"
               onClick={() => handleViewExecution(protocolRun.name)}
-              title="View Execution"
+              title="查看执行过程"
             >
               <Activity className="h-4 w-4" />
             </Button>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
+                  <span className="sr-only">打开菜单</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenu.Trigger>
@@ -197,7 +199,7 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
                 <DropdownMenu.Content className="w-48 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-md z-50">
                   <DropdownMenu.Item className={DROPDOWN_ITEM} onClick={() => handleCloneProtocolRun(protocolRun)}>
                     <Copy className="h-4 w-4" />
-                    <span>Clone</span>
+                    <span>克隆</span>
                   </DropdownMenu.Item>
                   {canCancel && (
                     <DropdownMenu.Item
@@ -206,9 +208,7 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
                       disabled={cancellingProtocolRun === protocolRun.name || !isConnected || !canSubmit}
                     >
                       <X className="h-4 w-4" />
-                      <span>
-                        {cancellingProtocolRun === protocolRun.name ? 'Cancelling...' : 'Cancel Protocol Run'}
-                      </span>
+                      <span>{cancellingProtocolRun === protocolRun.name ? '正在取消…' : '取消协议运行'}</span>
                     </DropdownMenu.Item>
                   )}
                 </DropdownMenu.Content>
@@ -235,26 +235,26 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
       <div className={`space-y-4 ${detailPanelOpen ? 'flex-1 min-w-0' : 'w-full'}`}>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Protocol Runs</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">View and manage protocol runs</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">协议运行</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">查看和管理协议运行</p>
           </div>
           <Button
             variant="primary"
             disabled={!isConnected || !canSubmit}
-            title={!isConnected ? 'Orchestrator offline' : undefined}
+            title={!isConnected ? '编排器离线' : undefined}
             onClick={() => {
               setProtocolRunToClone(null);
               setSubmitDialogOpen(true);
             }}
           >
-            Submit Protocol Run
+            提交协议运行
           </Button>
         </div>
 
         <DataTable
           columns={columns}
           data={serverTable.data}
-          searchPlaceholder="Search protocol runs..."
+          searchPlaceholder="搜索协议运行…"
           onRowClick={handleRowClick}
           toolbarActions={toolbarActions}
           manualPagination
@@ -286,14 +286,14 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white break-words">
                 {selectedProtocolRun.name}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Protocol Run Details</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">协议运行详情</p>
             </div>
             <button
               onClick={() => setDetailPanelOpen(false)}
               className="flex-shrink-0 rounded-sm opacity-70 ring-offset-white dark:ring-offset-slate-900 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 text-gray-900 dark:text-gray-400"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">关闭</span>
             </button>
           </div>
           <ProtocolRunDetail protocolRun={selectedProtocolRun} />
@@ -304,10 +304,10 @@ export function ProtocolRunsTable({ initialData, protocolSpecs, taskSpecs, labSp
         isOpen={protocolRunToCancel !== null}
         onClose={() => setProtocolRunToCancel(null)}
         onConfirm={handleCancelProtocolRun}
-        title="Cancel Protocol Run"
-        message={`Are you sure you want to cancel protocol run "${protocolRunToCancel}"? This will stop all running tasks.`}
-        confirmText="Cancel Protocol Run"
-        cancelText="Keep Running"
+        title="取消协议运行"
+        message={`确定要取消协议运行“${protocolRunToCancel}”吗？这将停止所有正在运行的任务。`}
+        confirmText="取消协议运行"
+        cancelText="继续运行"
         variant="danger"
       />
     </div>

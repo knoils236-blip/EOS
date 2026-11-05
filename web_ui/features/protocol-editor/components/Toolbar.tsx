@@ -1,10 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { FlaskConical, X, LayoutDashboard, Camera, CheckCircle, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import {
+  FlaskConical,
+  X,
+  LayoutDashboard,
+  Camera,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/stores/editorStore';
 import type { LabSpec } from '@/lib/api/specs';
 import { OptimizerButton } from './OptimizerButton';
+import { AIDraftDialog } from './AIDraftDialog';
 
 interface ToolbarProps {
   labSpecs: Record<string, LabSpec>;
@@ -33,7 +44,7 @@ function LabsSelector({ labSpecs }: { labSpecs: Record<string, LabSpec> }) {
         className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors text-sm font-medium bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700"
       >
         <FlaskConical className="w-4 h-4" />
-        <span>Labs ({labs.length})</span>
+        <span>实验室（{labs.length})</span>
       </button>
 
       {isOpen && (
@@ -41,7 +52,7 @@ function LabsSelector({ labSpecs }: { labSpecs: Record<string, LabSpec> }) {
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute left-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-md shadow-lg z-20">
             <div className="p-3 border-b border-gray-200 dark:border-slate-600 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Select Labs</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">选择实验室</h3>
               <button
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
@@ -51,7 +62,7 @@ function LabsSelector({ labSpecs }: { labSpecs: Record<string, LabSpec> }) {
             </div>
             <div className="p-2 max-h-64 overflow-y-auto">
               {Object.entries(labSpecs).length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400 p-2 text-center">No labs available</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 p-2 text-center">暂无可用实验室</div>
               ) : (
                 Object.entries(labSpecs).map(([labName, spec]) => (
                   <label
@@ -96,7 +107,7 @@ function ValidateButton({ onValidate }: { onValidate: () => void }) {
         <button
           onClick={() => setIsValidationPanelOpen(!isValidationPanelOpen)}
           className="flex items-center gap-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
-          title={`${count} ${count === 1 ? 'error' : 'errors'} — click to ${isValidationPanelOpen ? 'hide' : 'show'}`}
+          title={`${count} 个错误，点击${isValidationPanelOpen ? '隐藏' : '显示'}`}
         >
           <AlertCircle className="w-4 h-4" />
           <span className="text-xs font-medium">{count}</span>
@@ -112,10 +123,10 @@ function ValidateButton({ onValidate }: { onValidate: () => void }) {
         onClick={onValidate}
         disabled={isValidating}
         className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors text-sm font-medium bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Validate protocol against orchestrator"
+        title="通过编排器验证协议"
       >
         <ShieldCheck className="w-4 h-4" />
-        <span>Validate</span>
+        <span>验证</span>
       </button>
       <StatusIcon />
     </div>
@@ -125,30 +136,41 @@ function ValidateButton({ onValidate }: { onValidate: () => void }) {
 export function Toolbar({ labSpecs, onAutoLayout, onExportImage, onValidate }: ToolbarProps) {
   const isOptimizerPanelOpen = useEditorStore((state) => state.isOptimizerPanelOpen);
   const setIsOptimizerPanelOpen = useEditorStore((state) => state.setIsOptimizerPanelOpen);
+  const [isDraftOpen, setIsDraftOpen] = useState(false);
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-1.5 flex items-center gap-4 shadow-sm">
       <LabsSelector labSpecs={labSpecs} />
       <ValidateButton onValidate={onValidate} />
 
       <div className="ml-auto flex items-center gap-4">
+        <button
+          onClick={() => setIsDraftOpen(true)}
+          className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors text-sm font-medium bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 active:scale-95"
+          title="描述实验目标，由 AI 生成协议草稿"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>AI 草稿</span>
+        </button>
+        {isDraftOpen && <AIDraftDialog isOpen onClose={() => setIsDraftOpen(false)} labSpecs={labSpecs} />}
+
         {/* Auto Layout Button */}
         <button
           onClick={onAutoLayout}
           className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors text-sm font-medium bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95"
-          title="Auto-arrange nodes Left-to-Right"
+          title="从左到右自动排列节点"
         >
           <LayoutDashboard className="w-4 h-4" />
-          <span>Auto Layout</span>
+          <span>自动布局</span>
         </button>
 
         {/* Export Image Button */}
         <button
           onClick={onExportImage}
           className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors text-sm font-medium bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95"
-          title="Export canvas as image"
+          title="将画布导出为图片"
         >
           <Camera className="w-4 h-4" />
-          <span>Export Image</span>
+          <span>导出图片</span>
         </button>
 
         <OptimizerButton onClick={() => setIsOptimizerPanelOpen(!isOptimizerPanelOpen)} isOpen={isOptimizerPanelOpen} />

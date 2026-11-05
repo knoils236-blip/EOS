@@ -4,7 +4,7 @@ import asyncio
 import inspect
 import types
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
@@ -56,6 +56,7 @@ class Context:
 
     task_name: str
     protocol_run_name: str | None
+    meta: dict[str, Any] = dataclass_field(default_factory=dict)
 
 
 def build_task_output_file_path(protocol_run_name: str | None, task_name: str, file_name: str) -> str:

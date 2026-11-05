@@ -31,6 +31,11 @@ def _task(
 
 
 class TestTaskReferenceOrderingValidator:
+    def test_dependency_on_unknown_task_is_reported(self):
+        protocol = _protocol([_task("a"), _task("b", dependencies=["deleted", "a"])])
+        with pytest.raises(EosTaskGraphError, match="Task 'b' depends on unknown task 'deleted'"):
+            TaskReferenceOrderingValidator(protocol)
+
     def test_direct_ancestor_reference_passes(self):
         protocol = _protocol(
             [

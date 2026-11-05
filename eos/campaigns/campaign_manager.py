@@ -146,14 +146,16 @@ class CampaignManager:
             )
         )
 
-    async def delete_non_completed_campaign_protocol_runs(self, db: AsyncDbSession, campaign_name: str) -> None:
-        """Delete all non-completed protocols from a campaign (for resume)."""
+    async def delete_non_completed_campaign_protocol_runs(
+        self, db: AsyncDbSession, campaign_name: str, keep_failed: bool = False
+    ) -> None:
+        """Delete all non-completed protocols from a campaign (for resume), optionally keeping failed ones."""
         await self._validate_campaign_exists(db, campaign_name)
 
-        # Get non-completed protocols for this campaign
+        kept = [ProtocolRunStatus.COMPLETED, ProtocolRunStatus.FAILED] if keep_failed else [ProtocolRunStatus.COMPLETED]
         stmt = select(ProtocolRunModel.name).where(
             ProtocolRunModel.campaign == campaign_name,
-            ProtocolRunModel.status.not_in([ProtocolRunStatus.COMPLETED]),
+            ProtocolRunModel.status.not_in(kept),
         )
         result = await db.execute(stmt)
         protocol_run_names = [row[0] for row in result.all()]

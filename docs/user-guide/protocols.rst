@@ -64,8 +64,65 @@ Task Fields
   reference an earlier task's allocation. See :doc:`references` and :doc:`scheduling`.
 * ``files`` references earlier task output files. See :doc:`tasks`.
 * ``duration`` supplies the expected execution time in seconds for scheduling.
+* ``timeout`` fails the task if it runs longer than this many seconds. EOS stops the task's process;
+  a device command that was in progress may still finish on the device.
+* ``retries`` re-runs the task this many times after a failure or timeout, keeping its devices and
+  resources. Use it only for tasks that are safe to repeat.
+
+.. code-block:: yaml
+
+    - name: hplc_analysis
+      type: HPLC Analysis
+      timeout: 1800
+      retries: 2
 
 See :doc:`color_mixing` for a larger protocol with device allocation and resource movement.
+
+可视化编辑器中的场景能力
+~~~~~~~~~~~~~~~~~~~~~~~~
+左侧“场景能力”按实验室和工作站展示已登记操作。选择移液工作站后，可直接添加开门、取瓶、移液等能力；
+烧杯机器人与模拟配液展示各自的操作。能力目录可在设备未加载时用于设计，但执行前仍需加载实验室。
+
+加载或重新加载协议时，EOS 会先加载协议所需但尚未加载的实验室，再校验协议。
+初始化新的实验室需要超级用户权限；其他管理员仍可加载依赖已就绪的协议。
+如果引用的实验室定义不存在，系统会明确列出缺失名称；设备初始化失败时不会把协议标为已加载。
+当前 Matterix bridge 一次只能打开一个仿真场景。切换移液站与 Franka 烧杯场景时，
+请先确认没有运行中的实验，再卸载原场景对应的实验室，随后加载目标协议；已有协议和历史结果文件会保留。
+
+拖入能力会填写设备、能力编号和默认参数。移液站按添加顺序延续设备引用、先后依赖及工作站占用；
+首次操作前添加“实验初始化”，完整七阶段流程以“结束检查（七阶段）”收尾。
+这些连接不会验证物理前置条件，也不保证任意能力排列均可执行；具体操作仍由设备后端校验。
+测量、质控和评分在模拟配液的“分析与反馈”中，需连接对应数据端口。
+
+能力配置仍保存为标准 EOS 任务；重新打开时根据能力编号恢复中文名称。
+“高级任务”保留按底层任务类型添加的入口，适用于尚未登记场景能力的插件。
+
+Simulation Preflight
+~~~~~~~~~~~~~~~~~~~~
+A protocol run can rehearse on a digital twin before it touches real equipment. Load a twin lab that has devices
+with the same names and types as the real lab (for example simulated or Matterix-backed devices), then submit the
+run with a ``preflight`` mapping in its metadata. Mark each twin lab with ``simulated: true`` in its ``lab.yml``;
+every lab used by the preflight must be simulated. Map every real lab used by the protocol, including protocols
+that use more than one lab. Empty or malformed mappings are rejected before execution:
+
+.. code-block:: bash
+
+    curl -X POST http://localhost:8070/api/protocols/ -H 'Content-Type: application/json' -d '{
+      "name": "assay_42", "type": "my_assay", "owner": "me",
+      "parameters": {},
+      "meta": {"preflight": {"real_lab": "real_lab_twin"}}
+    }'
+
+EOS first runs ``assay_42__preflight``: the same protocol and parameters, with every device of ``real_lab`` replaced by
+the device of the same name in ``real_lab_twin`` (dynamic device requests are limited to the twin labs). Only if the
+preflight completes does EOS start ``assay_42`` on the real lab. If the preflight fails or is cancelled, the real run
+is not started; cancelling ``assay_42`` while it waits also cancels its preflight. The runs record each other in
+``meta`` (``preflight_for`` and ``preflight_run``). The example package includes ``multiplication_lab_twin`` for
+trying this with ``optimize_multiplication``.
+
+Limitations: static resource assignments are not remapped, a run waiting for its preflight is lost if the orchestrator
+restarts before the preflight finishes, and EOS does not treat a twin lab as in use by preflight runs when unloading
+labs.
 
 Conditionals (run_if)
 ~~~~~~~~~~~~~~~~~~~~~~~

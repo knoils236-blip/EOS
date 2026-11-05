@@ -18,17 +18,17 @@ def _ensure_git_repo() -> None:
     try:
         _run(["git", "rev-parse", "--git-dir"], capture=True)
     except (FileNotFoundError, subprocess.CalledProcessError) as e:
-        typer.echo("Not inside a git repository (or `git` not installed).", err=True)
+        typer.echo("当前目录不是 Git 仓库，或尚未安装 git。", err=True)
         raise typer.Exit(1) from e
 
 
 def _fetch_master_and_count_behind() -> int:
     """Fetch origin/master and return how many commits local master is behind."""
-    typer.echo("Checking for updates...")
+    typer.echo("正在检查更新…")
     try:
         _run(["git", "fetch", "origin", REQUIRED_BRANCH, "--quiet"])
     except subprocess.CalledProcessError as e:
-        typer.echo(f"git fetch failed: {e}", err=True)
+        typer.echo(f"git fetch 失败： {e}", err=True)
         raise typer.Exit(1) from e
     try:
         behind = _run(
@@ -37,7 +37,7 @@ def _fetch_master_and_count_behind() -> int:
         ).stdout.strip()
         return int(behind)
     except subprocess.CalledProcessError as e:
-        typer.echo(f"Could not compare local '{REQUIRED_BRANCH}' against origin: {e}", err=True)
+        typer.echo(f"无法比较本地 '{REQUIRED_BRANCH}' 与 origin： {e}", err=True)
         raise typer.Exit(1) from e
 
 
@@ -46,8 +46,8 @@ def _check_pull_preconditions() -> None:
     branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture=True).stdout.strip()
     if branch != REQUIRED_BRANCH:
         typer.echo(
-            f"Currently on branch '{branch}'; `eos update` only pulls on '{REQUIRED_BRANCH}'. "
-            f"Checkout master or use --skip-pull.",
+            f"当前分支为 '{branch}'，`eos update` 仅在 '{REQUIRED_BRANCH}' 分支执行拉取。"
+            f"请切换到 master 或使用 --skip-pull。",
             err=True,
         )
         raise typer.Exit(1)
@@ -55,7 +55,7 @@ def _check_pull_preconditions() -> None:
     dirty = _run(["git", "status", "--porcelain"], capture=True).stdout.strip()
     if dirty:
         typer.echo(
-            "Working tree has uncommitted changes. Commit or stash them first, or use --skip-pull.",
+            "工作区存在未提交的更改，请先提交或暂存，或使用 --skip-pull。",
             err=True,
         )
         raise typer.Exit(1)
@@ -63,59 +63,59 @@ def _check_pull_preconditions() -> None:
     try:
         _run(["git", "rev-parse", "--abbrev-ref", "@{upstream}"], capture=True)
     except subprocess.CalledProcessError as e:
-        typer.echo(f"Branch '{branch}' has no upstream tracking configured.", err=True)
+        typer.echo(f"分支 '{branch}' 未配置上游跟踪。", err=True)
         raise typer.Exit(1) from e
 
 
 def _do_pull() -> None:
-    typer.echo("Pulling latest changes (git pull --ff-only)...")
+    typer.echo("正在拉取最新更改（git pull --ff-only）…")
     try:
         _run(["git", "pull", "--ff-only"])
     except subprocess.CalledProcessError as e:
-        typer.echo("git pull failed (your branch may have diverged from upstream).", err=True)
+        typer.echo("git pull 失败，当前分支可能已与上游分叉。", err=True)
         raise typer.Exit(1) from e
 
 
 def _do_sync() -> None:
-    typer.echo("Syncing dependencies (uv sync --inexact)...")
+    typer.echo("正在同步依赖（uv sync --inexact）…")
     try:
         _run(["uv", "sync", "--inexact"])
     except (FileNotFoundError, subprocess.CalledProcessError) as e:
-        typer.echo(f"uv sync failed: {e}", err=True)
+        typer.echo(f"uv sync 失败： {e}", err=True)
         raise typer.Exit(1) from e
 
 
 def _do_migrate(config_path: str) -> None:
-    typer.echo("Running database migrations (alembic upgrade head)...")
+    typer.echo("正在执行数据库迁移（alembic upgrade head）…")
     try:
         eos_config = load_config(config_path)
         setup_alembic(eos_config)
         alembic_upgrade("head")
     except Exception as e:
-        typer.echo(f"Database migration failed: {e}", err=True)
+        typer.echo(f"数据库迁移失败： {e}", err=True)
         raise typer.Exit(1) from e
 
 
 def update(
-    skip_pull: Annotated[bool, typer.Option("--skip-pull", help="Skip git pull")] = False,
-    skip_sync: Annotated[bool, typer.Option("--skip-sync", help="Skip uv sync")] = False,
-    skip_migrate: Annotated[bool, typer.Option("--skip-migrate", help="Skip database migrations")] = False,
-    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt")] = False,
-    config: Annotated[str, typer.Option("--config", "-c", help="Path to EOS config YAML")] = DEFAULT_CONFIG_PATH,
+    skip_pull: Annotated[bool, typer.Option("--skip-pull", help="跳过 git pull")] = False,
+    skip_sync: Annotated[bool, typer.Option("--skip-sync", help="跳过 uv sync")] = False,
+    skip_migrate: Annotated[bool, typer.Option("--skip-migrate", help="跳过数据库迁移")] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="跳过确认提示")] = False,
+    config: Annotated[str, typer.Option("--config", "-c", help="EOS YAML 配置文件路径")] = DEFAULT_CONFIG_PATH,
 ) -> None:
-    """Update EOS: pull master, sync dependencies, and run database migrations.
+    """更新 EOS：拉取 master、同步依赖并执行数据库迁移。
 
-    User package code in ``user/`` is gitignored and untouched. Dependencies installed via
-    ``eos pkg install`` are preserved (``uv sync --inexact``). Each step fails closed — a
-    failure in one step stops the rest.
+    user/ 中被 Git 忽略的用户软件包代码保持不变。
+    保留通过 eos pkg install 安装的依赖（uv sync --inexact）。
+    任一步骤失败后，将停止后续步骤。
     """
     if not skip_pull:
         _ensure_git_repo()
         behind = _fetch_master_and_count_behind()
         if behind == 0:
-            typer.secho("EOS is already up to date.", fg="green")
+            typer.secho("EOS 已是最新版本。", fg="green")
             raise typer.Exit()
-        typer.echo(f"{behind} new commit(s) available on origin/{REQUIRED_BRANCH}.")
+        typer.echo(f"origin/{REQUIRED_BRANCH} 有 {behind} 个新提交。")
         _check_pull_preconditions()
 
     steps = []
@@ -127,14 +127,14 @@ def update(
         steps.append("alembic upgrade head")
 
     if not steps:
-        typer.echo("Nothing to do — all steps skipped.")
+        typer.echo("所有步骤均已跳过，无需执行操作。")
         raise typer.Exit()
 
-    typer.echo("Plan:")
+    typer.echo("执行计划：")
     for s in steps:
         typer.echo(f"  - {s}")
 
-    if not yes and not typer.confirm("Proceed?", default=True):
+    if not yes and not typer.confirm("是否继续？", default=True):
         raise typer.Exit()
 
     if not skip_pull:
@@ -144,4 +144,4 @@ def update(
     if not skip_migrate:
         _do_migrate(config)
 
-    typer.secho("EOS update complete.", fg="green")
+    typer.secho("EOS 更新完成。", fg="green")

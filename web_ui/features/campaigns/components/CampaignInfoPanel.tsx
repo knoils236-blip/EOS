@@ -52,9 +52,7 @@ export function CampaignInfoPanel({ campaign, activeCount }: CampaignInfoPanelPr
       <div className={`grid grid-cols-2 gap-4 ${campaign.status === 'RUNNING' ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
         {/* Progress stats */}
         <div>
-          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Protocol Runs
-          </div>
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">协议运行</div>
           <div className="mt-1">
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{campaign.protocol_runs_completed}</span>
             <span className="text-gray-500 dark:text-gray-400"> / {maxProtocolRuns || '∞'}</span>
@@ -64,16 +62,14 @@ export function CampaignInfoPanel({ campaign, activeCount }: CampaignInfoPanelPr
         {/* Running count - only show when campaign is running */}
         {campaign.status === 'RUNNING' && (
           <div>
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Active</div>
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">活动中</div>
             <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{activeCount}</div>
           </div>
         )}
 
         {/* Max Concurrent */}
         <div>
-          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Max Concurrent
-          </div>
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">最大并发数</div>
           <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
             {campaign.max_concurrent_protocol_runs}
           </div>
@@ -81,39 +77,41 @@ export function CampaignInfoPanel({ campaign, activeCount }: CampaignInfoPanelPr
 
         {/* Optimizer */}
         <div>
-          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Optimization
-          </div>
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">优化</div>
           <div className="mt-1 text-sm text-gray-900 dark:text-white">
             {campaign.optimize ? (
               <>
-                <span className="font-medium">Enabled</span>
+                <span className="font-medium">已启用</span>
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">{campaign.optimizer_ip}</div>
               </>
             ) : (
-              <span className="text-gray-500 dark:text-gray-400">Disabled</span>
+              <span className="text-gray-500 dark:text-gray-400">已禁用</span>
             )}
           </div>
         </div>
 
         {/* Timeline */}
         <div>
-          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Timeline</div>
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">时间线</div>
           <div className="mt-1 text-xs space-y-0.5">
             {campaign.start_time && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Started: </span>
-                <span className="text-gray-900 dark:text-white">{new Date(campaign.start_time).toLocaleString()}</span>
+                <span className="text-gray-500 dark:text-gray-400">开始时间： </span>
+                <span className="text-gray-900 dark:text-white">
+                  {new Date(campaign.start_time).toLocaleString('zh-CN')}
+                </span>
               </div>
             )}
             {campaign.end_time && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Ended: </span>
-                <span className="text-gray-900 dark:text-white">{new Date(campaign.end_time).toLocaleString()}</span>
+                <span className="text-gray-500 dark:text-gray-400">结束时间： </span>
+                <span className="text-gray-900 dark:text-white">
+                  {new Date(campaign.end_time).toLocaleString('zh-CN')}
+                </span>
               </div>
             )}
             {!campaign.start_time && !campaign.end_time && (
-              <div className="text-gray-500 dark:text-gray-400">Not started</div>
+              <div className="text-gray-500 dark:text-gray-400">尚未开始</div>
             )}
           </div>
         </div>
@@ -127,7 +125,7 @@ export function CampaignInfoPanel({ campaign, activeCount }: CampaignInfoPanelPr
             className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             {showParameters ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            Global Parameters
+            全局参数
           </button>
           {showParameters && (
             <div className="mt-2">

@@ -23,7 +23,7 @@ def eos_create_campaign_optimizer() -> tuple[dict, type[AbstractSequentialOptimi
         "acquisition_function": qLogNEI(),
         "num_initial_samples": 1,
         "initial_sampling_method": SamplingMethodEnum.SOBOL,
-        "p_bayesian": 1.0,
+        "p_bayesian": 0.5,
         "p_ai": 0.0,
         "ai_model": "claude-agent-sdk:sonnet",
         "ai_retries": 3,

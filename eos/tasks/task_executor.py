@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -11,7 +12,11 @@ from eos.configuration.entities.task_def import TaskDef
 from eos.configuration.eos_config import ExecutionConfig, FileDbConfig
 from eos.devices.device_actor_utils import DeviceActorReference
 from eos.devices.device_manager import DeviceManager
+from eos.devices.base_device import BaseDevice
+from eos.devices.entities.device import DeviceStatus
+from eos.database.file_db_interface import FileDbInterface
 from eos.resources.entities.resource import Resource
+from eos.resources.inventory import apply_inventory_events
 from eos.resources.resource_manager import ResourceManager
 from eos.logging.logger import log
 from eos.database.abstract_sql_db_interface import AsyncDbSession, AbstractSqlDbInterface
@@ -26,6 +31,7 @@ from eos.tasks.exceptions import (
     EosTaskStateError,
 )
 from eos.tasks.task_runner import run_task
+from eos.tasks.task_definition import build_task_output_file_path
 from eos.tasks.task_input_parameter_caster import TaskInputParameterCaster
 from eos.tasks.task_manager import TaskManager
 from eos.tasks.validation.task_validator import TaskValidator
@@ -47,6 +53,9 @@ class TaskExecutionContext:
     task_ref: ObjectRef | None = None
     initialized: bool = False
     execution_started: bool = False
+    started_at: float = 0.0  # time.monotonic() of the current attempt
+    attempt: int = 0
+    devices_finalized: bool = False
 
     @property
     def task_key(self) -> tuple[str | None, str]:
@@ -113,29 +122,32 @@ class TaskExecutor:
         return await future
 
     async def cancel_task(self, protocol_run_name: str | None, task_name: str) -> None:
-        task_key = (protocol_run_name, task_name)
-        # Detach first so in-flight processing of this task stops touching it
-        context = self._pending_tasks.pop(task_key, None)
-        future = self._task_futures.pop(task_key, None)
-        if not context:
-            return
+        # Launch must finish before cancellation can stop its Ray task and release devices.
+        async with self._lock:
+            task_key = (protocol_run_name, task_name)
+            context = self._pending_tasks.pop(task_key, None)
+            future = self._task_futures.pop(task_key, None)
+            if not context:
+                return
 
-        if context.task_ref:
-            ray.cancel(context.task_ref, force=True)
+            async with self._db_interface.get_async_session() as db:
+                await self._finalize_devices(db, context, stop=True)
+            if context.task_ref:
+                ray.cancel(context.task_ref, force=True)
 
-        async with self._db_interface.get_async_session() as db:
-            # Tasks still waiting for admission or initialization have no DB row yet
-            with contextlib.suppress(EosTaskStateError):
-                await self._task_manager.cancel_task(db, context.protocol_run_name, context.task_name)
-            await self._scheduler.release_task(db, task_name, protocol_run_name)
+            async with self._db_interface.get_async_session() as db:
+                # Tasks still waiting for admission or initialization have no DB row yet
+                with contextlib.suppress(EosTaskStateError):
+                    await self._task_manager.cancel_task(db, context.protocol_run_name, context.task_name)
+                await self._scheduler.release_task(db, task_name, protocol_run_name)
 
-        if future and not future.done():
-            future.set_exception(EosTaskCancellationError(f"Task '{task_name}' was cancelled."))
+            if future and not future.done():
+                future.set_exception(EosTaskCancellationError(f"Task '{task_name}' was cancelled."))
 
-        if protocol_run_name:
-            log.warning(f"RUN '{protocol_run_name}' - Cancelled task '{task_name}'.")
-        else:
-            log.warning(f"Cancelled on-demand task '{task_name}'.")
+            if protocol_run_name:
+                log.warning(f"RUN '{protocol_run_name}' - Cancelled task '{task_name}'.")
+            else:
+                log.warning(f"Cancelled on-demand task '{task_name}'.")
 
     async def process_tasks(self) -> None:
         async with self._lock:
@@ -175,6 +187,17 @@ class TaskExecutor:
             except Exception as e:
                 await self._handle_task_failure(db, context, e)
 
+    def _schedule_retry(self, context: TaskExecutionContext, error: Exception) -> None:
+        """Relaunch the task on the next cycle, keeping its devices and resources allocated."""
+        context.attempt += 1
+        context.task_ref = None
+        context.execution_started = False
+        context.devices_finalized = False
+        log.warning(
+            f"RUN '{context.protocol_run_name}' - Task '{context.task_name}' failed "
+            f"(attempt {context.attempt}/{context.task_submission.retries + 1}), retrying: {error}"
+        )
+
     async def _execute_task_lifecycle(self, db: AsyncDbSession, context: TaskExecutionContext) -> None:
         if not context.initialized:
             await self._initialize_task(db, context)
@@ -186,23 +209,38 @@ class TaskExecutor:
         if not context.execution_started:
             context.task_ref = await self._execute_task(db, context.task_submission)
             context.execution_started = True
+            context.started_at = time.monotonic()
             return
 
         if context.execution_started and context.task_ref:
             await self._check_task_completion(db, context)
 
     async def _check_task_completion(self, db: AsyncDbSession, context: TaskExecutionContext) -> None:
-        if not ray.wait([context.task_ref], timeout=0)[0]:
+        try:
+            if not ray.wait([context.task_ref], timeout=0)[0]:
+                timeout = context.task_submission.timeout
+                if timeout is not None and time.monotonic() - context.started_at > timeout:
+                    await self._finalize_devices(db, context, stop=True)
+                    ray.cancel(context.task_ref, force=True)
+                    raise EosTaskExecutionError(f"Task '{context.task_name}' timed out after {timeout} s")
+                return
+
+            result = await context.task_ref
+        except Exception as error:
+            if context.attempt >= context.task_submission.retries:
+                raise
+            await self._finalize_devices(db, context, stop=True)
+            for device in context.task_submission.devices.values():
+                status = await self._device_manager.get_device(db, device.lab_name, device.name)
+                if status.status == DeviceStatus.INACTIVE:
+                    raise
+            self._schedule_retry(context, error)
             return
 
-        result = await context.task_ref
         if not self._is_active(context):
             return  # Cancelled meanwhile
 
-        if result is None:
-            output_parameters, output_resources, output_file_names = {}, {}, []
-        else:
-            output_parameters, output_resources, output_file_names = result
+        output_parameters, output_resources, output_file_names = ({}, {}, []) if result is None else result
 
         for resource in output_resources.values():
             await self._resource_manager.update_resource(db, resource)
@@ -216,6 +254,8 @@ class TaskExecutor:
             output_file_names,
         )
 
+        await self._finalize_devices(db, context, stop=False)
+
         await self._task_manager.complete_task(db, context.protocol_run_name, context.task_name)
 
         if context.protocol_run_name:
@@ -223,10 +263,10 @@ class TaskExecutor:
         else:
             log.info(f"Completed on-demand task '{context.task_name}'.")
 
+        await self._scheduler.release_task(db, context.task_name, context.protocol_run_name)
+
         if (future := self._task_futures.get(context.task_key)) and not future.done():
             future.set_result((output_parameters, output_resources, output_file_names))
-
-        await self._scheduler.release_task(db, context.task_name, context.protocol_run_name)
 
         self._cleanup_task(context)
 
@@ -251,6 +291,7 @@ class TaskExecutor:
         if not self._is_active(context):
             return  # Cancelled meanwhile
         try:
+            await self._finalize_devices(db, context, stop=True)
             if (future := self._task_futures.get(context.task_key)) and not future.done():
                 future.set_exception(error)
             await self._task_manager.fail_task(
@@ -272,6 +313,78 @@ class TaskExecutor:
                 f"Error executing task '{context.task_name}' in protocol run '{context.protocol_run_name}': {error}"
             ) from error
         raise EosTaskExecutionError(f"Error executing on-demand task '{context.task_name}': {error}")
+
+    async def _finalize_devices(self, db: AsyncDbSession, context: TaskExecutionContext, stop: bool) -> None:
+        if context.devices_finalized or not context.execution_started:
+            return
+        context.devices_finalized = True
+        failure = None
+        for slot, device in context.task_submission.devices.items():
+            lab_device = self._configuration_manager.labs[device.lab_name].devices[device.name]
+            plugin = self._configuration_manager.devices.get_plugin_class_type(lab_device.type)
+            if plugin.finalize_task is BaseDevice.finalize_task:
+                continue
+            try:
+                actor = self._device_manager.get_device_actor(device.lab_name, device.name)
+                report = await asyncio.wait_for(
+                    actor.finalize_task.remote(context.protocol_run_name, context.task_name, stop), timeout=60
+                )
+                # Evidence is recorded for every terminal outcome, including cancellation and failure.
+                files = report["files"]
+                row = await self._task_manager.get_task(db, context.protocol_run_name, context.task_name)
+                parameters = {**(row.output_parameters or {}), f"{slot}_execution": report["parameters"]}
+                await self._task_manager.add_task_output(
+                    db,
+                    context.protocol_run_name,
+                    context.task_name,
+                    parameters,
+                    row.output_resources or {},
+                    row.output_file_names or [],
+                )
+                for name, metadata in report["resource_updates"].items():
+                    resource = await self._resource_manager.get_resource(db, name)
+                    resource.meta.update(metadata)
+                    await self._resource_manager.update_resource(db, resource)
+                if files:
+                    file_db = FileDbInterface(self._file_db_config)
+                    await asyncio.gather(
+                        *(
+                            file_db.store_file(
+                                build_task_output_file_path(context.protocol_run_name, context.task_name, name), data
+                            )
+                            for name, data in files.items()
+                        )
+                    )
+                names = list(dict.fromkeys([*(row.output_file_names or []), *files]))
+                await self._task_manager.add_task_output(
+                    db, context.protocol_run_name, context.task_name, parameters, row.output_resources or {}, names
+                )
+                await apply_inventory_events(db, report.get("inventory_events", []))
+                if not report["available"]:
+                    if not stop:
+                        raise EosTaskExecutionError(f"Device '{slot}' is unavailable after its operation")
+                    await self._device_manager.set_device_status(
+                        db, device.lab_name, device.name, DeviceStatus.INACTIVE
+                    )
+            except Exception as exc:
+                await self._device_manager.set_device_status(db, device.lab_name, device.name, DeviceStatus.INACTIVE)
+                row = await self._task_manager.get_task(db, context.protocol_run_name, context.task_name)
+                if row is not None:
+                    await self._task_manager.add_task_output(
+                        db,
+                        context.protocol_run_name,
+                        context.task_name,
+                        {**(row.output_parameters or {}), f"{slot}_finalization_error": str(exc)},
+                        row.output_resources or {},
+                        row.output_file_names or [],
+                    )
+                if not stop:
+                    failure = (slot, exc)
+                else:
+                    log.error(f"Device '{slot}' stop/archive could not be confirmed; device deactivated: {exc}")
+        if failure is not None:
+            slot, error = failure
+            raise EosTaskExecutionError(f"Device '{slot}' finalization failed: {error}") from error
 
     def _is_active(self, context: TaskExecutionContext) -> bool:
         return self._pending_tasks.get(context.task_key) is context
@@ -327,6 +440,7 @@ class TaskExecutor:
             input_parameters,
             task_submission.input_resources,
             task_submission.input_files or {},
+            task_submission.meta,
         )
 
     async def process_new_tasks(self) -> None:

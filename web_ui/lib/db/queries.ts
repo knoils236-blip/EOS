@@ -188,6 +188,7 @@ export interface CampaignRow {
   priority: number;
   maxProtocolRuns: number;
   maxConcurrentProtocolRuns: number;
+  maxFailedProtocolRuns: number;
   optimize: boolean;
   optimizerIp: string | null;
   globalParameters: Record<string, Record<string, unknown>> | null;
@@ -254,6 +255,7 @@ function mapCampaignRow(row: typeof campaigns.$inferSelect): CampaignRow {
     priority: row.priority,
     maxProtocolRuns: row.maxProtocolRuns,
     maxConcurrentProtocolRuns: row.maxConcurrentProtocolRuns,
+    maxFailedProtocolRuns: row.maxFailedProtocolRuns,
     optimize: row.optimize,
     optimizerIp: row.optimizerIp,
     globalParameters: row.globalParameters as Record<string, Record<string, unknown>> | null,

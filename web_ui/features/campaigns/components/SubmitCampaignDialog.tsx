@@ -15,7 +15,7 @@ import { Combobox } from '@/components/ui/Combobox';
 import { ParameterSearchInput } from '@/components/ui/ParameterSearchInput';
 import { DescriptionTooltip } from '@/components/ui/DescriptionTooltip';
 import { submitCampaign } from '@/features/campaigns/api/campaigns';
-import { getOptimizerDefaults } from '@/features/campaigns/api/optimizer';
+import { getOptimizerDefaultsResult } from '@/features/campaigns/api/optimizer';
 import { ProtocolRunParameterField } from '@/features/protocol-runs/components/ProtocolRunParameterField';
 import { OptimizerPanel } from './OptimizerPanel';
 import { extractOptimizerDomain } from '../utils/optimizerMeta';
@@ -33,12 +33,13 @@ import type { TaskSpec, ParameterSpec, ParameterValue } from '@/lib/types/protoc
 import type { ProtocolSpec } from '@/lib/api/specs';
 
 const campaignFormSchema = z.object({
-  name: z.string().min(1, 'Campaign name is required').regex(IDENTIFIER_PATTERN, IDENTIFIER_ERROR_MESSAGE),
-  protocol: z.string().min(1, 'Protocol type is required'),
-  owner: z.string().min(1, 'Owner is required'),
+  name: z.string().min(1, '请输入实验计划名称').regex(IDENTIFIER_PATTERN, IDENTIFIER_ERROR_MESSAGE),
+  protocol: z.string().min(1, '请选择协议类型'),
+  owner: z.string().min(1, '请输入负责人'),
   priority: z.number().min(0),
   max_protocol_runs: z.number().min(0),
   max_concurrent_protocol_runs: z.number().min(1),
+  max_failed_protocol_runs: z.number().min(0),
   optimize: z.boolean(),
   optimizer_ip: z.string(),
   protocol_run_parameters: z.string().optional(),
@@ -94,10 +95,8 @@ function GlobalParametersSection({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
         <div>
-          <Label className="text-base cursor-pointer">Global Parameters</Label>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Parameters shared across all protocol runs in this campaign
-          </p>
+          <Label className="text-base cursor-pointer">全局参数</Label>
+          <p className="text-xs text-gray-500 dark:text-gray-400">此实验计划中所有协议运行共用的参数</p>
         </div>
       </button>
 
@@ -184,7 +183,7 @@ function GlobalParametersSection({
                     )}
                     <span>
                       <span className="block text-sm font-medium text-gray-900 dark:text-white">{taskConfig.name}</span>
-                      <span className="block text-xs text-gray-500 dark:text-gray-400">Type: {taskConfig.type}</span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400">类型： {taskConfig.type}</span>
                     </span>
                   </button>
                   {taskConfig.desc && <DescriptionTooltip description={taskConfig.desc} />}
@@ -217,6 +216,12 @@ function GlobalParametersSection({
   );
 }
 
+function optimizerLoadError(error: unknown): string {
+  if (!(error instanceof Error)) return '读取优化器配置失败。';
+  const status = 'status' in error && typeof error.status === 'number' ? `（HTTP ${error.status}）` : '';
+  return `${error.message}${status}`;
+}
+
 export function SubmitCampaignDialog({
   open,
   onOpenChange,
@@ -232,6 +237,8 @@ export function SubmitCampaignDialog({
   const [optimizerDefaults, setOptimizerDefaults] = React.useState<OptimizerDefaults | null>(null);
   const [optimizerOverrides, setOptimizerOverrides] = React.useState<Record<string, unknown>>({});
   const [isLoadingOptimizer, setIsLoadingOptimizer] = React.useState(false);
+  const [optimizerError, setOptimizerError] = React.useState<string | null>(null);
+  const optimizerLoadRequestRef = React.useRef(0);
 
   // Visual editor state - task parameters structure: { task_name: { param_name: ParameterValue } }
   const [taskParameters, setTaskParameters] = React.useState<Record<string, Record<string, ParameterValue>>>({});
@@ -261,6 +268,7 @@ export function SubmitCampaignDialog({
       priority: 0,
       max_protocol_runs: 0,
       max_concurrent_protocol_runs: 1,
+      max_failed_protocol_runs: 0,
       optimize: true,
       optimizer_ip: '127.0.0.1',
       protocol_run_parameters: '',
@@ -295,6 +303,7 @@ export function SubmitCampaignDialog({
       setValue('priority', initialCampaign.priority ?? 0);
       setValue('max_protocol_runs', initialCampaign.max_protocol_runs ?? 0);
       setValue('max_concurrent_protocol_runs', initialCampaign.max_concurrent_protocol_runs ?? 1);
+      setValue('max_failed_protocol_runs', initialCampaign.max_failed_protocol_runs ?? 0);
       setValue('optimize', initialCampaign.optimize);
       setValue('optimizer_ip', initialCampaign.optimizer_ip || '127.0.0.1');
       setValue('resume', initialCampaign.resume || false);
@@ -345,22 +354,46 @@ export function SubmitCampaignDialog({
 
   // Fetch optimizer defaults when protocol type changes and optimize is enabled
   React.useEffect(() => {
+    const requestId = ++optimizerLoadRequestRef.current;
+    setOptimizerDefaults(null);
+    setOptimizerOverrides({});
+    setOptimizerError(null);
+
     if (optimize && protocolType) {
       setIsLoadingOptimizer(true);
-      getOptimizerDefaults(protocolType)
-        .then((defaults) => {
+      getOptimizerDefaultsResult(protocolType)
+        .then((result) => {
+          if (requestId !== optimizerLoadRequestRef.current) return;
+          if (!result.success) {
+            setOptimizerError(`读取优化器配置失败：${result.error}`);
+            return;
+          }
+          const defaults = result.defaults;
           setOptimizerDefaults(defaults);
+          if (!defaults) {
+            setOptimizerError('该协议未配置优化器。请先配置优化器；如需仅运行一次协议，请关闭“启用优化”。');
+            return;
+          }
           if (initialCampaign?.meta?.optimizer_overrides) {
             setOptimizerOverrides(initialCampaign.meta.optimizer_overrides as Record<string, unknown>);
           } else {
             setOptimizerOverrides({});
           }
         })
-        .finally(() => setIsLoadingOptimizer(false));
+        .catch((error: unknown) => {
+          if (requestId !== optimizerLoadRequestRef.current) return;
+          setOptimizerError(`读取优化器配置失败：${optimizerLoadError(error)}`);
+        })
+        .finally(() => {
+          if (requestId === optimizerLoadRequestRef.current) setIsLoadingOptimizer(false);
+        });
     } else {
-      setOptimizerDefaults(null);
-      setOptimizerOverrides({});
+      setIsLoadingOptimizer(false);
     }
+
+    return () => {
+      if (requestId === optimizerLoadRequestRef.current) optimizerLoadRequestRef.current += 1;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally read once during clone
   }, [optimize, protocolType]);
 
@@ -411,6 +444,7 @@ export function SubmitCampaignDialog({
       priority: 0,
       max_protocol_runs: 0,
       max_concurrent_protocol_runs: 1,
+      max_failed_protocol_runs: 0,
       optimize: true,
       optimizer_ip: '127.0.0.1',
       protocol_run_parameters: '',
@@ -429,6 +463,9 @@ export function SubmitCampaignDialog({
     }
 
     setOptimizerOverrides({});
+    setOptimizerDefaults(null);
+    setOptimizerError(null);
+    optimizerLoadRequestRef.current += 1;
     setError(null);
     populatedFromCampaignRef.current = null; // Reset so we can clone again if needed
   };
@@ -448,13 +485,17 @@ export function SubmitCampaignDialog({
           ? parseProtocolRunParameters(data.protocol_run_parameters)
           : null;
       } catch (e) {
-        throw new Error(e instanceof Error ? e.message : 'Invalid protocol run parameters');
+        throw new Error(e instanceof Error ? e.message : '协议运行参数无效');
       }
       let meta: Record<string, unknown>;
       try {
         meta = data.meta?.trim() ? JSON.parse(data.meta) : {};
       } catch {
-        throw new Error('Invalid JSON in "Metadata" field');
+        throw new Error('“元数据”字段中的 JSON 无效');
+      }
+
+      if (data.optimize && !optimizerDefaults) {
+        throw new Error(optimizerError || '优化器配置尚未加载完成，请稍后重试。');
       }
 
       // Include optimizer overrides in meta — only values that differ from defaults
@@ -478,6 +519,7 @@ export function SubmitCampaignDialog({
         priority: data.priority,
         max_protocol_runs: data.max_protocol_runs,
         max_concurrent_protocol_runs: data.max_concurrent_protocol_runs,
+        max_failed_protocol_runs: data.max_failed_protocol_runs,
         optimize: data.optimize,
         optimizer_ip: data.optimizer_ip,
         global_parameters: Object.keys(global_parameters).length > 0 ? global_parameters : undefined,
@@ -492,10 +534,10 @@ export function SubmitCampaignDialog({
         onOpenChange(false);
         onSuccess?.();
       } else {
-        setError(result.error || 'Failed to submit campaign');
+        setError(result.error || '提交实验计划失败');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid input in one of the fields');
+      setError(err instanceof Error ? err.message : '某个字段的输入无效');
     } finally {
       setIsSubmitting(false);
     }
@@ -529,8 +571,8 @@ export function SubmitCampaignDialog({
       <BaseSubmitDialog
         open={open}
         onOpenChange={onOpenChange}
-        title="Submit Campaign"
-        submitLabel="Submit Campaign"
+        title="提交实验计划"
+        submitLabel="提交实验计划"
         isSubmitting={isSubmitting}
         error={error}
         onSubmit={handleSubmit(onSubmit)}
@@ -538,38 +580,44 @@ export function SubmitCampaignDialog({
         headerActions={
           <Button variant="outline" size="sm" onClick={handleClear} className="gap-2">
             <Eraser className="w-4 h-4" />
-            Clear
+            清空
           </Button>
         }
       >
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Campaign Name *</Label>
+            <Label htmlFor="name">实验计划名称 *</Label>
             <Input id="name" {...register('name')} error={errors.name?.message} placeholder="my_campaign" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="protocol">Protocol *</Label>
+            <Label htmlFor="protocol">协议 *</Label>
             <Combobox
               options={protocolTypeOptions}
               value={protocolType}
-              onChange={(value) => setValue('protocol', value, { shouldValidate: true })}
-              placeholder="Select protocol"
-              searchPlaceholder="Search protocols..."
-              emptyText="No protocols found"
+              onChange={(value) => {
+                optimizerLoadRequestRef.current += 1;
+                setOptimizerDefaults(null);
+                setOptimizerOverrides({});
+                setOptimizerError(null);
+                setValue('protocol', value, { shouldValidate: true });
+              }}
+              placeholder="选择协议"
+              searchPlaceholder="搜索协议…"
+              emptyText="未找到协议"
             />
             {errors.protocol && <p className="text-sm text-red-600">{errors.protocol.message}</p>}
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="owner">Owner *</Label>
+          <Label htmlFor="owner">负责人 *</Label>
           <Input id="owner" {...register('owner')} error={errors.owner?.message} placeholder="user1" />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="space-y-2">
-            <Label htmlFor="priority">Priority</Label>
+            <Label htmlFor="priority">优先级</Label>
             <Input
               id="priority"
               type="number"
@@ -579,7 +627,7 @@ export function SubmitCampaignDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="max_protocol_runs">Max Protocol Runs</Label>
+            <Label htmlFor="max_protocol_runs">最大协议运行次数</Label>
             <Input
               id="max_protocol_runs"
               type="number"
@@ -589,12 +637,22 @@ export function SubmitCampaignDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="max_concurrent_protocol_runs">Max Concurrent Protocol Runs</Label>
+            <Label htmlFor="max_concurrent_protocol_runs">最大并发协议运行数</Label>
             <Input
               id="max_concurrent_protocol_runs"
               type="number"
               {...register('max_concurrent_protocol_runs', { valueAsNumber: true })}
               error={errors.max_concurrent_protocol_runs?.message}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max_failed_protocol_runs">允许失败的协议运行数</Label>
+            <Input
+              id="max_failed_protocol_runs"
+              type="number"
+              {...register('max_failed_protocol_runs', { valueAsNumber: true })}
+              error={errors.max_failed_protocol_runs?.message}
             />
           </div>
         </div>
@@ -607,13 +665,13 @@ export function SubmitCampaignDialog({
             className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-blue-600 focus:ring-blue-600"
           />
           <Label htmlFor="optimize" className="cursor-pointer">
-            Enable Optimization
+            启用优化
           </Label>
         </div>
 
         {optimize && (
           <div className="space-y-2">
-            <Label htmlFor="optimizer_ip">Optimizer IP</Label>
+            <Label htmlFor="optimizer_ip">优化器 IP</Label>
             <Input id="optimizer_ip" {...register('optimizer_ip')} error={errors.optimizer_ip?.message} />
           </div>
         )}
@@ -622,8 +680,13 @@ export function SubmitCampaignDialog({
         {optimize && isLoadingOptimizer && (
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-4">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading optimizer settings...
+            正在加载优化器设置…
           </div>
+        )}
+        {optimize && optimizerError && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            {optimizerError}
+          </p>
         )}
         {optimize && optimizerDefaults && (
           <OptimizerPanel
@@ -644,7 +707,7 @@ export function SubmitCampaignDialog({
             className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-blue-600 focus:ring-blue-600"
           />
           <Label htmlFor="resume" className="cursor-pointer">
-            Resume if exists
+            若已存在则恢复运行
           </Label>
         </div>
 
@@ -661,7 +724,7 @@ export function SubmitCampaignDialog({
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="protocol_run_parameters">Protocol Run Parameters</Label>
+            <Label htmlFor="protocol_run_parameters">协议运行参数</Label>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
                 <button
@@ -676,9 +739,9 @@ export function SubmitCampaignDialog({
                   className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 rounded-md text-xs max-w-xs shadow-lg z-[100]"
                   sideOffset={5}
                 >
-                  <p className="font-medium mb-1">Accepts JSON or CSV</p>
+                  <p className="font-medium mb-1">支持 JSON 或 CSV</p>
                   <p className="mb-1">JSON: [&#123;&quot;task.param&quot;: value&#125;, ...]</p>
-                  <p>CSV: dot-notation headers (task.param), one protocol run per row. Missing columns are OK.</p>
+                  <p>CSV：列标题使用点号格式（task.param），每行对应一次协议运行，允许缺少部分列。</p>
                   <Tooltip.Arrow className="fill-gray-900 dark:fill-gray-100" />
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -691,7 +754,7 @@ export function SubmitCampaignDialog({
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                Download CSV Template
+                下载 CSV 模板
               </button>
             )}
             <button
@@ -700,7 +763,7 @@ export function SubmitCampaignDialog({
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
             >
               <Upload className="w-3.5 h-3.5" />
-              Upload
+              上传
             </button>
             <input
               ref={paramFileInputRef}
@@ -725,13 +788,13 @@ export function SubmitCampaignDialog({
             id="protocol_run_parameters"
             {...register('protocol_run_parameters')}
             error={errors.protocol_run_parameters?.message}
-            placeholder="Paste JSON array or CSV"
+            placeholder="粘贴 JSON 数组或 CSV"
           />
-          {!optimize && <p className="text-xs text-gray-500 dark:text-gray-400">Required if not optimizing</p>}
+          {!optimize && <p className="text-xs text-gray-500 dark:text-gray-400">未启用优化时必填</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="meta">Metadata (JSON)</Label>
+          <Label htmlFor="meta">元数据（JSON）</Label>
           <Textarea
             id="meta"
             {...register('meta')}

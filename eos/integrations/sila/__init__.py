@@ -8,11 +8,13 @@ and connecting to them from EOS tasks.
 from eos.integrations.sila import _upb_compat  # noqa: F401
 
 from eos.integrations.sila.sila_client_context import SilaClientContext
+from eos.integrations.sila.sila_device import SilaDevice
 from eos.integrations.sila.sila_device_mixin import SilaDeviceMixin
 from eos.integrations.sila.sila_server_manager import SilaServerInstance, SilaServerManager
 
 __all__ = [
     "SilaClientContext",
+    "SilaDevice",
     "SilaDeviceMixin",
     "SilaServerInstance",
     "SilaServerManager",

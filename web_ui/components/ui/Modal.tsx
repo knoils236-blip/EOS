@@ -68,11 +68,11 @@ export function Modal({
               <button
                 type="button"
                 disabled={closeDisabled}
-                aria-label="Close"
+                aria-label="关闭"
                 className="rounded-sm text-gray-400 opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus:ring-yellow-500 focus:ring-offset-2 disabled:pointer-events-none dark:text-gray-400 dark:ring-offset-slate-900"
               >
                 <X className="h-5 w-5" />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">关闭</span>
               </button>
             </Dialog.Close>
           </div>

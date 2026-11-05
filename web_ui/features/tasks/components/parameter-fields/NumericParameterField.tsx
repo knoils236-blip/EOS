@@ -31,9 +31,9 @@ export const NumericParameterField = memo(({ name, spec, value, onChange }: Nume
   };
 
   const constraints = [
-    spec.unit && `unit: ${spec.unit}`,
-    typeof spec.min === 'number' && `min: ${spec.min}`,
-    typeof spec.max === 'number' && `max: ${spec.max}`,
+    spec.unit && `单位：${spec.unit}`,
+    typeof spec.min === 'number' && `最小值：${spec.min}`,
+    typeof spec.max === 'number' && `最大值：${spec.max}`,
   ]
     .filter(Boolean)
     .join(', ');
@@ -55,7 +55,9 @@ export const NumericParameterField = memo(({ name, spec, value, onChange }: Nume
         onChange={handleChange}
         onBlur={() => restoreDefaultIfEmpty(value, spec, onChange)}
         step={spec.type === 'int' ? '1' : 'any'}
-        placeholder={`Enter ${name}${spec.unit ? ` (${spec.unit})` : ''}`}
+        min={typeof spec.min === 'number' ? spec.min : undefined}
+        max={typeof spec.max === 'number' ? spec.max : undefined}
+        placeholder={`输入 ${name}${spec.unit ? ` (${spec.unit})` : ''}`}
         className={`w-full px-2.5 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 ${
           error
             ? 'border-red-500 focus:ring-red-500'

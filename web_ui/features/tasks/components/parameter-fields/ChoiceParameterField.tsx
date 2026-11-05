@@ -56,7 +56,7 @@ export const ChoiceParameterField = memo(({ name, spec, value, onChange }: Choic
             : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500 dark:focus:ring-yellow-500'
         } bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100`}
       >
-        <option value="">Select {name}</option>
+        <option value="">选择 {name}</option>
         {choices.map((choice) => (
           <option key={choice} value={choice}>
             {choice}
@@ -64,9 +64,7 @@ export const ChoiceParameterField = memo(({ name, spec, value, onChange }: Choic
         ))}
       </select>
       {error && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{error}</p>}
-      {choices.length === 0 && (
-        <p className="mt-1 text-xs text-amber-500 dark:text-amber-400">No choices defined for this parameter</p>
-      )}
+      {choices.length === 0 && <p className="mt-1 text-xs text-amber-500 dark:text-amber-400">此参数尚未定义可选值</p>}
     </div>
   );
 });

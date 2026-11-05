@@ -40,7 +40,7 @@ export function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTokenDialo
     if (result.success) {
       setToken(result.token ?? null);
     } else {
-      setError(result.error ?? 'Failed to create token');
+      setError(result.error ?? '创建令牌失败');
     }
   };
 
@@ -48,13 +48,13 @@ export function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTokenDialo
     <Modal
       open={open}
       onOpenChange={(next) => !next && handleClose()}
-      title={token ? 'API token created' : 'New API token'}
+      title={token ? 'API 令牌已创建' : '新建 API 令牌'}
       closeDisabled={isSubmitting}
     >
       {token ? (
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Copy this token now. It will not be shown again. Send it as{' '}
+            请立即复制此令牌，关闭后将不再显示。发送请求时使用{' '}
             <code className="font-mono text-xs">Authorization: Bearer &lt;token&gt;</code>.
           </p>
           <div className="flex items-center gap-2 p-3 rounded-md bg-gray-100 dark:bg-slate-800 font-mono text-sm">
@@ -62,37 +62,35 @@ export function CreateApiTokenDialog({ open, onOpenChange }: CreateApiTokenDialo
             <button
               onClick={() => navigator.clipboard.writeText(token)}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              aria-label="Copy token"
+              aria-label="复制令牌"
             >
               <Copy className="w-4 h-4" />
             </button>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleClose}>Done</Button>
+            <Button onClick={handleClose}>完成</Button>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            The token acts with your current access. Revoke it any time from your profile.
-          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">令牌使用您当前的访问权限，可随时在个人资料中撤销。</p>
           <div className="space-y-1.5">
-            <Label htmlFor="token-label">Label</Label>
+            <Label htmlFor="token-label">标签</Label>
             <Input
               id="token-label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. laptop script"
+              placeholder="例如：笔记本脚本"
               disabled={isSubmitting}
             />
           </div>
           {error && <ErrorBox error={error} />}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              取消
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create token'}
+              {isSubmitting ? '正在创建…' : '创建令牌'}
             </Button>
           </div>
         </div>

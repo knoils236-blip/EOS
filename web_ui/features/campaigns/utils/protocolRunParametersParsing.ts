@@ -47,27 +47,27 @@ export function parseProtocolRunParametersCsv(csv: string): ProtocolRunParams {
 
   if (result.errors.length > 0) {
     const firstError = result.errors[0];
-    throw new Error(`CSV parse error (row ${(firstError.row ?? 0) + 1}): ${firstError.message}`);
+    throw new Error(`CSV 解析错误（行 ${(firstError.row ?? 0) + 1}）：${firstError.message}`);
   }
 
   const headers = result.meta.fields ?? [];
   if (headers.length === 0) {
-    throw new Error('CSV has no columns');
+    throw new Error('CSV 没有列');
   }
 
   // Validate dot notation headers
   for (const header of headers) {
     if (!header.includes('.')) {
-      throw new Error(`Invalid column header "${header}": expected dot notation "task_name.param_name"`);
+      throw new Error(`列标题无效：“${header}”：应使用点号格式 "task_name.param_name"`);
     }
     const parts = header.split('.');
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
-      throw new Error(`Invalid column header "${header}": expected exactly "task_name.param_name"`);
+      throw new Error(`列标题无效：“${header}”：必须严格使用 "task_name.param_name" 格式`);
     }
   }
 
   if (result.data.length === 0) {
-    throw new Error('CSV has headers but no data rows');
+    throw new Error('CSV 只有列标题，没有数据行');
   }
 
   return result.data.map((row) => {
@@ -116,7 +116,7 @@ export function parseProtocolRunParameters(text: string): ProtocolRunParams {
     try {
       return JSON.parse(text);
     } catch {
-      throw new Error('Invalid JSON in protocol run parameters');
+      throw new Error('协议运行参数中的 JSON 无效');
     }
   }
 
@@ -132,9 +132,9 @@ export function parseProtocolRunParameters(text: string): ProtocolRunParams {
       return parseProtocolRunParametersCsv(text);
     } catch {
       throw new Error(
-        'Could not parse protocol run parameters as JSON or CSV. ' +
-          'JSON should be an array like [{"task": {"param": value}}]. ' +
-          'CSV should have dot-notation headers like "task.param".'
+        '无法将协议运行参数解析为 JSON 或 CSV。' +
+          'JSON 应为数组，例如 [{"task": {"param": value}}]。' +
+          'CSV 列标题应使用点号格式，例如 "task.param"。'
       );
     }
   }

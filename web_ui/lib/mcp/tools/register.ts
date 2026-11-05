@@ -9,6 +9,7 @@ import { registerSqlTools } from './sql';
 import { registerDeviceTools } from './devices';
 import { registerFilesystemTools } from './filesystem';
 import { registerSimulatorTools } from './simulator';
+import { registerSdlTools } from './sdl';
 
 export function registerAllTools(server: McpServer) {
   registerTaskTools(server);
@@ -21,4 +22,5 @@ export function registerAllTools(server: McpServer) {
   registerSqlTools(server);
   registerFilesystemTools(server);
   registerSimulatorTools(server);
+  registerSdlTools(server);
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { statusLabel } from '@/lib/labels';
+
 import * as React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
@@ -66,7 +68,7 @@ export function DeviceSelector({ devices, selectedDevice, onDeviceSelect }: Devi
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search devices..."
+            placeholder="搜索设备…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -79,7 +81,7 @@ export function DeviceSelector({ devices, selectedDevice, onDeviceSelect }: Devi
         <div className="p-4 space-y-6">
           {filteredDevicesByLab.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-              {searchQuery ? 'No devices found matching your search' : 'No devices available'}
+              {searchQuery ? '没有匹配的设备' : '暂无可用设备'}
             </div>
           ) : (
             filteredDevicesByLab.map(([lab, labDevices]) => (
@@ -118,7 +120,7 @@ export function DeviceSelector({ devices, selectedDevice, onDeviceSelect }: Devi
                           variant={device.status === 'ACTIVE' ? 'success' : 'default'}
                           className="flex-shrink-0 text-xs"
                         >
-                          {device.status}
+                          {statusLabel(device.status)}
                         </Badge>
                       </div>
                     </button>

@@ -1,3 +1,4 @@
+import { ASSIGNMENT_MODE_LABELS } from '@/lib/labels';
 interface AssignmentModeSelectorProps {
   mode: 'static' | 'dynamic' | 'reference';
   onChange: (mode: 'static' | 'dynamic' | 'reference') => void;
@@ -22,7 +23,7 @@ export function AssignmentModeSelector({ mode, onChange, color = 'blue' }: Assig
               : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
           }`}
         >
-          {m}
+          {ASSIGNMENT_MODE_LABELS[m]}
         </button>
       ))}
     </div>

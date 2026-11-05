@@ -63,9 +63,9 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Beacon Journal
+            Beacon 日志
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">AI reasoning log and expert insights</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">AI 推理日志与专家建议</p>
         </div>
       </button>
 
@@ -73,12 +73,12 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
         <div className="mt-4 space-y-4">
           {/* Expert Insights */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Expert Insights</Label>
+            <Label className="text-sm font-medium">专家建议</Label>
             <div className="flex gap-2 items-center">
               <Textarea
                 value={insightText}
                 onChange={(e) => setInsightText(e.target.value)}
-                placeholder="Add an expert insight..."
+                placeholder="添加专家建议…"
                 disabled={disabled}
                 className="text-xs min-h-[60px]"
               />
@@ -90,7 +90,7 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
                 className="h-8 px-3 gap-1 shrink-0"
               >
                 <Send className="h-3 w-3" />
-                Send
+                发送
               </Button>
             </div>
           </div>
@@ -99,7 +99,7 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
           {journal.length > 0 && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">
-                Journal ({journal.length} {journal.length === 1 ? 'entry' : 'entries'})
+                日志（{journal.length} {journal.length === 1 ? 'entry' : '条记录'})
               </Label>
               <div className="max-h-[32rem] overflow-auto border border-gray-200 dark:border-slate-700 rounded-md">
                 {pageEntries.map((entry, i) => (
@@ -110,6 +110,7 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
                     }`}
                   >
                     <ReactMarkdown
+                      disallowedElements={['img']}
                       remarkPlugins={[remarkGfm, remarkMath]}
                       rehypePlugins={[rehypeKatex]}
                       components={{
@@ -147,10 +148,10 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
                     className="h-7 px-2 gap-1"
                   >
                     <ChevronLeft className="h-3 w-3" />
-                    Newer
+                    较新
                   </Button>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Page {page + 1} of {totalPages}
+                    第 {page + 1} / {totalPages} 页
                   </span>
                   <Button
                     variant="ghost"
@@ -159,7 +160,7 @@ export function BeaconJournalPanel({ campaignName, journal, isRunning, onRefresh
                     disabled={page === totalPages - 1}
                     className="h-7 px-2 gap-1"
                   >
-                    Older
+                    较早
                     <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
