@@ -537,12 +537,38 @@ def test_pipetting_at_the_opening_station_targets_the_carried_bottle(monkeypatch
 
     # Every loaded workflow is planned against live positions, whatever the zone
     planned = []
-    monkeypatch.setattr(station_skills, "build_workflow", lambda name, parameters: (name, parameters["zone"]))
+    monkeypatch.setattr(
+        station_skills, "build_workflow", lambda name, parameters, settle_first: (name, parameters["zone"]))
     worker = object.__new__(StationSessionWorker)
+    worker.scene_settled = True
     monkeypatch.setattr(worker, "_use_live_positions", planned.append, raising=False)
     for zone in ("大开盖区", "中瓶区1"):
         worker._load_workflow("skill_aspirate_from", {"zone": zone, "volume_ul": 50})
     assert planned == [("skill_aspirate_from", "大开盖区"), ("skill_aspirate_from", "中瓶区1")]
+
+
+def test_only_an_unsettled_scene_prepends_the_spawn_settle(monkeypatch):
+    def settles(workflow):
+        return [type(node).__name__ for node in workflow.sub_actions].count("SettleCfg")
+
+    # Native skill configs need Isaac Lab's configclass; a stand-in keeps the composition under test
+    constructor = station_skills.descriptor("skill_aspirate_from")["constructor"]
+    monkeypatch.setattr(native_skills, constructor, type(constructor, (types.SimpleNamespace,), {}))
+    fresh = station_skills.build_workflow("skill_aspirate_from", {"volume_ul": 50})
+    resting = station_skills.build_workflow("skill_aspirate_from", {"volume_ul": 50}, settle_first=False)
+    assert settles(fresh) == 1
+    assert settles(resting) == 0
+    assert resting.sub_actions == fresh.sub_actions[1:]
+
+    # The worker asks for the settle exactly while its scene is unsettled
+    calls = []
+    monkeypatch.setattr(
+        station_skills, "build_workflow", lambda name, parameters, settle_first: calls.append(settle_first))
+    worker = object.__new__(StationSessionWorker)
+    for settled in (False, True):
+        worker.scene_settled = settled
+        worker._build_workflow("skill_mount_tip", {"tip_index": 1})
+    assert calls == [True, False]
 
 
 @dataclasses.dataclass

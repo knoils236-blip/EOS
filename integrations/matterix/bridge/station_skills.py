@@ -554,8 +554,12 @@ def apply_workflow_parameters(workflow, parameters):
     return result
 
 
-def build_workflow(workflow_name, parameters):
-    """Build an executable workflow through the exported native constructors."""
+def build_workflow(workflow_name, parameters, settle_first=True):
+    """Build an executable workflow through the exported native constructors.
+
+    ``settle_first`` prepends the 2 s settle that lets freshly spawned consumables land; a scene already at rest
+    after a succeeded task skips it.
+    """
     skills = importlib.import_module("matterix_plc.actions.skills")
     compat = importlib.import_module("matterix_sm._compat")
     values = _parameters_or_defaults(workflow_name, parameters)
@@ -581,7 +585,7 @@ def build_workflow(workflow_name, parameters):
         kwargs["jaws"] = copy.deepcopy(item["fixed_parameters"]["jaws"])
     if issubclass(constructor, skills.SkillCfg):  # plain station actions take no sub_actions
         kwargs["sub_actions"] = []
-    return make_workflow(settle(), constructor(**kwargs))
+    return make_workflow(*([settle()] if settle_first else []), constructor(**kwargs))
 
 
 def _check(name, actual, expected, unit, passed):

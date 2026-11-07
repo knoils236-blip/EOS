@@ -205,6 +205,7 @@ class StationSessionWorker(SessionWorker):
         self.bottle_clamp_frame = None
         self.completed_phase = 0
         self.held_commands = {}
+        self.scene_settled = False
         self.camera_ready = False
         self.recording_render = None
         self.camera_workflow = ""
@@ -616,6 +617,8 @@ class StationSessionWorker(SessionWorker):
             self._station_driver().operations.prim.GetAttribute("operation:status").Set("idle")
             self.completed_phase = 0
             self.held_commands = {}
+            # Reset respawns consumables hovering above their seats; the next skill must settle them first
+            self.scene_settled = False
             self.camera_workflow = ""
             self.last_operation_status = None
             if self.sm is not None:
@@ -675,7 +678,8 @@ class StationSessionWorker(SessionWorker):
 
     def _build_workflow(self, workflow_name, parameters=None):
         if workflow_name in station_skills.WORKFLOWS:
-            return station_skills.build_workflow(workflow_name, parameters)
+            return station_skills.build_workflow(
+                workflow_name, parameters, settle_first=not self.scene_settled)
         workflows = importlib.import_module("matterix_plc.actions.workflows")
         if workflow_name == "mixture_close":
             return workflows.full_station().sub_actions[6]
@@ -997,6 +1001,8 @@ class StationSessionWorker(SessionWorker):
             pending_cancel = _cancel_reason(run_dir)
             if pending_cancel is not None and status != "interrupted":
                 status, error = pending_cancel, f"cancel_reason:{pending_cancel}"
+            # A failed or cancelled task can leave objects in motion, so only success skips the next settle
+            self.scene_settled = status == "succeeded"
             if status == "succeeded" and task["workflow_name"] in FULL_WORKFLOWS:
                 self.completed_phase = FULL_WORKFLOWS[task["workflow_name"]]
             if status == "succeeded" and task["workflow_name"] in MIXTURE_WORKFLOWS:
