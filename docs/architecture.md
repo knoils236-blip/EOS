@@ -266,9 +266,9 @@ MCP 由 `app/api/[transport]/route.ts` 承接，使用独立 Bearer 校验，并
 
 设备收尾会查询或停止 bridge 请求、确认终态并下载证据。无法确认停止或归档失败时，设备会被阻止继续使用，需恢复或重新加载。协议层进一步汇总任务证据和录像。此处的外部生命周期处理是设备适配的一部分。
 
-截至仓库内 2026-11-04 的报告，移液站已接入 PhysX 路径，但整站物理验收未通过：前门目标为 390 mm，记录实测约 2.835 mm，流程停止在第一阶段。本文未复测该结果。历史运动学录像、语义液量守恒、Mock 测量与真实物理或化学验收应分别解读。
+移液站已接入 PhysX 路径。2026-11-04 的整站物理验收停在第一阶段（前门目标 390 mm，实测约 2.835 mm）；2026-11-08 的复测中前门开合与整站开门能力均已到位（0.389959 m），但整站七阶段流程尚未重新验收。历史运动学录像、语义液量守恒、Mock 测量与真实物理或化学验收应分别解读。
 
-证据：[设备适配器](../user/matterix_sim/devices/matterix_workstation/device.py)、[会话管理](../integrations/matterix/bridge/session_manager.py)、[bridge 部署与限制](../integrations/matterix/README.md)、[2026-11-04 物理验收记录](../evidence/matterix-physics-acceptance-20261104-d12ffa/README.md)。
+证据：[设备适配器](../user/matterix_sim/devices/matterix_workstation/device.py)、[会话管理](../integrations/matterix/bridge/session_manager.py)、[bridge 部署与限制](../integrations/matterix/README.md)、[2026-11-04 物理验收记录](../evidence/matterix-physics-acceptance-20261104-d12ffa/README.md)、[2026-11-08 前门复测](../evidence/matterix-front-door-recheck-20261108/README.md)。
 
 ### 8.2 Atlas 与 AiiDA
 

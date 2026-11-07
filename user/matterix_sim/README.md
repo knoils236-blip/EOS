@@ -88,7 +88,7 @@ AI 草稿除了任务 spec，还会拿到所选实验室的场景操作（ID、�
 ## 限制
 
 - bridge 同一时间只允许一个活动会话，所以一个 bridge 只能对应一台 `matterix_workstation` 设备。
-- 物理路径已接入，新的整站物理验收未通过（前门目标 390 mm，实测约 2.835 mm）；前门干涉未修复。液量来自仿真语义账本，不代表真实化学测量。
+- 物理路径已接入。前门开合已在 2026-11-08 复测中通过 PhysX 验收（到位 0.389959 m，见 `evidence/matterix-front-door-recheck-20261108`），但整站七阶段物理流程尚未通过验收。液量来自仿真语义账本，不代表真实化学测量。
 - `eos_dynamic` 和优化器只能用于顶层任务参数；`Matterix Capability` 的 `parameters` 字典内的参数需在协议中写定，需要优化体积时改用 `Matterix Volume Operation`。
 
 ## 测试

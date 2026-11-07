@@ -214,3 +214,11 @@ namespace 和唯一 Protocol Run 名称。测试不复制自身到项目协议�
 2.835 mm，未达到 390 mm 目标，连续流程停在第一阶段。1920×540、25 fps 双画面已实际解码；
 液体动作时的近景跟随、出口/瓶口可见性和新增接收器尚未运行到。原始资产未改动；完整证据见
 ``evidence/matterix-physics-acceptance-20261104-d12ffa/README.md``。
+
+2026-11-08 前门复测
+-------------------
+
+独立 bridge 上复测：``station_skill_front_door`` 开到 0.389959 m、关回约 0 m，
+``station_full_station_open_door`` 在 6.11 s 仿真内到位，均在 ±1.5 mm 内。8 秒窗口不是 11-04 失败的原因；
+根因未定位。连续七阶段与液体动作未在复测中运行。证据见
+``evidence/matterix-front-door-recheck-20261108/README.md``。

@@ -49,7 +49,7 @@ PYTHONNOUSERSITE=1 /home/ry/anaconda3/envs/chemos2/bin/python -B -m bridge.serve
 
 EOS 移液站已从仿真动作项和协议关节观测中移除 `service_door_left`、`service_door_right`。环境动作只包含其余 27 个工作流关节；上游 PLC 的原始 29 列在 bridge 内按名称映射，不再向环境传递检修门命令。原始 USD、manifest、门板及碰撞体保留，`hide_shell` 仍仅控制录制可见性。这与整站演示中显式使用的升降前门 `front_door` 无关。
 
-移液站入口改用导出的 `PipettingStationTwinEnvCfg` 推进 PhysX；原有 `pipetting_realtime` 场景 ID 保留。不会回退到运动学执行。原始 USD、碰撞体和导出源码保持不变。前门干涉尚未修复，新整站物理流程尚未通过验收，旧运动学录像不能作为碰撞验收证据。
+移液站入口改用导出的 `PipettingStationTwinEnvCfg` 推进 PhysX；原有 `pipetting_realtime` 场景 ID 保留。不会回退到运动学执行。原始 USD、碰撞体和导出源码保持不变。前门已在 2026-11-08 复测中通过 PhysX 开合验收（见下文），但新整站七阶段物理流程尚未通过验收，旧运动学录像不能作为碰撞验收证据。
 
 针筒原子吐液固定向小瓶区转移瓶吐液（源包程序 33）；此前的 `recipient` 扩展已下线。编辑器预检与实验结束检查覆盖盖子、过滤头、液量及一次性耗材弃置。录制为 1920×540、25 fps，左侧整站、右侧工具近景；协议拼接保留该尺寸。双画面已通过实际场景解码和首/中/末帧检查；动态工具跟随及液体出口/瓶口可见性尚未完成物理动作验收。
 
@@ -66,3 +66,5 @@ EOS 移液站已从仿真动作项和协议关节观测中移除 `service_door_l
 前次离线验收：受影响范围 152 passed、1 skipped（原生 Isaac 配置构造测试缺少已初始化的 Isaac 环境）；本次主要修改文件通过 Ruff 检查，旧 worker / capability 文件相对任务基线没有新增 Ruff 诊断。该阶段未运行全仓测试或实机实验，也未重启当时的旧会话。
 
 随后已执行真实 PhysX 验收：初始化和 2 秒等待通过；四个容器后段静置稳定；前门目标 390 mm、实测约 2.835 mm，本次 8 秒仿真窗口超时，连续流程停止在第一阶段。验收中修复了纯 Wait 初始动作为空的 bridge 接入错误，相关回归 50 passed、1 skipped。原始资产/导出源码的 8 个受保护文件哈希未变，独立验收服务与 Isaac worker 已退出。完整报告和视频见 [物理验收证据](../../evidence/matterix-physics-acceptance-20261104-d12ffa/README.md)。
+
+2026-11-08 在独立 bridge 上复测前门（HEAD `0dff2fa`，配置版本 `d2138389…`）：`station_skill_front_door` 开到 0.389959 m、关回约 0 m，11-04 失败的 `station_full_station_open_door` 在 6.11 s 仿真内到位 0.389959 m，三项均在 ±1.5 mm 内且无拒绝。8 秒窗口不是 11-04 失败的原因；两次配置版本不同，具体是哪处改动消除了 `Tracking lag at front_door` 未定位。移液、旋盖、过滤头、弃置和连续七阶段未在复测中运行。见 [前门复测证据](../../evidence/matterix-front-door-recheck-20261108/README.md)。
