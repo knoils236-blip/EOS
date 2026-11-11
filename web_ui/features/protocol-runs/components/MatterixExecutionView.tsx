@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -40,7 +41,10 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip);
 
-const TABS = ['观测曲线', '参数快照', '验收详情', '视频', '下载与原始数据'] as const;
+// three.js needs the browser, and its bundle is only worth loading when the tab is opened
+const StationTwinView = dynamic(() => import('./StationTwinView'), { ssr: false });
+
+const TABS = ['观测曲线', '数字孪生', '参数快照', '验收详情', '视频', '下载与原始数据'] as const;
 type Tab = (typeof TABS)[number];
 
 const SERIES_COLORS = [
@@ -815,6 +819,7 @@ export function MatterixExecutionView({
 
       <div role="tabpanel">
         {activeTab === '观测曲线' && <CurvesTab detail={detail} onTaskSelect={onTaskSelect} />}
+        {activeTab === '数字孪生' && <StationTwinView detail={detail} />}
         {activeTab === '参数快照' && <ParametersTab detail={detail} />}
         {activeTab === '验收详情' && <AcceptanceTab detail={detail} onTaskSelect={onTaskSelect} />}
         {activeTab === '视频' && <VideoTab detail={detail} />}

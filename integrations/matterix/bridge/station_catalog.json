@@ -953,6 +953,168 @@
           "label": "仿真超时"
         }
       }
+    },
+    "station_skill_pick": {
+      "workflow_name": "skill_pick",
+      "source_symbol": "SmallVialPickCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_place": {
+      "workflow_name": "skill_place",
+      "source_symbol": "SmallVialPlaceCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_decap": {
+      "workflow_name": "skill_decap",
+      "source_symbol": "SmallVialDecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_recap": {
+      "workflow_name": "skill_recap",
+      "source_symbol": "SmallVialRecapCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_mount": {
+      "workflow_name": "skill_mount",
+      "source_symbol": "MountTipCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_skill_aspirate": {
+      "workflow_name": "skill_aspirate",
+      "source_symbol": "AspirateFromCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        }
+      }
+    },
+    "station_skill_dispense": {
+      "workflow_name": "skill_dispense",
+      "source_symbol": "DispenseToCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        }
+      }
+    },
+    "station_skill_discard": {
+      "workflow_name": "skill_discard",
+      "source_symbol": "EjectTipCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        }
+      }
+    },
+    "station_transfer_liquid": {
+      "workflow_name": "transfer_liquid",
+      "source_symbol": "PipetteTransferCfg",
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位（移液器）"
+        }
+      }
     }
   },
   "workflows": {
@@ -2790,6 +2952,1283 @@
           "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/program_action.py",
           "sha256": "84f08c9d01e339d35e879576fcde73624f71b81cd3646ce475eac9615cdeb1b6",
           "marker": "program_cfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_pick": {
+      "source_symbol": "SmallVialPickCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_pick",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "object": {
+          "type": "string",
+          "default": "2 mL 小瓶",
+          "choices": [
+            "2 mL 小瓶",
+            "500 mL 大瓶"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "容器"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "object": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_small_vial_pick",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现小瓶盖 grasp 事件",
+            "最终小瓶盖 attached 且小瓶盖爪闭合"
+          ]
+        },
+        {
+          "objects": {
+            "object": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_big_bottle_pick",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现大瓶盖 grasp 事件",
+            "最终大瓶盖 attached 且相关夹爪闭合"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottlePickCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialPickCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_place": {
+      "source_symbol": "SmallVialPlaceCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_place",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "object": {
+          "type": "string",
+          "default": "2 mL 小瓶",
+          "choices": [
+            "2 mL 小瓶",
+            "500 mL 大瓶"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "容器"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "object": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_small_vial_place",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现小瓶盖 release 事件",
+            "最终小瓶盖不再 attached 且小瓶盖爪张开"
+          ]
+        },
+        {
+          "objects": {
+            "object": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_big_bottle_place",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现大瓶盖 release 事件",
+            "最终大瓶盖不再 attached 且大瓶盖爪张开"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottlePlaceCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialPlaceCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_decap": {
+      "source_symbol": "SmallVialDecapCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_decap",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "object": {
+          "type": "string",
+          "default": "2 mL 小瓶",
+          "choices": [
+            "2 mL 小瓶",
+            "500 mL 大瓶"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "容器"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "object": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_small_vial_decap",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 cap_detached 事件",
+            "本次状态进入 SmallCapOpen=true 且最终保持打开"
+          ]
+        },
+        {
+          "objects": {
+            "object": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_big_bottle_decap",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 cap_detached 事件",
+            "本次状态进入 BigCapOpen=true 且最终保持打开"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottleDecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialDecapCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_recap": {
+      "source_symbol": "SmallVialRecapCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_recap",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "object": {
+          "type": "string",
+          "default": "2 mL 小瓶",
+          "choices": [
+            "2 mL 小瓶",
+            "500 mL 大瓶"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "容器"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "object": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_small_vial_recap",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 cap_engaged 事件",
+            "本次状态回到 SmallCapOpen=false 且瓶盖闭合"
+          ]
+        },
+        {
+          "objects": {
+            "object": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_big_bottle_recap",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 cap_engaged 事件",
+            "本次状态回到 BigCapOpen=false 且瓶盖闭合"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "BigBottleRecapCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SmallVialRecapCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_mount": {
+      "source_symbol": "MountTipCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_mount",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tool": {
+          "type": "string",
+          "default": "移液器",
+          "choices": [
+            "移液器",
+            "针筒机构"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "工具"
+        },
+        "consumable": {
+          "type": "string",
+          "default": "TIP 1",
+          "choices": [
+            "TIP 1",
+            "TIP 2",
+            "针筒",
+            "过滤头"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "耗材"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "tool": "移液器",
+            "consumable": "TIP 1"
+          },
+          "workflow_name": "skill_mount_tip",
+          "fixed_parameters": {
+            "tip_index": 1
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的真实 grasp/tip_seated 记录",
+            "最终 TipOn=true 且该 TIP attached、seated"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "consumable": "TIP 2"
+          },
+          "workflow_name": "skill_mount_tip",
+          "fixed_parameters": {
+            "tip_index": 2
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的真实 grasp/tip_seated 记录",
+            "最终 TipOn=true 且该 TIP attached、seated"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构",
+            "consumable": "针筒"
+          },
+          "workflow_name": "skill_syringe_pick",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务同时出现筒身和活塞 grasp 事件",
+            "最终两者 attached、SyringeOn=true 且 pg3/pg4 闭合"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构",
+            "consumable": "过滤头"
+          },
+          "workflow_name": "skill_filter_head_mount",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 filter_installed 事件",
+            "最终 FilterHeadOn=true 且针筒筒身仍 attached"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "FilterHeadMountCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "MountTipCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringePickCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_aspirate": {
+      "source_symbol": "AspirateFromCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_aspirate",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tool": {
+          "type": "string",
+          "default": "移液器",
+          "choices": [
+            "移液器",
+            "针筒机构"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "工具"
+        },
+        "source": {
+          "type": "string",
+          "default": "10 mL 转移瓶",
+          "choices": [
+            "10 mL 转移瓶",
+            "50 mL 接收瓶",
+            "2 mL 小瓶",
+            "500 mL 大瓶",
+            "八位反应器"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "液源对象"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_aspirate_from",
+          "fixed_parameters": {
+            "zone": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 aspirate 命令",
+            "所选源容器液量下降、TIP 液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_aspirate_from",
+          "fixed_parameters": {
+            "zone": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 aspirate 命令",
+            "所选源容器液量下降、TIP 液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_aspirate_from",
+          "fixed_parameters": {
+            "zone": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 aspirate 命令",
+            "所选源容器液量下降、TIP 液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_aspirate_from",
+          "fixed_parameters": {
+            "zone": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 aspirate 命令",
+            "所选源容器液量下降、TIP 液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构",
+            "source": "八位反应器"
+          },
+          "workflow_name": "skill_syringe_aspirate",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "针筒筒身和活塞均 mounted",
+            "本次任务出现 syringe aspirate 命令且源容器液量下降"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "AspirateFromCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeAspirateCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_dispense": {
+      "source_symbol": "DispenseToCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_dispense",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tool": {
+          "type": "string",
+          "default": "移液器",
+          "choices": [
+            "移液器",
+            "针筒机构"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "工具"
+        },
+        "target": {
+          "type": "string",
+          "default": "50 mL 接收瓶",
+          "choices": [
+            "10 mL 转移瓶",
+            "50 mL 接收瓶",
+            "2 mL 小瓶",
+            "500 mL 大瓶",
+            "八位反应器"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "目标对象"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "tool": "移液器",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_dispense_to",
+          "fixed_parameters": {
+            "zone": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 dispense 命令",
+            "TIP 液量下降、目标容器液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "target": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_dispense_to",
+          "fixed_parameters": {
+            "zone": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 dispense 命令",
+            "TIP 液量下降、目标容器液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "target": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_dispense_to",
+          "fixed_parameters": {
+            "zone": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 dispense 命令",
+            "TIP 液量下降、目标容器液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "target": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_dispense_to",
+          "fixed_parameters": {
+            "zone": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现 dispense 命令",
+            "TIP 液量下降、目标容器液量上升且总量守恒"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_syringe_dispense",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "针筒和过滤头均 mounted",
+            "本次任务出现 syringe dispense 命令且转移瓶液量上升"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "DispenseToCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeDispenseCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "skill_discard": {
+      "source_symbol": "EjectTipCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_skill_discard",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tool": {
+          "type": "string",
+          "default": "移液器",
+          "choices": [
+            "移液器",
+            "针筒机构"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "工具"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "tool": "移液器"
+          },
+          "workflow_name": "skill_eject_tip",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现 eject_tip 命令和当前已装 TIP 的 release 事件",
+            "最终 TipOn=false 且没有 attached/seated TIP"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构"
+          },
+          "workflow_name": "skill_syringe_discard",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现针筒 release 事件",
+            "最终 SyringeOn=false、FilterHeadOn=false 且两者不再 attached"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "EjectTipCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeDiscardCfg",
+          "scope": "static_source"
+        }
+      ],
+      "disabled_reason": null
+    },
+    "transfer_liquid": {
+      "source_symbol": "PipetteTransferCfg",
+      "kind": "goal_conditioned_skill",
+      "enabled_capability": "station_transfer_liquid",
+      "fixed_parameters": {},
+      "parameter_ranges": {
+        "timeout_s": {
+          "type": "number",
+          "default": 120,
+          "min": 1,
+          "max": 180,
+          "unit": "s",
+          "label": "仿真超时"
+        },
+        "tool": {
+          "type": "string",
+          "default": "移液器",
+          "choices": [
+            "移液器",
+            "针筒机构"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "工具"
+        },
+        "source": {
+          "type": "string",
+          "default": "10 mL 转移瓶",
+          "choices": [
+            "10 mL 转移瓶",
+            "50 mL 接收瓶",
+            "2 mL 小瓶",
+            "500 mL 大瓶",
+            "八位反应器"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "液源对象"
+        },
+        "target": {
+          "type": "string",
+          "default": "50 mL 接收瓶",
+          "choices": [
+            "10 mL 转移瓶",
+            "50 mL 接收瓶",
+            "2 mL 小瓶",
+            "500 mL 大瓶",
+            "八位反应器"
+          ],
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "目标对象"
+        },
+        "volume_ul": {
+          "type": "number",
+          "default": 50,
+          "min": 20.0,
+          "max": 180.0,
+          "unit": "µL",
+          "label": "吸/吐体积"
+        },
+        "tip_index": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 2,
+          "choices": [
+            1,
+            2
+          ],
+          "unit": "",
+          "label": "TIP 槽位（移液器）"
+        },
+        "record_video": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制仿真视频"
+        },
+        "hide_shell": {
+          "type": "boolean",
+          "default": false,
+          "min": null,
+          "max": null,
+          "unit": "",
+          "label": "录制时隐藏外壳"
+        }
+      },
+      "bindings": [
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "10 mL 转移瓶",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小瓶区",
+            "target": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "10 mL 转移瓶",
+            "target": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小瓶区",
+            "target": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "10 mL 转移瓶",
+            "target": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小瓶区",
+            "target": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "10 mL 转移瓶",
+            "target": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小瓶区",
+            "target": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "50 mL 接收瓶",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "中瓶区1",
+            "target": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "50 mL 接收瓶",
+            "target": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "中瓶区1",
+            "target": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "50 mL 接收瓶",
+            "target": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "中瓶区1",
+            "target": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "50 mL 接收瓶",
+            "target": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "中瓶区1",
+            "target": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "2 mL 小瓶",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小开盖区",
+            "target": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "2 mL 小瓶",
+            "target": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小开盖区",
+            "target": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "2 mL 小瓶",
+            "target": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小开盖区",
+            "target": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "2 mL 小瓶",
+            "target": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "小开盖区",
+            "target": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "500 mL 大瓶",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "大开盖区",
+            "target": "小瓶区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "500 mL 大瓶",
+            "target": "50 mL 接收瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "大开盖区",
+            "target": "中瓶区1"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "500 mL 大瓶",
+            "target": "2 mL 小瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "大开盖区",
+            "target": "小开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "移液器",
+            "source": "500 mL 大瓶",
+            "target": "500 mL 大瓶"
+          },
+          "workflow_name": "skill_pipette_transfer",
+          "fixed_parameters": {
+            "source": "大开盖区",
+            "target": "大开盖区"
+          },
+          "semantic_acceptance": [
+            "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
+            "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
+          ]
+        },
+        {
+          "objects": {
+            "tool": "针筒机构",
+            "source": "八位反应器",
+            "target": "10 mL 转移瓶"
+          },
+          "workflow_name": "skill_syringe_filter_transfer",
+          "fixed_parameters": {},
+          "semantic_acceptance": [
+            "本次任务出现筒身、活塞 grasp/release 与 filter_installed 事件",
+            "反应器到小瓶区的液量变化与请求体积相差不超过 5 µL，最终 SyringeOn=false、FilterHeadOn=false"
+          ]
+        }
+      ],
+      "semantic_acceptance": [
+        "满足所选对象与工具对应技能的前置条件",
+        "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+      ],
+      "verified_evidence": [],
+      "reference_evidence": [
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "PipetteTransferCfg",
+          "scope": "static_source"
+        },
+        {
+          "path": "/home/ry/projects/Matterix/PipettingStation_20261031/source/matterix_plc/matterix_plc/actions/skills.py",
+          "sha256": "51d17675fab7ddc1be0eb6880a5eb998b634ecdf680a82b458871c7d454c6168",
+          "marker": "SyringeFilterTransferCfg",
           "scope": "static_source"
         }
       ],

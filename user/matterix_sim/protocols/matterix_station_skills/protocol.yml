@@ -1,0 +1,376 @@
+type: matterix_station_skills
+desc: 用目标化原子技能展开参考移液站七阶段工作；仅声明仿真能力，expected_phase=0 使用自定义实验验收。
+labs:
+- matterix_pipetting_lab
+tasks:
+- name: begin
+  type: Matterix Begin Experiment
+  timeout: 240
+  retries: 0
+  devices:
+    matterix:
+      lab_name: matterix_pipetting_lab
+      name: matterix
+      hold: true
+- name: open_door
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_front_door
+    parameters:
+      open_m: 0.39
+  dependencies:
+  - begin
+  devices:
+    matterix:
+      ref: begin.matterix
+      hold: true
+- name: small_vial_pick
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_pick
+    parameters:
+      object: 2 mL 小瓶
+  dependencies:
+  - open_door
+  devices:
+    matterix:
+      ref: open_door.matterix
+      hold: true
+- name: small_vial_decap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_decap
+    parameters:
+      object: 2 mL 小瓶
+  dependencies:
+  - small_vial_pick
+  devices:
+    matterix:
+      ref: small_vial_pick.matterix
+      hold: true
+- name: small_vial_recap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_recap
+    parameters:
+      object: 2 mL 小瓶
+  dependencies:
+  - small_vial_decap
+  devices:
+    matterix:
+      ref: small_vial_decap.matterix
+      hold: true
+- name: small_vial_place
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_place
+    parameters:
+      object: 2 mL 小瓶
+  dependencies:
+  - small_vial_recap
+  devices:
+    matterix:
+      ref: small_vial_recap.matterix
+      hold: true
+- name: small_cap_home
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_small_cap_home
+  dependencies:
+  - small_vial_place
+  devices:
+    matterix:
+      ref: small_vial_place.matterix
+      hold: true
+- name: mount_tip_1
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_mount
+    parameters:
+      tool: 移液器
+      consumable: TIP 1
+  dependencies:
+  - small_cap_home
+  devices:
+    matterix:
+      ref: small_cap_home.matterix
+      hold: true
+- name: aspirate_small
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_aspirate
+    parameters:
+      tool: 移液器
+      source: 10 mL 转移瓶
+      volume_ul: 100
+  dependencies:
+  - mount_tip_1
+  devices:
+    matterix:
+      ref: mount_tip_1.matterix
+      hold: true
+- name: dispense_small
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_dispense
+    parameters:
+      tool: 移液器
+      target: 50 mL 接收瓶
+      volume_ul: 100
+  dependencies:
+  - aspirate_small
+  devices:
+    matterix:
+      ref: aspirate_small.matterix
+      hold: true
+- name: discard_tip_1
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_discard
+    parameters:
+      tool: 移液器
+  dependencies:
+  - dispense_small
+  devices:
+    matterix:
+      ref: dispense_small.matterix
+      hold: true
+- name: big_bottle_pick
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_pick
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - discard_tip_1
+  devices:
+    matterix:
+      ref: discard_tip_1.matterix
+      hold: true
+- name: big_bottle_decap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_decap
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - big_bottle_pick
+  devices:
+    matterix:
+      ref: big_bottle_pick.matterix
+      hold: true
+- name: mount_tip_2
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_mount
+    parameters:
+      tool: 移液器
+      consumable: TIP 2
+  dependencies:
+  - big_bottle_decap
+  devices:
+    matterix:
+      ref: big_bottle_decap.matterix
+      hold: true
+- name: aspirate_big
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_aspirate
+    parameters:
+      tool: 移液器
+      source: 500 mL 大瓶
+      volume_ul: 100
+  dependencies:
+  - mount_tip_2
+  devices:
+    matterix:
+      ref: mount_tip_2.matterix
+      hold: true
+- name: dispense_big
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_dispense
+    parameters:
+      tool: 移液器
+      target: 500 mL 大瓶
+      volume_ul: 100
+  dependencies:
+  - aspirate_big
+  devices:
+    matterix:
+      ref: aspirate_big.matterix
+      hold: true
+- name: discard_tip_2
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_discard
+    parameters:
+      tool: 移液器
+  dependencies:
+  - dispense_big
+  devices:
+    matterix:
+      ref: dispense_big.matterix
+      hold: true
+- name: big_bottle_recap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_recap
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - discard_tip_2
+  devices:
+    matterix:
+      ref: discard_tip_2.matterix
+      hold: true
+- name: big_bottle_place
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_place
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - big_bottle_recap
+  devices:
+    matterix:
+      ref: big_bottle_recap.matterix
+      hold: true
+- name: mount_syringe
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_mount
+    parameters:
+      tool: 针筒机构
+      consumable: 针筒
+  dependencies:
+  - big_bottle_place
+  devices:
+    matterix:
+      ref: big_bottle_place.matterix
+      hold: true
+- name: aspirate_reactor
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_aspirate
+    parameters:
+      tool: 针筒机构
+      source: 八位反应器
+      volume_ul: 50
+  dependencies:
+  - mount_syringe
+  devices:
+    matterix:
+      ref: mount_syringe.matterix
+      hold: true
+- name: mount_filter
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_mount
+    parameters:
+      tool: 针筒机构
+      consumable: 过滤头
+  dependencies:
+  - aspirate_reactor
+  devices:
+    matterix:
+      ref: aspirate_reactor.matterix
+      hold: true
+- name: dispense_filtered
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_dispense
+    parameters:
+      tool: 针筒机构
+      target: 10 mL 转移瓶
+      volume_ul: 50
+  dependencies:
+  - mount_filter
+  devices:
+    matterix:
+      ref: mount_filter.matterix
+      hold: true
+- name: discard_syringe
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_discard
+    parameters:
+      tool: 针筒机构
+  dependencies:
+  - dispense_filtered
+  devices:
+    matterix:
+      ref: dispense_filtered.matterix
+      hold: true
+- name: close_door
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_front_door
+    parameters:
+      open_m: 0
+  dependencies:
+  - discard_syringe
+  devices:
+    matterix:
+      ref: discard_syringe.matterix
+      hold: true
+- name: finish
+  type: Matterix End Experiment
+  timeout: 240
+  retries: 0
+  parameters:
+    expected_phase: 0
+  dependencies:
+  - close_door
+  devices:
+    matterix:
+      ref: close_door.matterix
+      hold: false

@@ -2,6 +2,7 @@
 
 from integrations.matterix.bridge.capabilities import catalog
 from integrations.matterix.bridge.plan_check import scene_notes
+from integrations.matterix.bridge.station_skills import goal_bindings
 from matterix_sim.capability import VOLUME_OPERATIONS
 
 DISPLAY_LABELS = {
@@ -38,6 +39,7 @@ def workstation_scene(scene_id: str) -> dict:
                 "label": DISPLAY_LABELS.get(capability["id"], capability["label"]),
                 "description": "；".join(capability["success_criteria"]),
                 "group": GROUPS[capability["tier"]],
+                "bindings": goal_bindings(capability["workflow_name"]),
                 "parameter_specs": {
                     key: {**spec, "label": spec.get("label", "移液体积" if key == "volume_ul" else key),
                           "unit": spec.get("unit", "µL" if key == "volume_ul" else "")}

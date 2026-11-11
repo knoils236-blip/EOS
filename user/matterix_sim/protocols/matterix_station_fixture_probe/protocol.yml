@@ -1,0 +1,42 @@
+type: matterix_station_fixture_probe
+desc: 临时大瓶夹具对齐诊断；检测到瓶身真实夹持后取消，不作完整工艺验收。
+labs:
+- matterix_pipetting_lab
+tasks:
+- name: begin
+  type: Matterix Begin Experiment
+  timeout: 240
+  retries: 0
+  devices:
+    matterix:
+      lab_name: matterix_pipetting_lab
+      name: matterix
+      hold: true
+- name: big_bottle_pick
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_pick
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - begin
+  devices:
+    matterix:
+      ref: begin.matterix
+      hold: true
+- name: big_bottle_decap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_decap
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - big_bottle_pick
+  devices:
+    matterix:
+      ref: big_bottle_pick.matterix
+      hold: true

@@ -1,0 +1,87 @@
+type: matterix_station_pump_probe
+desc: 临时六任务泵行为复现，仅用于本次诊断。
+labs:
+- matterix_pipetting_lab
+tasks:
+- name: begin
+  type: Matterix Begin Experiment
+  timeout: 240
+  retries: 0
+  devices:
+    matterix:
+      lab_name: matterix_pipetting_lab
+      name: matterix
+      hold: true
+- name: mount_tip_1
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_mount
+    parameters:
+      tool: 移液器
+      consumable: TIP 1
+  dependencies:
+  - begin
+  devices:
+    matterix:
+      ref: begin.matterix
+      hold: true
+- name: aspirate_small
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_aspirate
+    parameters:
+      tool: 移液器
+      source: 10 mL 转移瓶
+      volume_ul: 100
+  dependencies:
+  - mount_tip_1
+  devices:
+    matterix:
+      ref: mount_tip_1.matterix
+      hold: true
+- name: dispense_small
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_dispense
+    parameters:
+      tool: 移液器
+      target: 50 mL 接收瓶
+      volume_ul: 100
+  dependencies:
+  - aspirate_small
+  devices:
+    matterix:
+      ref: aspirate_small.matterix
+      hold: true
+- name: discard_tip_1
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_discard
+    parameters:
+      tool: 移液器
+  dependencies:
+  - dispense_small
+  devices:
+    matterix:
+      ref: dispense_small.matterix
+      hold: true
+- name: finish
+  type: Matterix End Experiment
+  timeout: 240
+  retries: 0
+  parameters:
+    expected_phase: 0
+  dependencies:
+  - discard_tip_1
+  devices:
+    matterix:
+      ref: discard_tip_1.matterix
+      hold: false

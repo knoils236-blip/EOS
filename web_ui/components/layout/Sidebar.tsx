@@ -14,6 +14,7 @@ import {
   FolderOpen,
   Microscope,
   GanttChart,
+  Rotate3d,
   Box,
   Settings,
   Sun,
@@ -92,6 +93,11 @@ export function Sidebar() {
       href: '/simulator',
       icon: GanttChart,
       label: '模拟器',
+    },
+    {
+      href: '/digital-twin',
+      icon: Rotate3d,
+      label: '数字孪生',
     },
     {
       href: '/ai-lab',

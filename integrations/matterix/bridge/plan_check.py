@@ -18,6 +18,8 @@ from .station_skills import (
     PIPETTE_ZONES,
     RULES,
     Unknown,
+    GOALS,
+    resolve_workflow,
     unmet_preconditions,
 )
 
@@ -216,6 +218,13 @@ def check_plan(scene_id, steps):
         if not began:
             error(step, f"「{label}」之前需要先执行实验初始化（Matterix Begin Experiment）")
             continue
+        if workflow in GOALS:
+            try:
+                workflow, values = resolve_workflow(workflow, values)
+            except ValueError as exc:
+                error(step, str(exc))
+                continue
+            specs = next(item["parameters"] for item in capabilities.values() if item["workflow_name"] == workflow)
         executed += 1
         if workflow in PHASE_WORKFLOWS:
             required = PHASE_WORKFLOWS[workflow] - 1
@@ -291,6 +300,13 @@ def scene_notes(scene_id):
         for index in sorted(set(PHASE_WORKFLOWS.values()))
     )
     return [
+        (
+            "推荐使用按对象和工具选择的原子技能：station_skill_pick/place/decap/recap、"
+            "station_skill_mount/aspirate/dispense/discard。完整转移用 station_transfer_liquid；"
+            "它包含耗材装载、吸液、吐液和弃置，不能当作一次吸液。"
+            "对象名表示固定的实际容器，10 mL 转移瓶也接收针筒过滤液；50 mL 接收瓶初始为空。"
+            "针筒机构仅支持八位反应器吸液、10 mL 转移瓶吐液，且必须先吸液、再装过滤头、再吐液。"
+        ),
         (
             "先执行 Matterix Begin Experiment（重置场景并独占工作站），最后执行 Matterix End Experiment 释放工作站；"
             "移液站操作只能在两者之间执行，并且都要用依赖串成一条顺序链。"

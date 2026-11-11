@@ -754,9 +754,9 @@ def _tip_keys(snapshot):
 
 def precondition_checks(workflow_name, snapshot, parameters=None):
     """All checks that must hold before a run starts, passed or not."""
-    from .station_skills import RULES, precondition_checks as skill_precondition_checks
+    from .station_skills import WORKFLOWS, precondition_checks as skill_precondition_checks
 
-    if workflow_name in RULES:
+    if workflow_name in WORKFLOWS:
         return skill_precondition_checks(workflow_name, snapshot, parameters)
     if workflow_name in MIXTURE_WORKFLOWS:
         from .station_mixture import preconditions
@@ -863,9 +863,9 @@ def _evaluate_self_transfer(initial, final, parameters, history, extrema):
 def evaluate_postconditions(workflow_name, initial, final, parameters, history, extrema=None):
     """Evaluate workflow semantics from snapshots without trusting a status flag alone."""
 
-    from .station_skills import RULES, evaluate_postconditions as evaluate_skill
+    from .station_skills import WORKFLOWS, evaluate_postconditions as evaluate_skill
 
-    if workflow_name in RULES:
+    if workflow_name in WORKFLOWS:
         return evaluate_skill(workflow_name, initial, final, parameters, history, extrema)
     if workflow_name in MIXTURE_WORKFLOWS:
         from .station_mixture import evaluate

@@ -45,6 +45,30 @@ PYTHONNOUSERSITE=1 /home/ry/anaconda3/envs/chemos2/bin/python -B -m bridge.serve
 
 不要在同一端口上同时运行两个 bridge：gRPC 允许端口复用，第二个进程不会报错，但请求会被随机分给两个进程。
 
+## 移液站数字孪生（Web）
+
+EOS 界面侧边栏有独立的“数字孪生”栏目（`/digital-twin`）：模型铺满整个页面，标题和透明度滑块叠在画布上，自动跟随最新一次协议运行的最新样本（运行中每秒刷新，否则每 5 秒查一次），没有时间轴。Matterix 执行视图里的同名标签页（任务级和协议级都有）用同一个 three.js 组件，多一条可回放的时间轴。
+
+模型由 `tools/export_station_twin.py` 从 `PipettingStation_Operational.usd` 导出到 `web_ui/public/twin/`（GLB 约 28 MB，不进 git，新环境需要先生成一次；USD 或外壳判定规则变了也要重新生成）：
+
+```shell
+/home/ry/anaconda3/envs/matterix/bin/python -m pip install meshoptimizer
+/home/ry/anaconda3/envs/matterix/bin/python integrations/matterix/tools/export_station_twin.py
+```
+
+导出只取可见网格，按连杆、外壳件、耗材和 USD 材质分节点，保留 USD 材质（颜色、金属度、粗糙度、透明度，含按面分配的 GeomSubset）并按 35° 折痕生成法线。减面有误差上限：只合并使表面偏移不超过 0.2 mm 的三角面（287 万 → 71 万）。31 个关节的轴和锚点、耗材初始位姿写进同目录的 JSON。USD 是操作中途的 CAD 快照，开盖位和工具头上挂着演示件（254 号大瓶、116/271/609 号小瓶、120 号吸头、094/095 号针筒、150 mL 样品瓶）；仿真启动前会移除它们，导出脚本读取 `matterix_assets/equipment/pipetting_station.py` 里的同一份清单并跳过，否则夹爪到位时会和这些不存在的瓶子穿模。外壳件沿用录像 `hide_shell` 的判定（`bridge/recording.py` 的 `shell_visual_paths`）。
+
+驱动数据是样本里已有的两项，孪生不关心它们来自仿真还是真机：
+
+| 字段 | 内容 |
+|---|---|
+| `semantics.jointsSI` | 关节名 → 位置（m / rad），关节名与 USD、PLC 轴映射一致 |
+| `semantics.object_poses` | 复位后位移超过 2 mm 的耗材 → base 连杆坐标系下的 `[x, y, z, qx, qy, qz, qw]`；未列出的耗材画在 USD 初始位置 |
+
+接真机时，让真机设备的样本按同样的关节名上报 `jointsSI` 即可驱动机构；真机没有耗材位姿测量时不填 `object_poses`，耗材会停在初始位置。当前只接了仿真。
+
+显示上用 USD 原始材质加环境光照。外壳和门不隐藏，默认透明度 0.75 并描出面板轮廓线；机架和台面默认不透明。两者各有透明度滑块（0 到 0.95，外壳拉到 0 就是整机真实外观），运动机构按原材质显示；耗材的不透明度下限提到 0.65 并描轮廓线（USD 里玻璃和透明塑料的不透明度只有 0.03–0.35，在半透明外壳里几乎看不见）；两个样本之间有位移的关节，其连杆标成橙色并列在“正在运动”里。样本间隔约 0.5 s，中间线性插值，所以快于采样间隔的往复动作看不到。
+
 ## 2026-11-04 实验流程与物理边界修正
 
 EOS 移液站已从仿真动作项和协议关节观测中移除 `service_door_left`、`service_door_right`。环境动作只包含其余 27 个工作流关节；上游 PLC 的原始 29 列在 bridge 内按名称映射，不再向环境传递检修门命令。原始 USD、manifest、门板及碰撞体保留，`hide_shell` 仍仅控制录制可见性。这与整站演示中显式使用的升降前门 `front_door` 无关。

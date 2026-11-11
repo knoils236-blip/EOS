@@ -1,0 +1,175 @@
+type: matterix_station_operations
+desc: 与原子技能整站示例对应的组合操作流程：容器准备、两次 TIP 转移和针筒过滤转移。
+labs:
+- matterix_pipetting_lab
+tasks:
+- name: begin
+  type: Matterix Begin Experiment
+  timeout: 240
+  retries: 0
+  devices:
+    matterix:
+      lab_name: matterix_pipetting_lab
+      name: matterix
+      hold: true
+- name: open_door
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_front_door
+    parameters:
+      open_m: 0.39
+  dependencies:
+  - begin
+  devices:
+    matterix:
+      ref: begin.matterix
+      hold: true
+- name: prepare_vial
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_small_vial_decap_recap
+  dependencies:
+  - open_door
+  devices:
+    matterix:
+      ref: open_door.matterix
+      hold: true
+- name: transfer_small
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_transfer_liquid
+    parameters:
+      tool: 移液器
+      source: 10 mL 转移瓶
+      target: 50 mL 接收瓶
+      volume_ul: 100
+      tip_index: 1
+  dependencies:
+  - prepare_vial
+  devices:
+    matterix:
+      ref: prepare_vial.matterix
+      hold: true
+- name: big_bottle_pick
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_pick
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - transfer_small
+  devices:
+    matterix:
+      ref: transfer_small.matterix
+      hold: true
+- name: big_bottle_decap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_decap
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - big_bottle_pick
+  devices:
+    matterix:
+      ref: big_bottle_pick.matterix
+      hold: true
+- name: transfer_big
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_transfer_liquid
+    parameters:
+      tool: 移液器
+      source: 500 mL 大瓶
+      target: 500 mL 大瓶
+      volume_ul: 100
+      tip_index: 2
+  dependencies:
+  - big_bottle_decap
+  devices:
+    matterix:
+      ref: big_bottle_decap.matterix
+      hold: true
+- name: big_bottle_recap
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_recap
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - transfer_big
+  devices:
+    matterix:
+      ref: transfer_big.matterix
+      hold: true
+- name: big_bottle_place
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_place
+    parameters:
+      object: 500 mL 大瓶
+  dependencies:
+  - big_bottle_recap
+  devices:
+    matterix:
+      ref: big_bottle_recap.matterix
+      hold: true
+- name: filter_transfer
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_transfer_liquid
+    parameters:
+      tool: 针筒机构
+      source: 八位反应器
+      target: 10 mL 转移瓶
+      volume_ul: 50
+  dependencies:
+  - big_bottle_place
+  devices:
+    matterix:
+      ref: big_bottle_place.matterix
+      hold: true
+- name: close_door
+  type: Matterix Capability
+  timeout: 660
+  retries: 0
+  parameters:
+    capability_id: station_skill_front_door
+    parameters:
+      open_m: 0
+  dependencies:
+  - filter_transfer
+  devices:
+    matterix:
+      ref: filter_transfer.matterix
+      hold: true
+- name: finish
+  type: Matterix End Experiment
+  timeout: 240
+  retries: 0
+  parameters:
+    expected_phase: 0
+  dependencies:
+  - close_door
+  devices:
+    matterix:
+      ref: close_door.matterix
+      hold: false

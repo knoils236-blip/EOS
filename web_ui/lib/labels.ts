@@ -34,6 +34,15 @@ export const ASSIGNMENT_MODE_LABELS = { static: '静态', dynamic: '动态', ref
 export const ENTITY_TYPE_LABELS = { devices: '设备', tasks: '任务', labs: '实验室', protocols: '协议' };
 
 export const MATTERIX_CAPABILITY_LABELS: Record<string, string> = {
+  station_skill_pick: '夹取对象',
+  station_skill_place: '放回对象',
+  station_skill_decap: '打开容器盖',
+  station_skill_recap: '关闭容器盖',
+  station_skill_mount: '装载耗材',
+  station_skill_aspirate: '吸液',
+  station_skill_dispense: '吐液',
+  station_skill_discard: '弃置工具耗材',
+  station_transfer_liquid: '转移液体',
   grasp_beaker: '抓取烧杯',
   lift_beaker: '抬升烧杯',
   lower_beaker: '放下烧杯',
@@ -54,43 +63,39 @@ export const MATTERIX_CAPABILITY_LABELS: Record<string, string> = {
   station_full_station_transfer_big: '大瓶定量转移',
   station_full_station_syringe_transfer: '注射器过滤转移',
   station_full_station_close_door: '关闭前门',
-  station_skill_mount_tip: "装载 TIP",
-  station_skill_eject_tip: "卸载 TIP",
-  station_skill_aspirate_from: "从指定区吸液",
-  station_skill_dispense_to: "向指定区吐液",
-  station_skill_small_vial_pick: "夹取 2 mL 小瓶",
-  station_skill_small_vial_place: "放回 2 mL 小瓶",
-  station_skill_small_vial_decap: "打开 2 mL 小瓶盖",
-  station_skill_small_vial_recap: "关闭 2 mL 小瓶盖",
-  station_skill_small_cap_home: "小瓶盖头回静息位",
-  station_skill_big_bottle_pick: "夹取 500 mL 大瓶",
-  station_skill_big_bottle_place: "放回 500 mL 大瓶",
-  station_skill_big_bottle_decap: "打开 500 mL 大瓶盖",
-  station_skill_big_bottle_recap: "关闭 500 mL 大瓶盖",
-  station_skill_syringe_pick: "夹取过滤针筒",
-  station_skill_filter_head_mount: "安装过滤头",
-  station_skill_syringe_aspirate: "针筒吸液",
-  station_skill_syringe_dispense: "针筒吐液",
-  station_skill_syringe_discard: "弃置针筒和过滤头",
-  station_skill_wait: "推进仿真时间",
+  station_skill_mount_tip: '装载 TIP',
+  station_skill_eject_tip: '卸载 TIP',
+  station_skill_aspirate_from: '从指定区吸液',
+  station_skill_dispense_to: '向指定区吐液',
+  station_skill_small_vial_pick: '夹取 2 mL 小瓶',
+  station_skill_small_vial_place: '放回 2 mL 小瓶',
+  station_skill_small_vial_decap: '打开 2 mL 小瓶盖',
+  station_skill_small_vial_recap: '关闭 2 mL 小瓶盖',
+  station_skill_small_cap_home: '小瓶盖头回静息位',
+  station_skill_big_bottle_pick: '夹取 500 mL 大瓶',
+  station_skill_big_bottle_place: '放回 500 mL 大瓶',
+  station_skill_big_bottle_decap: '打开 500 mL 大瓶盖',
+  station_skill_big_bottle_recap: '关闭 500 mL 大瓶盖',
+  station_skill_syringe_pick: '夹取过滤针筒',
+  station_skill_filter_head_mount: '安装过滤头',
+  station_skill_syringe_aspirate: '针筒吸液',
+  station_skill_syringe_dispense: '针筒吐液',
+  station_skill_syringe_discard: '弃置针筒和过滤头',
+  station_skill_wait: '推进仿真时间',
   station_mixture_stock: '加入母液',
   station_mixture_diluent: '加入稀释液',
   station_mixture_close: '配液结束与关门',
 };
 
-export function matterixCapabilityLabel(
-  capabilityId: string,
-  parameters: Record<string, unknown> = {},
-): string {
+export function matterixCapabilityLabel(capabilityId: string, parameters: Record<string, unknown> = {}): string {
   const label = MATTERIX_CAPABILITY_LABELS[capabilityId] ?? capabilityId;
   const nested = parameters.parameters;
-  const volume = parameters.volume_ul ?? (
-    nested && typeof nested === 'object' && !Array.isArray(nested)
-      ? (nested as Record<string, unknown>).volume_ul : undefined
-  );
-  return typeof volume === 'number' && Number.isFinite(volume)
-    ? `${label}（${volume} µL）`
-    : label;
+  const volume =
+    parameters.volume_ul ??
+    (nested && typeof nested === 'object' && !Array.isArray(nested)
+      ? (nested as Record<string, unknown>).volume_ul
+      : undefined);
+  return typeof volume === 'number' && Number.isFinite(volume) ? `${label}（${volume} µL）` : label;
 }
 
 export function matterixTaskLabel(type: string, parameters: Record<string, unknown> = {}): string {
@@ -254,5 +259,7 @@ export const MATTERIX_FIELD_LABELS: Record<string, string> = {
 
 export function matterixFieldLabel(field: string): string {
   const normalized = field.toLowerCase();
-  return MATTERIX_FIELD_LABELS[normalized] ?? MATTERIX_FIELD_LABELS[normalized.split('.').at(-1) ?? normalized] ?? field;
+  return (
+    MATTERIX_FIELD_LABELS[normalized] ?? MATTERIX_FIELD_LABELS[normalized.split('.').at(-1) ?? normalized] ?? field
+  );
 }

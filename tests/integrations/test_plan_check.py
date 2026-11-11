@@ -310,3 +310,37 @@ def test_source_composites_share_tip_and_cap_rules():
                 op("self", "station_pipette_zhongping1", volume_ul=50), op("pp", "station_small_cap_pick_place"),
                 op("f", "station_skill_syringe_filter_transfer", volume_ul=50), end(0)]
     assert messages(transfer) == []
+
+
+def test_object_based_skills_share_the_plan_state_with_existing_operations():
+    steps = [BEGIN,
+             op("mount", "station_skill_mount", tool="移液器", consumable="TIP 2"),
+             op("aspirate", "station_skill_aspirate", tool="移液器", source="10 mL 转移瓶", volume_ul=100),
+             op("dispense", "station_skill_dispense", tool="移液器", target="50 mL 接收瓶", volume_ul=100),
+             op("discard", "station_skill_discard", tool="移液器"), end(0)]
+    assert messages(steps) == []
+    reused = [*steps[:-1], op("again", "station_skill_mount", tool="移液器", consumable="TIP 2")]
+    assert "TIP 2 号位" in messages(reused)[0][1]
+    assert "先吸液" in messages([BEGIN, steps[1], steps[3]])[0][1]
+    invalid = [BEGIN, op("bad", "station_skill_aspirate", tool="移液器", source="八位反应器")]
+    assert "不支持" in messages(invalid)[0][1]
+
+
+def test_object_based_syringe_skills_preserve_the_filter_order():
+    mount = op("syringe", "station_skill_mount", tool="针筒机构", consumable="针筒")
+    aspirate = op("aspirate", "station_skill_aspirate", tool="针筒机构", source="八位反应器", volume_ul=50)
+    filter_head = op("filter", "station_skill_mount", tool="针筒机构", consumable="过滤头")
+    dispense = op("dispense", "station_skill_dispense", tool="针筒机构", target="10 mL 转移瓶", volume_ul=50)
+    discard = op("discard", "station_skill_discard", tool="针筒机构")
+    assert messages([BEGIN, mount, aspirate, filter_head, dispense, discard, end(0)]) == []
+    assert "过滤头会挡住吸液" in messages([BEGIN, mount, filter_head, aspirate])[0][1]
+
+
+def test_object_based_container_skills_require_pick_and_close_before_release():
+    pick = op("pick", "station_skill_pick", object="500 mL 大瓶")
+    decap = op("decap", "station_skill_decap", object="500 mL 大瓶")
+    transfer = op("transfer", "station_transfer_liquid", source="500 mL 大瓶", target="50 mL 接收瓶")
+    recap = op("recap", "station_skill_recap", object="500 mL 大瓶")
+    place = op("place", "station_skill_place", object="500 mL 大瓶")
+    assert messages([BEGIN, pick, decap, transfer, recap, place, end(0)]) == []
+    assert "需要先夹取大瓶" in messages([BEGIN, decap])[0][1]

@@ -6,8 +6,6 @@ import type { BoundPreset, EditorScene } from '../lib/scenePresets';
 
 export const TASK_DRAG_TYPE = 'application/x-eos-task-type';
 export const CAPABILITY_DRAG_TYPE = 'application/x-eos-scene-capability';
-// Atomic Matterix skills are for debugging and custom sequences, so they start folded
-const COLLAPSED_GROUPS = new Set(['原子技能']);
 
 interface TaskPaletteProps {
   scenes: EditorScene[];
@@ -47,7 +45,7 @@ const TaskPaletteComponent = ({
       (preset) =>
         preset.scene === scene && (!q || `${preset.label} ${preset.id} ${preset.description}`.toLowerCase().includes(q))
     );
-    return ['实验边界', '场景操作', '分析与反馈', '原子技能']
+    return ['实验边界', '原子技能', '场景操作', '分析与反馈']
       .map((group) => [group, matches.filter((p) => p.group === group)] as const)
       .filter(([, items]) => items.length > 0);
   }, [presets, scene, query]);
@@ -150,7 +148,7 @@ const TaskPaletteComponent = ({
           </p>
         )}
         {groups.map(([group, items]) => (
-          <details key={group} open={!COLLAPSED_GROUPS.has(group) || query.trim() !== ''} className="mb-4">
+          <details key={group} open className="mb-4">
             <summary className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 cursor-pointer">
               {group}
               <span>{items.length}</span>

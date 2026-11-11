@@ -422,6 +422,99 @@ SKILLS = (
     ),
 )
 
+# Stable laboratory objects, independent of CAD names and PLC work-area names.
+OBJECTS = {
+    "10 mL 转移瓶": {"asset": semantics.SOURCE_BOTTLE, "zone": "小瓶区", "kind": "bottle"},
+    "50 mL 接收瓶": {"asset": semantics.TARGET_BOTTLE, "zone": "中瓶区1", "kind": "bottle"},
+    "2 mL 小瓶": {"asset": semantics.SMALL_VIAL, "zone": "小开盖区", "kind": "vial"},
+    "500 mL 大瓶": {"asset": semantics.BIG_BOTTLE, "zone": "大开盖区", "kind": "bottle"},
+    "八位反应器": {"asset": "EightPositionReactor_662", "zone": "中瓶区2", "kind": "reactor"},
+}
+_CONTAINERS = {"2 mL 小瓶": "small_vial", "500 mL 大瓶": "big_bottle"}
+_PIPETTE_OBJECTS = tuple(name for name in OBJECTS if name != "八位反应器")
+
+# Each binding selects an existing, independently checked native skill. Unsupported combinations have no binding.
+GOALS = {
+    **{
+        f"skill_{action}": {
+            "label": label,
+            "selectors": ("object",),
+            "parameters": {"object": _enum("2 mL 小瓶", _CONTAINERS, "容器")},
+            "bindings": {(obj,): (f"skill_{family}_{action}", {}) for obj, family in _CONTAINERS.items()},
+        }
+        for action, label in (("pick", "夹取对象"), ("place", "放回对象"),
+                              ("decap", "打开容器盖"), ("recap", "关闭容器盖"))
+    },
+    "skill_mount": {
+        "label": "装载耗材",
+        "selectors": ("tool", "consumable"),
+        "parameters": {"tool": _enum("移液器", ("移液器", "针筒机构"), "工具"),
+                       "consumable": _enum("TIP 1", ("TIP 1", "TIP 2", "针筒", "过滤头"), "耗材")},
+        "bindings": {
+            ("移液器", "TIP 1"): ("skill_mount_tip", {"tip_index": 1}),
+            ("移液器", "TIP 2"): ("skill_mount_tip", {"tip_index": 2}),
+            ("针筒机构", "针筒"): ("skill_syringe_pick", {}),
+            ("针筒机构", "过滤头"): ("skill_filter_head_mount", {}),
+        },
+    },
+    **{
+        f"skill_{action}": {
+            "label": label,
+            "selectors": ("tool", endpoint),
+            "parameters": {"tool": _enum("移液器", ("移液器", "针筒机构"), "工具"),
+                           endpoint: _enum(default, OBJECTS, endpoint_label), "volume_ul": dict(VOLUME)},
+            "bindings": {
+                **{("移液器", obj): (native, {"zone": OBJECTS[obj]["zone"]}) for obj in _PIPETTE_OBJECTS},
+                ("针筒机构", syringe_object): (f"skill_syringe_{action}", {}),
+            },
+        }
+        for action, label, endpoint, endpoint_label, default, native, syringe_object in (
+            ("aspirate", "吸液", "source", "液源对象", "10 mL 转移瓶", "skill_aspirate_from", "八位反应器"),
+            ("dispense", "吐液", "target", "目标对象", "50 mL 接收瓶", "skill_dispense_to", "10 mL 转移瓶"),
+        )
+    },
+    "skill_discard": {
+        "label": "弃置工具耗材",
+        "selectors": ("tool",),
+        "parameters": {"tool": _enum("移液器", ("移液器", "针筒机构"), "工具")},
+        "bindings": {("移液器",): ("skill_eject_tip", {}), ("针筒机构",): ("skill_syringe_discard", {})},
+    },
+    "transfer_liquid": {
+        "label": "转移液体（含耗材取用与弃置）",
+        "selectors": ("tool", "source", "target"),
+        "parameters": {"tool": _enum("移液器", ("移液器", "针筒机构"), "工具"),
+                       "source": _enum("10 mL 转移瓶", OBJECTS, "液源对象"),
+                       "target": _enum("50 mL 接收瓶", OBJECTS, "目标对象"),
+                       "volume_ul": dict(VOLUME),
+                       "tip_index": {**TIP_INDEX, "label": "TIP 槽位（移液器）"}},
+        "bindings": {
+            **{("移液器", source, target): ("skill_pipette_transfer", {
+                "source": OBJECTS[source]["zone"], "target": OBJECTS[target]["zone"]})
+               for source in _PIPETTE_OBJECTS for target in _PIPETTE_OBJECTS},
+            ("针筒机构", "八位反应器", "10 mL 转移瓶"): ("skill_syringe_filter_transfer", {}),
+        },
+    },
+}
+
+_GOAL_LEAVES = {leaf for goal in GOALS.values() for leaf, _ in goal["bindings"].values()}
+_COMPOSITE_SKILLS = {"skill_pipette_transfer", "skill_syringe_filter_transfer"}
+for _item in SKILLS:
+    if _item["workflow_name"] in _GOAL_LEAVES:
+        _item["tier"] = "operation" if _item["workflow_name"] in _COMPOSITE_SKILLS else "hidden"
+
+_NATIVE_BY_WORKFLOW = {item["workflow_name"]: item for item in SKILLS}
+SKILLS += tuple(
+    _skill(
+        name, goal["label"], _NATIVE_BY_WORKFLOW[next(iter(goal["bindings"].values()))[0]]["constructor"],
+        "选择实验对象和工具，执行对应的原生站点技能；支持的组合由绑定表限定。",
+        extra_parameters=goal["parameters"],
+        success_criteria=["满足所选对象与工具对应技能的前置条件",
+                          "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"],
+        tier="operation" if name == "transfer_liquid" else "skill",
+    )
+    for name, goal in GOALS.items()
+)
+
 SKILL_BY_WORKFLOW = {item["workflow_name"]: item for item in SKILLS}
 WORKFLOWS = frozenset(SKILL_BY_WORKFLOW)
 
@@ -477,6 +570,30 @@ def _registered_evidence(workflow_name):
 
 def catalog_workflow_entry(workflow_name):
     item = descriptor(workflow_name)
+    if workflow_name in GOALS:
+        goal = GOALS[workflow_name]
+        return {
+            "source_symbol": item["constructor"],
+            "kind": "goal_conditioned_skill",
+            "enabled_capability": item["id"],
+            "fixed_parameters": {},
+            "parameter_ranges": item["parameters"],
+            "bindings": [
+                {"objects": dict(zip(goal["selectors"], key, strict=True)),
+                 "workflow_name": native, "fixed_parameters": fixed,
+                 "semantic_acceptance": descriptor(native)["success_criteria"]}
+                for key, (native, fixed) in goal["bindings"].items()
+            ],
+            "semantic_acceptance": item["success_criteria"],
+            "verified_evidence": [],
+            "reference_evidence": [
+                {"path": str(SKILLS_SOURCE), "sha256": _source_sha256(SKILLS_SOURCE),
+                 "marker": constructor, "scope": "static_source"}
+                for constructor in sorted({descriptor(native)["constructor"]
+                                           for native, _ in goal["bindings"].values()})
+            ],
+            "disabled_reason": None,
+        }
     if item["source_workflow"]:
         return {
             "source_symbol": workflow_name,
@@ -530,6 +647,31 @@ def _parameters_or_defaults(workflow_name, parameters):
     return values
 
 
+def resolve_workflow(workflow_name, parameters):
+    """Bind a laboratory goal to a native skill, keeping transport and recording parameters intact."""
+    values = _parameters_or_defaults(workflow_name, parameters)
+    if workflow_name not in GOALS:
+        return workflow_name, values
+    goal = GOALS[workflow_name]
+    key = tuple(values[name] for name in goal["selectors"])
+    try:
+        native, fixed = goal["bindings"][key]
+    except (KeyError, TypeError):
+        raise ValueError(f"{goal['label']}不支持此对象/工具组合：{key}") from None
+    specs = descriptor(native)["parameters"]
+    return native, _parameters_or_defaults(native, {
+        **{name: value for name, value in values.items() if name in specs}, **fixed,
+    })
+
+
+def goal_bindings(workflow_name):
+    """Valid selector combinations for authoring; the server independently validates every request."""
+    if workflow_name not in GOALS:
+        return []
+    goal = GOALS[workflow_name]
+    return [dict(zip(goal["selectors"], key, strict=True)) for key in goal["bindings"]]
+
+
 def apply_workflow_parameters(workflow, parameters):
     """Replace the requested volume in an exported station workflow before execution."""
     if "volume_ul" not in parameters:
@@ -560,6 +702,7 @@ def build_workflow(workflow_name, parameters, settle_first=True):
     ``settle_first`` prepends the 2 s settle that lets freshly spawned consumables land; a scene already at rest
     after a succeeded task skips it.
     """
+    workflow_name, parameters = resolve_workflow(workflow_name, parameters)
     skills = importlib.import_module("matterix_plc.actions.skills")
     compat = importlib.import_module("matterix_sm._compat")
     values = _parameters_or_defaults(workflow_name, parameters)
@@ -1434,15 +1577,15 @@ RULES = {
         "verify": lambda i, f, h, v, x: _evaluate_wait(i, f, h, v),
     },
 }
-if set(RULES) != WORKFLOWS:
+if set(RULES) != WORKFLOWS - GOALS.keys():
     raise RuntimeError(f"Station skill rules do not match SKILLS: {sorted(set(RULES) ^ WORKFLOWS)}")
 
 
 def evaluate_postconditions(workflow_name, initial, final, parameters, history, extrema=None):
-    if workflow_name not in RULES:
+    if workflow_name not in WORKFLOWS:
         return semantics._failure(workflow_name, "workflow is not enabled for execution", "workflow")
-    checks = RULES[workflow_name]["verify"](
-        initial, final, history, _parameters_or_defaults(workflow_name, parameters), extrema)
+    native, values = resolve_workflow(workflow_name, parameters)
+    checks = RULES[native]["verify"](initial, final, history, values, extrema)
     return {
         "workflow_name": workflow_name,
         "passed": all(item["passed"] for item in checks),
@@ -1451,9 +1594,9 @@ def evaluate_postconditions(workflow_name, initial, final, parameters, history, 
 
 
 def precondition_checks(workflow_name, snapshot, parameters=None):
-    values = _parameters_or_defaults(workflow_name, parameters)
     checks = []
     try:
+        workflow_name, values = resolve_workflow(workflow_name, parameters)
         state = SnapshotState(snapshot)
         for label, test, _ in RULES[workflow_name]["pre"]:
             result = test(state, values)
@@ -1482,8 +1625,10 @@ def unmet_preconditions(workflow_name, state, values, raw):
 
 __all__ = [
     "CAP_FIX",
+    "GOALS",
     "MAX_VOLUME_UL",
     "MIN_VOLUME_UL",
+    "OBJECTS",
     "PIPETTE_ZONES",
     "RULES",
     "SKILLS",
@@ -1498,6 +1643,8 @@ __all__ = [
     "catalog_workflow_entry",
     "descriptor",
     "evaluate_postconditions",
+    "goal_bindings",
     "precondition_checks",
+    "resolve_workflow",
     "unmet_preconditions",
 ]

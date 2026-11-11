@@ -6,6 +6,14 @@
 
 ## 移液站完整实验
 
+重新设计的原子技能入口按“动作 + 对象/工具”选择：夹取、放回、开盖、合盖、装载耗材、吸液、吐液、弃置，
+加上前门开合、小瓶盖头回静息位和等待。编辑器优先展示原子技能，按工具联动可用对象；完整 TIP 移液和针筒过滤转移属于场景操作。
+详细对象绑定、全部参考工作覆盖表与验收边界见 [场景能力设计](../../integrations/matterix/SCENE_CAPABILITY_DESIGN.md)。
+
+新增 `matterix_station_skills` 示例，把参考整站工作展开成 26 个 EOS 任务；
+每一步都可以调整或替换，保持同一设备占用、耗材和液量状态。它是自定义技能协议，结束时使用 `expected_phase: 0`，
+不递增七阶段操作计数；原 `matterix_full_station` 继续使用七阶段验收。
+
 默认入口 `./start_eos.sh` 加载 `matterix_pipetting_lab` / `matterix_full_station`，同时加载 `mixture_mock_lab` / `mixture_mock` 供快速闭环实验使用。`./start_eos.sh --no-matterix` 仅加载配液 Mock。
 在 EOS 中提交 `matterix_full_station`，协议包含初始化、七个操作阶段和结束检查，共九个任务：
 

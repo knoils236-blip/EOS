@@ -28,6 +28,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.24",
     "@types/js-yaml": "^4.0.9",
+    "@types/three": "^0.187.0",
     "@xyflow/react": "^12.10.1",
     "ai": "^6.0.116",
     "chart.js": "^4.5.1",
@@ -58,6 +59,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "tailwind-merge": "^3.5.0",
+    "three": "^0.187.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },

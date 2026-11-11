@@ -3,6 +3,8 @@
 import copy
 import dataclasses
 import json
+import os
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -20,9 +22,12 @@ from bridge.station_experiment import WORKFLOWS as FULL_WORKFLOWS
 from bridge.station_mixture import WORKFLOWS as MIXTURE_WORKFLOWS
 from bridge.recording import OVERVIEW_TARGET
 from bridge.station_worker import StationSessionWorker
+from bridge.station_fixture import align_bottle_fixture, center_bottle_clamp_frame
 from matterix_plc.actions import skills as native_skills
 from matterix_plc.executor import TRAVERSE_AXIS, _default_height_model, plan_macro
 from matterix_plc.object_frames import ConsumableIndex
+from matterix_plc.programs import PROGRAMS
+from matterix_sm._compat import HAS_ISAACLAB
 
 
 ROOT = Path(__file__).resolve().parents[2] / "integrations/matterix/bridge"
@@ -100,7 +105,7 @@ def test_records_reconcile_fully_and_expose_only_bounded_real_parameters():
     capabilities = {item["id"]: item for item in catalog()}
     raw_capabilities = json.loads((ROOT / "capabilities.json").read_text(encoding="utf-8"))
     raw_catalog = json.loads((ROOT / "station_catalog.json").read_text(encoding="utf-8"))
-    assert len(station_skills.SKILLS) == 25
+    assert len(station_skills.SKILLS) == 25 + len(station_skills.GOALS)
 
     for item in station_skills.SKILLS:
         if not item["source_workflow"]:
@@ -650,11 +655,34 @@ def test_service_doors_are_absent_from_protocol_joint_observations(monkeypatch):
     worker.session_sim_s, worker.completed_phase = 0.0, 0
     monkeypatch.setattr(semantics, "snapshot_semantics", lambda env: {"device_state": {}})
     monkeypatch.setattr(worker, "_station_driver", lambda: types.SimpleNamespace(
-        operations=types.SimpleNamespace(air_ml=0.0, spilled_ml=0.0)))
+        operations=types.SimpleNamespace(air_ml=0.0, spilled_ml=0.0, poses={}, tool_path=str)))
     measured = worker._semantics()
     assert measured["jointsSI"] == {"rotate_small_cap": 2.0, "rotate_large_cap": 4.0}
     assert measured["device_state"]["joint_positions"] == measured["jointsSI"]
+    assert measured["object_poses"] == {}
     assert not {"service_door_left", "service_door_right"} & worker.joint_units.keys()
+
+
+def test_twin_object_poses_list_only_consumables_moved_since_reset():
+    import numpy as np  # noqa: PLC0415
+
+    def pose(x, y, z):
+        matrix = np.eye(4)
+        matrix[:3, 3] = x, y, z
+        return matrix
+
+    operations = types.SimpleNamespace(root="/S", tool_path=lambda name: f"/S/Mechanism/Links/{name}", poses={
+        "/S/Mechanism/Links/base": pose(10, 0, 0),  # the env origin must drop out
+        "/S/Mechanism/Links/gantry_y": pose(10, 1, 1),
+        "/S/Consumables/vial": pose(10.1, 0.2, 0.9),
+        "/S/Consumables/tip": pose(10.3, 0.2, 0.9),
+    })
+    worker = object.__new__(StationSessionWorker)
+    worker.object_reset_poses = None
+    assert worker._displaced_object_poses(operations) == {}
+    operations.poses["/S/Consumables/vial"] = pose(10.1, 0.25, 0.95)
+    operations.poses["/S/Consumables/tip"] = pose(10.3, 0.2, 0.901)  # settling, below the 2 mm threshold
+    assert worker._displaced_object_poses(operations) == {"vial": [0.1, 0.25, 0.95, 0.0, 0.0, 0.0, 1.0]}
 
 
 @pytest.mark.parametrize("parameters", [
@@ -847,3 +875,143 @@ def test_front_door_acceptance_reads_the_measured_joint():
     final["device_state"]["joint_positions"]["front_door"] = 0.002836  # the blocked physics door
     assert not station_skills.evaluate_postconditions(
         "skill_front_door", initial, final, {"open_m": 0.39}, [final])["passed"]
+
+
+@pytest.fixture(scope="module")
+def goal_action_trees_verified():
+    if HAS_ISAACLAB:
+        return False
+    # Native config construction needs Isaac Lab; execute these same cases in the installed Matterix runtime.
+    completed = subprocess.run(
+        ["/home/ry/anaconda3/envs/matterix/bin/python", "-m", "pytest", __file__,
+         "-k", ("test_goal_bindings_build_the_same_native_action_tree or "
+                "test_every_exported_native_skill_remains_reachable or "
+                "test_liquid_modes_stop_before_retraction or "
+                "test_big_bottle_opening_pose_matches_fixture"),
+         "-q", "-p", "no:cacheprovider", "--tb=short"],
+        cwd=ROOT.parents[2], env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        capture_output=True, text=True, timeout=60, check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    return True
+
+
+@pytest.mark.parametrize(("workflow", "key", "native", "fixed"), [
+    (name, key, native, fixed)
+    for name, goal in station_skills.GOALS.items()
+    for key, (native, fixed) in goal["bindings"].items()
+])
+def test_goal_bindings_build_the_same_native_action_tree(workflow, key, native, fixed, goal_action_trees_verified):
+    goal = station_skills.GOALS[workflow]
+    parameters = dict(zip(goal["selectors"], key, strict=True))
+    if "volume_ul" in goal["parameters"]:
+        parameters["volume_ul"] = 113
+    task = validate_task({"request_id": "goal-test", "session_id": "session-test",
+                          "capability_id": f"station_{workflow}", "parameters": parameters})
+    resolved, values = station_skills.resolve_workflow(workflow, task["parameters"])
+    assert resolved == native
+    assert all(values[name] == value for name, value in fixed.items())
+    if "volume_ul" in parameters:
+        assert values["volume_ul"] == 113
+    if goal_action_trees_verified:
+        return
+    for settle in (True, False):
+        actual = station_skills.build_workflow(workflow, task["parameters"], settle_first=settle)
+        expected = station_skills.build_workflow(native, values, settle_first=settle)
+        assert dataclasses.asdict(actual) == dataclasses.asdict(expected)
+
+
+@pytest.mark.parametrize(("workflow", "parameters"), [
+    ("skill_mount", {"tool": "移液器", "consumable": "过滤头"}),
+    ("skill_aspirate", {"tool": "移液器", "source": "八位反应器"}),
+    ("skill_dispense", {"tool": "针筒机构", "target": "50 mL 接收瓶"}),
+    ("transfer_liquid", {"tool": "针筒机构", "source": "10 mL 转移瓶", "target": "八位反应器"}),
+])
+def test_unsupported_tool_object_combinations_are_rejected_at_the_request_boundary(workflow, parameters):
+    with pytest.raises(ValueError, match="不支持此对象/工具组合"):
+        validate_task({"request_id": "invalid-goal", "session_id": "session-test",
+                       "capability_id": f"station_{workflow}", "parameters": parameters})
+    assert any(not check["passed"] for check in semantics.precondition_checks(workflow, snapshot(), parameters))
+
+
+def test_goal_preconditions_and_acceptance_keep_the_native_physical_checks():
+    params = {"tool": "移液器", "source": "500 mL 大瓶", "volume_ul": 50}
+    checks = semantics.precondition_checks("skill_aspirate", snapshot(tip_on=True), params)
+    assert any(not check["passed"] for check in checks)  # capped bottle, even though its ledger contains liquid
+    initial = snapshot()
+    unchanged = semantics.evaluate_postconditions("skill_mount", initial, initial,
+                                                  {"tool": "移液器", "consumable": "TIP 1"}, [initial])
+    assert not unchanged["passed"]  # an unchanged final state never proves a grasp
+    moved = copy.deepcopy(initial)
+    moved["device_state"]["joint_positions"]["front_door"] = 0.002836
+    assert not semantics.evaluate_postconditions("skill_front_door", initial, moved,
+                                                 {"open_m": 0.39}, [moved])["passed"]
+
+
+def test_every_exported_native_skill_remains_reachable(goal_action_trees_verified):
+    constructors = {item["constructor"] for item in station_skills.SKILLS}
+    assert {cfg.__name__ for cfg in native_skills.SKILL_CFGS} <= constructors
+    if goal_action_trees_verified:
+        return
+    programs = set()
+
+    def collect(node):
+        if type(node).__name__ == "ProgramStepCfg":
+            programs.add(node.entry_step)
+        for child in getattr(node, "sub_actions", ()):
+            collect(child)
+
+    for item in station_skills.SKILLS:
+        if not item["source_workflow"] and item["workflow_name"] not in station_skills.GOALS:
+            collect(station_skills.build_workflow(item["workflow_name"], {}))
+    assert set(PROGRAMS) <= programs
+
+
+def test_liquid_modes_stop_before_retraction(goal_action_trees_verified, monkeypatch):
+    if goal_action_trees_verified:
+        return
+    from bridge.station_worker import _program_steps
+    from bridge.station_liquid import stop_liquid_before_retract
+    from matterix_sm.action_base import ActionBase
+
+    worker = StationSessionWorker.__new__(StationSessionWorker)
+    worker.scene_settled = True
+    monkeypatch.setattr(worker, "_use_live_positions", lambda _: None)
+    for workflow in ("skill_aspirate_from", "skill_dispense_to", "skill_pipette_transfer"):
+        config = worker._load_workflow(workflow, {"volume_ul": 100})
+        for step in _program_steps(config):
+            if step.step in (510, 710):
+                action = ActionBase.from_cfg(step)
+                stop_liquid_before_retract([action])
+                requests = [info.additional_info.get("request") for info in action.semantics]
+                assert {"action": "stop"} in requests, "pump mode must end before Z retracts"
+                assert step.settle_time >= 1.0
+            if step.step in (500, 700):
+                assert step.settle_time >= 1.0, "position must settle before liquid mode starts"
+
+
+def test_big_bottle_opening_pose_matches_fixture(goal_action_trees_verified):
+    if goal_action_trees_verified:
+        return
+    from bridge.station_worker import _program_steps
+    from matterix_sm.action_base import ActionBase
+
+    assets = station_skills.SKILLS_SOURCE.parents[4] / "assets/PipettingStation_Asset_v4/Asset"
+    manifest = json.loads((assets / "operational_manifest.json").read_text())
+    rig = json.loads((assets / "rig_manifest.json").read_text())
+    body = manifest["consumables"][semantics.BIG_BOTTLE]["pose"]
+    fixture = rig["frames"]["bottle_clamp"]["offset"]
+    pick = plan_macro("大开盖机构去大瓶区取瓶", 1, twin_alignment=True).joint_targets
+    for workflow in ("skill_big_bottle_decap", "skill_big_bottle_recap"):
+        config = station_skills.build_workflow(workflow, {})
+        actions = [ActionBase.from_cfg(step) for step in _program_steps(config)]
+        align_bottle_fixture(actions, assets)
+        for action in actions:
+            for index, axis in enumerate(("pipette_y", "gantry")):
+                if axis in action.joint_targets:
+                    center = body[index] + action.joint_targets[axis] - pick[axis]
+                    assert center == pytest.approx(fixture[index], abs=1e-9)
+    frame = {"offset": [0.0797, -0.049, 0.855], "worldAtRest": [0.0797, -0.049, 0.855]}
+    centered = center_bottle_clamp_frame(frame, assets)
+    assert centered["offset"] == pytest.approx([*fixture[:2], 0.855])
+    assert centered["worldAtRest"] == pytest.approx(centered["offset"])

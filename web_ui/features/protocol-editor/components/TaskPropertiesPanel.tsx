@@ -14,7 +14,13 @@ import { ResourceAssignment as ResourceAssignmentComponent } from './ResourceAss
 import { BooleanParameterField } from '@/features/tasks/components/parameter-fields/BooleanParameterField';
 import { NumericParameterField } from '@/features/tasks/components/parameter-fields/NumericParameterField';
 import { ChoiceParameterField } from '@/features/tasks/components/parameter-fields/ChoiceParameterField';
-import { presetParameterValues, withPresetParameterValues, type BoundPreset } from '../lib/scenePresets';
+import {
+  presetChoices,
+  presetParameterValues,
+  updatePresetParameters,
+  withPresetParameterValues,
+  type BoundPreset,
+} from '../lib/scenePresets';
 import { iterateInputParameters } from '@/lib/utils/paramGroups';
 import { IDENTIFIER_ERROR_MESSAGE, isValidIdentifier } from '@/lib/utils/identifier';
 
@@ -473,17 +479,29 @@ export function TaskPropertiesPanel({
                 {Object.entries(preset.parameter_specs).map(([key, parameter]) => {
                   const values = presetParameterValues(taskNode);
                   const spec: ParameterSpec = {
-                    type: parameter.type === 'boolean' ? 'bool' : parameter.type === 'integer' ? 'int' : parameter.type === 'string' ? 'choice' : 'float',
+                    type:
+                      parameter.type === 'boolean'
+                        ? 'bool'
+                        : parameter.type === 'integer'
+                          ? 'int'
+                          : parameter.type === 'string'
+                            ? 'choice'
+                            : 'float',
                     value: parameter.default,
-                    choices: parameter.type === 'string' ? parameter.choices?.map(String) : undefined,
+                    choices: parameter.type === 'string' ? presetChoices(preset, key, values) : undefined,
                     min: parameter.min ?? undefined,
                     max: parameter.max ?? undefined,
                     unit: parameter.unit,
                   };
                   const change = (value: unknown) => {
-                    const next = { ...values };
+                    let next = { ...values };
                     if (value === undefined || value === '') delete next[key];
-                    else next[key] = ['boolean', 'string'].includes(parameter.type) || Number.isNaN(Number(value)) ? value : Number(value);
+                    else
+                      next[key] =
+                        ['boolean', 'string'].includes(parameter.type) || Number.isNaN(Number(value))
+                          ? value
+                          : Number(value);
+                    next = updatePresetParameters(preset, next, key, next[key]);
                     onUpdate(taskNode.name, { parameters: withPresetParameterValues(taskNode, next) });
                   };
                   const label = `${parameter.label}${parameter.unit ? `（${parameter.unit}）` : ''}`;
@@ -493,15 +511,14 @@ export function TaskPropertiesPanel({
                     return (
                       <InputField key={key} name={label} spec={spec} value={current} placeholder="" onChange={change} />
                     );
-                  const Field = parameter.type === 'boolean' ? BooleanParameterField : parameter.type === 'string' ? ChoiceParameterField : NumericParameterField;
+                  const Field =
+                    parameter.type === 'boolean'
+                      ? BooleanParameterField
+                      : parameter.type === 'string'
+                        ? ChoiceParameterField
+                        : NumericParameterField;
                   return (
-                    <Field
-                      key={key}
-                      name={label}
-                      spec={spec}
-                      value={current ?? parameter.default}
-                      onChange={change}
-                    />
+                    <Field key={key} name={label} spec={spec} value={current ?? parameter.default} onChange={change} />
                   );
                 })}
               </div>
@@ -511,7 +528,10 @@ export function TaskPropertiesPanel({
               (() => {
                 const structure = iterateInputParameters(taskSpec.input_parameters);
                 const renderParam = (name: string, spec: ParameterSpec) => {
-                  if (preset?.parameter_specs && (name === 'capability_id' || name === 'parameters' || name in preset.parameter_specs))
+                  if (
+                    preset?.parameter_specs &&
+                    (name === 'capability_id' || name === 'parameters' || name in preset.parameter_specs)
+                  )
                     return null;
                   // User override falls back to the task spec default; serializer strips equal-to-default values
                   const effectiveValue = taskNode.parameters?.[name] ?? spec.value;

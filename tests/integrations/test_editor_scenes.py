@@ -123,9 +123,10 @@ async def test_skills_are_a_separate_group_and_fixed_or_hidden_entries_stay_out(
     scenes = await LabService(config, Mock()).get_editor_scenes()
     station = next(scene for scene in scenes if scene["scene_id"] == "pipetting_realtime")
     groups = {preset["id"]: preset["group"] for preset in station["presets"]}
-    assert groups["station_skill_mount_tip"] == "原子技能"
+    assert groups["station_skill_mount"] == "原子技能"
+    assert "station_skill_mount_tip" not in groups
     assert groups["station_full_station_open_door"] == "场景操作"
-    aspirate = next(p for p in station["presets"] if p["id"] == "station_skill_aspirate_from")
+    aspirate = next(p for p in station["presets"] if p["id"] == "station_skill_aspirate")
     assert "index" not in aspirate["parameter_specs"]
     assert "index" not in aspirate["task"]["parameters"]["parameters"]
     beaker = next(scene for scene in scenes if scene["scene_id"] == "franka_beaker")

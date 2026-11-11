@@ -24,6 +24,7 @@ def _volume_operations() -> dict[str, dict]:
         item["id"]: item["parameters"]
         for item in catalog()
         if item["tier"] == "operation" and "volume_ul" in item["parameters"]
+        and set(item["parameters"]) == {"volume_ul", "timeout_s", "record_video", "hide_shell"}
     }
 
 

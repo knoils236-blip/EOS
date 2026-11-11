@@ -5,7 +5,14 @@ import { registerHooks } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import yaml from 'js-yaml';
-import { bindScenePresets, createPresetTask, findTaskPreset, sceneTaskLabel } from '../features/protocol-editor/lib/scenePresets.ts';
+import {
+  bindScenePresets,
+  createPresetTask,
+  findTaskPreset,
+  sceneTaskLabel,
+  presetChoices,
+  updatePresetParameters,
+} from '../features/protocol-editor/lib/scenePresets.ts';
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -31,6 +38,52 @@ const { matterixTaskLabel } = await import('../lib/labels.ts');
 const catalog = JSON.parse(
   await readFile(new URL('../../integrations/matterix/bridge/capabilities.json', import.meta.url), 'utf8')
 );
+const stationCatalog = JSON.parse(
+  await readFile(new URL('../../integrations/matterix/bridge/station_catalog.json', import.meta.url), 'utf8')
+);
+
+test('goal selectors offer only executable tool/object combinations and preserve volumes', () => {
+  const capability = catalog.find((item) => item.id === 'station_transfer_liquid');
+  const preset = {
+    parameter_specs: capability.parameters,
+    bindings: stationCatalog.workflows.transfer_liquid.bindings.map((binding) => binding.objects),
+  };
+  const values = { tool: '移液器', source: '10 mL 转移瓶', target: '50 mL 接收瓶', volume_ul: 75 };
+  assert(!presetChoices(preset, 'source', values).includes('八位反应器'));
+  const syringe = updatePresetParameters(preset, values, 'tool', '针筒机构');
+  assert.deepEqual(syringe, { tool: '针筒机构', source: '八位反应器', target: '10 mL 转移瓶', volume_ul: 75 });
+  assert.deepEqual(presetChoices(preset, 'source', syringe), ['八位反应器']);
+  assert.deepEqual(presetChoices(preset, 'target', syringe), ['10 mL 转移瓶']);
+  const pipette = updatePresetParameters(preset, syringe, 'tool', '移液器');
+  assert(presetChoices(preset, 'source', pipette).includes(pipette.source));
+  assert.equal(pipette.volume_ul, 75);
+  assert.equal(values.tool, '移液器');
+});
+
+test('consumable choices follow the selected tool', () => {
+  const capability = catalog.find((item) => item.id === 'station_skill_mount');
+  const preset = {
+    parameter_specs: capability.parameters,
+    bindings: stationCatalog.workflows.skill_mount.bindings.map((binding) => binding.objects),
+  };
+  assert.deepEqual(presetChoices(preset, 'consumable'), ['TIP 1', 'TIP 2']);
+  assert.deepEqual(updatePresetParameters(preset, {}, 'tool', '针筒机构'), { tool: '针筒机构', consumable: '针筒' });
+  assert.deepEqual(presetChoices(preset, 'consumable', { tool: '针筒机构' }), ['针筒', '过滤头']);
+});
+
+test('goal task labels show the selected object, tool and volume', () => {
+  const capability = catalog.find((item) => item.id === 'station_skill_aspirate');
+  const preset = {
+    label: capability.label,
+    parameter_specs: capability.parameters,
+    bindings: stationCatalog.workflows.skill_aspirate.bindings.map((binding) => binding.objects),
+  };
+  const task = {
+    type: 'Matterix Capability',
+    parameters: { parameters: { tool: '针筒机构', source: '八位反应器', volume_ul: 75 } },
+  };
+  assert.equal(sceneTaskLabel(task, preset), '吸液（针筒机构，八位反应器） · 75 µL');
+});
 const station = {
   lab_name: 'station_lab',
   device_name: 'station',
@@ -72,9 +125,12 @@ const preset = (id) => presets.find((p) => p.id === id);
 
 test('existing phase volume remains editable, saved and reflected in the node label', () => {
   const phase = preset('station_full_station_transfer_small');
-  const editable = { ...phase, parameter_specs: { volume_ul: catalog.find(c => c.id === phase.id).parameters.volume_ul } };
+  const editable = {
+    ...phase,
+    parameter_specs: { volume_ul: catalog.find((c) => c.id === phase.id).parameters.volume_ul },
+  };
   assert.ok(editable.parameter_specs.volume_ul);
-  const task = createPresetTask(editable, 'transfer', {x:0,y:0}, []);
+  const task = createPresetTask(editable, 'transfer', { x: 0, y: 0 }, []);
   task.parameters.parameters.volume_ul = 75;
   assert.match(sceneTaskLabel(task, editable), /75 µL/);
   assert.match(matterixTaskLabel(task.type, task.parameters), /75 µL/);
@@ -82,16 +138,34 @@ test('existing phase volume remains editable, saved and reflected in the node la
 });
 
 test('repeated Franka motion keeps one device until the independent release step', () => {
-  const beakerPresets = bindScenePresets([{
-    ...station, lab_name: 'beaker_lab', scene_id: 'franka_beaker',
-    presets: catalog.filter((item) => ['grasp_beaker', 'lift_beaker', 'lower_beaker', 'release_beaker'].includes(item.id))
-      .map((item) => ({ id: item.id, label: item.label, device_slot: 'matterix', task: {
-        type: 'Matterix Capability', parameters: { capability_id: item.id, parameters: {} },
-      }})),
-  }]);
+  const beakerPresets = bindScenePresets([
+    {
+      ...station,
+      lab_name: 'beaker_lab',
+      scene_id: 'franka_beaker',
+      presets: catalog
+        .filter((item) => ['grasp_beaker', 'lift_beaker', 'lower_beaker', 'release_beaker'].includes(item.id))
+        .map((item) => ({
+          id: item.id,
+          label: item.label,
+          device_slot: 'matterix',
+          task: {
+            type: 'Matterix Capability',
+            parameters: { capability_id: item.id, parameters: {} },
+          },
+        })),
+    },
+  ]);
   const tasks = [];
   for (const id of ['grasp_beaker', 'lift_beaker', 'lift_beaker', 'lower_beaker', 'lower_beaker', 'release_beaker']) {
-    tasks.push(createPresetTask(beakerPresets.find((item) => item.id === id), `b${tasks.length}`, { x: 0, y: 0 }, tasks));
+    tasks.push(
+      createPresetTask(
+        beakerPresets.find((item) => item.id === id),
+        `b${tasks.length}`,
+        { x: 0, y: 0 },
+        tasks
+      )
+    );
   }
   assert.equal(tasks[4].devices.matterix, 'b3.matterix');
   assert.deepEqual(tasks[4].dependencies, ['b3']);
@@ -100,12 +174,30 @@ test('repeated Franka motion keeps one device until the independent release step
 });
 
 test('custom lifecycle finish and seven-phase finish remain distinct on reload', () => {
-  const withCustom = bindScenePresets([{...station, presets: [{
-    id: 'end_custom_experiment', label: '结束自定义实验', device_slot: 'matterix',
-    task: { type: 'Matterix End Experiment', parameters: { expected_phase: 0 } },
-  }, ...station.presets]}]);
-  for (const [id, phase] of [['end_custom_experiment', 0], ['end_experiment', 7]]) {
-    const task = createPresetTask(withCustom.find((item) => item.id === id), 'finish', {x:0,y:0}, []);
+  const withCustom = bindScenePresets([
+    {
+      ...station,
+      presets: [
+        {
+          id: 'end_custom_experiment',
+          label: '结束自定义实验',
+          device_slot: 'matterix',
+          task: { type: 'Matterix End Experiment', parameters: { expected_phase: 0 } },
+        },
+        ...station.presets,
+      ],
+    },
+  ]);
+  for (const [id, phase] of [
+    ['end_custom_experiment', 0],
+    ['end_experiment', 7],
+  ]) {
+    const task = createPresetTask(
+      withCustom.find((item) => item.id === id),
+      'finish',
+      { x: 0, y: 0 },
+      []
+    );
     assert.equal(task.parameters.expected_phase, phase);
     assert.equal(task.device_holds.matterix, false);
     assert.equal(findTaskPreset(task, withCustom, [task]).id, id);
@@ -216,5 +308,8 @@ test('deleting a task removes it from the dependencies of the remaining tasks', 
     ],
   });
   useEditorStore.getState().deleteTask('door');
-  assert.deepEqual(useEditorStore.getState().tasks.map((t) => [t.name, t.dependencies]), [['pick', ['begin']]]);
+  assert.deepEqual(
+    useEditorStore.getState().tasks.map((t) => [t.name, t.dependencies]),
+    [['pick', ['begin']]]
+  );
 });

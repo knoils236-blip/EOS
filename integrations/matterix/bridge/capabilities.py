@@ -8,6 +8,7 @@ from pathlib import Path
 from .common import PIPETTING_SCENE_ID, ROOT, SCENE_ID, read_json, request_id
 from .beaker_workspace import load_beaker_workspace
 from .environment import GRID_ASSET_MANIFEST
+from .station_skills import GOALS, resolve_workflow
 
 CAPABILITIES_PATH = ROOT / "bridge/capabilities.json"
 WORKFLOWS_PATH = ROOT / "bridge/session_workflows.yaml"
@@ -127,6 +128,8 @@ def config_version():
         ("station_worker", ROOT / "bridge/station_worker.py"),
         ("station_collisions", ROOT / "bridge/station_collisions.py"),
         ("station_skills", ROOT / "bridge/station_skills.py"),
+        ("station_liquid", ROOT / "bridge/station_liquid.py"),
+        ("station_fixture", ROOT / "bridge/station_fixture.py"),
         ("session_worker", ROOT / "bridge/session_worker.py"),
         ("session_contract", ROOT / "bridge/common.py"),
         ("beaker_workspace", ROOT / "bridge/beaker_workspace.json"),
@@ -197,5 +200,7 @@ def validate_task(payload):
             if value < spec["min"] or value > spec["max"]:
                 raise ValueError(f"{name} must be between {spec['min']} and {spec['max']}")
         normalized[name] = value
+    if capability["workflow_name"] in GOALS:
+        resolve_workflow(capability["workflow_name"], normalized)
     return {"request_id": task_id, "session_id": session_id,
             "capability_id": capability["id"], "parameters": normalized}

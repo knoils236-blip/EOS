@@ -1204,7 +1204,7 @@
       "本次任务出现所选 TIP 的真实 grasp/tip_seated 记录",
       "最终 TipOn=true 且该 TIP attached、seated"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_eject_tip",
@@ -1258,7 +1258,7 @@
       "本次任务出现 eject_tip 命令和当前已装 TIP 的 release 事件",
       "最终 TipOn=false 且没有 attached/seated TIP"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_aspirate_from",
@@ -1346,7 +1346,7 @@
       "本次任务出现 aspirate 命令",
       "所选源容器液量下降、TIP 液量上升且总量守恒"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_dispense_to",
@@ -1434,7 +1434,7 @@
       "本次任务出现 dispense 命令",
       "TIP 液量下降、目标容器液量上升且总量守恒"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_small_vial_pick",
@@ -1499,7 +1499,7 @@
       "本次任务出现小瓶盖 grasp 事件",
       "最终小瓶盖 attached 且小瓶盖爪闭合"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_small_vial_place",
@@ -1564,7 +1564,7 @@
       "本次任务出现小瓶盖 release 事件",
       "最终小瓶盖不再 attached 且小瓶盖爪张开"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_small_vial_decap",
@@ -1618,7 +1618,7 @@
       "本次任务出现 cap_detached 事件",
       "本次状态进入 SmallCapOpen=true 且最终保持打开"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_small_vial_recap",
@@ -1672,7 +1672,7 @@
       "本次任务出现 cap_engaged 事件",
       "本次状态回到 SmallCapOpen=false 且瓶盖闭合"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_small_cap_home",
@@ -1780,7 +1780,7 @@
       "本次任务出现大瓶盖 grasp 事件",
       "最终大瓶盖 attached 且相关夹爪闭合"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_big_bottle_place",
@@ -1845,7 +1845,7 @@
       "本次任务出现大瓶盖 release 事件",
       "最终大瓶盖不再 attached 且大瓶盖爪张开"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_big_bottle_decap",
@@ -1899,7 +1899,7 @@
       "本次任务出现 cap_detached 事件",
       "本次状态进入 BigCapOpen=true 且最终保持打开"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_big_bottle_recap",
@@ -1953,7 +1953,7 @@
       "本次任务出现 cap_engaged 事件",
       "本次状态回到 BigCapOpen=false 且瓶盖闭合"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_syringe_pick",
@@ -2018,7 +2018,7 @@
       "本次任务同时出现筒身和活塞 grasp 事件",
       "最终两者 attached、SyringeOn=true 且 pg3/pg4 闭合"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_filter_head_mount",
@@ -2083,7 +2083,7 @@
       "本次任务出现 filter_installed 事件",
       "最终 FilterHeadOn=true 且针筒筒身仍 attached"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_syringe_aspirate",
@@ -2156,7 +2156,7 @@
       "针筒筒身和活塞均 mounted",
       "本次任务出现 syringe aspirate 命令且源容器液量下降"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_syringe_dispense",
@@ -2229,7 +2229,7 @@
       "针筒和过滤头均 mounted",
       "本次任务出现 syringe dispense 命令且转移瓶液量上升"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_syringe_discard",
@@ -2283,7 +2283,7 @@
       "本次任务出现针筒 release 事件",
       "最终 SyringeOn=false、FilterHeadOn=false 且两者不再 attached"
     ],
-    "tier": "skill"
+    "tier": "hidden"
   },
   {
     "id": "station_skill_wait",
@@ -2439,7 +2439,7 @@
       "本次任务出现所选 TIP 的 grasp/release 与 aspirate、dispense、eject_tip 命令",
       "源区与目标区液量变化与请求体积相差不超过 5 µL，账本总量守恒、TIP 无残液、无洒漏"
     ],
-    "tier": "skill"
+    "tier": "operation"
   },
   {
     "id": "station_skill_syringe_filter_transfer",
@@ -2501,7 +2501,7 @@
       "本次任务出现筒身、活塞 grasp/release 与 filter_installed 事件",
       "反应器到小瓶区的液量变化与请求体积相差不超过 5 µL，最终 SyringeOn=false、FilterHeadOn=false"
     ],
-    "tier": "skill"
+    "tier": "operation"
   },
   {
     "id": "station_skill_front_door",
@@ -2689,6 +2689,638 @@
     "success_criteria": [
       "本次任务出现大瓶盖 grasp 与 release 事件",
       "最终大瓶盖不再 attached"
+    ],
+    "tier": "operation"
+  },
+  {
+    "id": "station_skill_pick",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "夹取对象",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_pick",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "object": {
+        "type": "string",
+        "default": "2 mL 小瓶",
+        "choices": [
+          "2 mL 小瓶",
+          "500 mL 大瓶"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "容器"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_place",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "放回对象",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_place",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "object": {
+        "type": "string",
+        "default": "2 mL 小瓶",
+        "choices": [
+          "2 mL 小瓶",
+          "500 mL 大瓶"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "容器"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_decap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "打开容器盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_decap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "object": {
+        "type": "string",
+        "default": "2 mL 小瓶",
+        "choices": [
+          "2 mL 小瓶",
+          "500 mL 大瓶"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "容器"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_recap",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "关闭容器盖",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_recap",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "object": {
+        "type": "string",
+        "default": "2 mL 小瓶",
+        "choices": [
+          "2 mL 小瓶",
+          "500 mL 大瓶"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "容器"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_mount",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "装载耗材",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_mount",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tool": {
+        "type": "string",
+        "default": "移液器",
+        "choices": [
+          "移液器",
+          "针筒机构"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "工具"
+      },
+      "consumable": {
+        "type": "string",
+        "default": "TIP 1",
+        "choices": [
+          "TIP 1",
+          "TIP 2",
+          "针筒",
+          "过滤头"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "耗材"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_aspirate",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "吸液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_aspirate",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tool": {
+        "type": "string",
+        "default": "移液器",
+        "choices": [
+          "移液器",
+          "针筒机构"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "工具"
+      },
+      "source": {
+        "type": "string",
+        "default": "10 mL 转移瓶",
+        "choices": [
+          "10 mL 转移瓶",
+          "50 mL 接收瓶",
+          "2 mL 小瓶",
+          "500 mL 大瓶",
+          "八位反应器"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "液源对象"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_dispense",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "吐液",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_dispense",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tool": {
+        "type": "string",
+        "default": "移液器",
+        "choices": [
+          "移液器",
+          "针筒机构"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "工具"
+      },
+      "target": {
+        "type": "string",
+        "default": "50 mL 接收瓶",
+        "choices": [
+          "10 mL 转移瓶",
+          "50 mL 接收瓶",
+          "2 mL 小瓶",
+          "500 mL 大瓶",
+          "八位反应器"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "目标对象"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_skill_discard",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "弃置工具耗材",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "skill_discard",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tool": {
+        "type": "string",
+        "default": "移液器",
+        "choices": [
+          "移液器",
+          "针筒机构"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "工具"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
+    ],
+    "tier": "skill"
+  },
+  {
+    "id": "station_transfer_liquid",
+    "version": 1,
+    "scene_id": "pipetting_realtime",
+    "label": "转移液体（含耗材取用与弃置）",
+    "workflow_yaml": "station_catalog.json",
+    "workflow_name": "transfer_liquid",
+    "parameters": {
+      "timeout_s": {
+        "type": "number",
+        "default": 120,
+        "min": 1,
+        "max": 180,
+        "unit": "s",
+        "label": "仿真超时"
+      },
+      "tool": {
+        "type": "string",
+        "default": "移液器",
+        "choices": [
+          "移液器",
+          "针筒机构"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "工具"
+      },
+      "source": {
+        "type": "string",
+        "default": "10 mL 转移瓶",
+        "choices": [
+          "10 mL 转移瓶",
+          "50 mL 接收瓶",
+          "2 mL 小瓶",
+          "500 mL 大瓶",
+          "八位反应器"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "液源对象"
+      },
+      "target": {
+        "type": "string",
+        "default": "50 mL 接收瓶",
+        "choices": [
+          "10 mL 转移瓶",
+          "50 mL 接收瓶",
+          "2 mL 小瓶",
+          "500 mL 大瓶",
+          "八位反应器"
+        ],
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "目标对象"
+      },
+      "volume_ul": {
+        "type": "number",
+        "default": 50,
+        "min": 20.0,
+        "max": 180.0,
+        "unit": "µL",
+        "label": "吸/吐体积"
+      },
+      "tip_index": {
+        "type": "integer",
+        "default": 1,
+        "min": 1,
+        "max": 2,
+        "choices": [
+          1,
+          2
+        ],
+        "unit": "",
+        "label": "TIP 槽位（移液器）"
+      },
+      "record_video": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制仿真视频"
+      },
+      "hide_shell": {
+        "type": "boolean",
+        "default": false,
+        "min": null,
+        "max": null,
+        "unit": "",
+        "label": "录制时隐藏外壳"
+      }
+    },
+    "observations": [
+      "device_state.joint_positions",
+      "device_state.semantic_state",
+      "device_state.operation_status",
+      "device_state.operation_events",
+      "device_state.operation_commands"
+    ],
+    "success_criteria": [
+      "满足所选对象与工具对应技能的前置条件",
+      "本次任务事件、实际机构状态与液量变化通过对应原生技能验收"
     ],
     "tier": "operation"
   }

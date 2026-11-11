@@ -49,6 +49,7 @@ from bridge.session_worker import (
     _cancel_reason,
 )
 from bridge.station_experiment import PHASES, initial_checks, initial_state
+from bridge.station_fixture import align_bottle_fixture, center_bottle_clamp_frame
 from bridge.station_experiment import WORKFLOWS as FULL_WORKFLOWS
 from bridge.station_mixture import WORKFLOWS as MIXTURE_WORKFLOWS
 
@@ -204,6 +205,7 @@ class StationSessionWorker(SessionWorker):
         self.last_operation_status = None
         self.bottle_clamp_frame = None
         self.completed_phase = 0
+        self.object_reset_poses = None
         self.held_commands = {}
         self.scene_settled = False
         self.camera_ready = False
@@ -395,6 +397,8 @@ class StationSessionWorker(SessionWorker):
         skills_helper = Path(__file__).with_name("station_skills.py")
         if skills_helper.is_file():
             source_files.append(skills_helper)
+        source_files.append(Path(__file__).with_name("station_liquid.py"))
+        source_files.append(Path(__file__).with_name("station_fixture.py"))
         packages = {
             name: _installed_version(name)
             for name in (
@@ -465,8 +469,33 @@ class StationSessionWorker(SessionWorker):
         value["experiment_phase"] = self.completed_phase
         operations = self._station_driver().operations
         value["liquid_balance"] = {"air_ml": operations.air_ml, "spilled_ml": operations.spilled_ml}
+        value["object_poses"] = self._displaced_object_poses(operations)
         value["initial_state_id"] = initial_state()["id"]
         return _json_value(value)
+
+    def _displaced_object_poses(self, operations) -> dict:
+        """Base-frame [x, y, z, qx, qy, qz, qw] of the consumables moved since the scene reset, for the web twin."""
+        import numpy as np  # noqa: PLC0415
+        from scipy.spatial.transform import Rotation  # noqa: PLC0415
+
+        base = operations.poses.get(operations.tool_path("base"))
+        if base is None:  # no physics tick has measured the scene yet
+            return {}
+        prefix = operations.root + "/Consumables/"
+        poses = {
+            path[len(prefix):]: np.linalg.inv(base) @ pose
+            for path, pose in operations.poses.items()
+            if path.startswith(prefix)
+        }
+        if self.object_reset_poses is None:
+            self.object_reset_poses = poses
+        # shortcut: the twin draws unlisted consumables at their USD pose, so anything within 2 mm of where the
+        # reset put it is left out to keep samples small; report every pose if the twin needs settle-level detail.
+        return {
+            name: np.round([*pose[:3, 3], *Rotation.from_matrix(pose[:3, :3]).as_quat()], 5).tolist()
+            for name, pose in poses.items()
+            if not np.allclose(pose, self.object_reset_poses[name], atol=2e-3)
+        }
 
     def _station_state(self):
         cache = getattr(self.env, "_pipetting_operations", {}) or {}
@@ -519,7 +548,8 @@ class StationSessionWorker(SessionWorker):
         raw = attribute.Get() if attribute else None
         if not raw:
             return None
-        return copy.deepcopy(json.loads(raw)["frames"]["bottle_clamp"])
+        frame = copy.deepcopy(json.loads(raw)["frames"]["bottle_clamp"])
+        return center_bottle_clamp_frame(frame, EXPORT_ASSET_DIR)
 
     def _restore_bottle_clamp_frame(self, frame):
         if frame is None:
@@ -616,6 +646,7 @@ class StationSessionWorker(SessionWorker):
             self._station_driver().operations.prim.GetAttribute("operation:command").Set("")
             self._station_driver().operations.prim.GetAttribute("operation:status").Set("idle")
             self.completed_phase = 0
+            self.object_reset_poses = None
             self.held_commands = {}
             # Reset respawns consumables hovering above their seats; the next skill must settle them first
             self.scene_settled = False
@@ -655,7 +686,10 @@ class StationSessionWorker(SessionWorker):
         return observations
 
     def _load_workflow(self, workflow_name, parameters=None):
+        from bridge.station_liquid import prepare_liquid_steps  # noqa: PLC0415 (Isaac runtime)
+
         workflow = self._build_workflow(workflow_name, parameters)
+        workflow = prepare_liquid_steps(workflow)
         # Matterix plans every step when the workflow loads, finding targets by their CAD slots; liquid steps must
         # find a container that earlier tasks carried elsewhere (a bottle at an opening station) where it is now
         self._use_live_positions(workflow)
@@ -794,6 +828,9 @@ class StationSessionWorker(SessionWorker):
 
     def _task_provenance(self, task):
         value = read_json(self.directory / "session_provenance.json")
+        if task["workflow_name"] in station_skills.GOALS:
+            native, parameters = station_skills.resolve_workflow(task["workflow_name"], task["parameters"])
+            value["skill_binding"] = {"workflow_name": native, "parameters": parameters}
         workflow_path = Path(task["workflow_yaml"])
         value.update(
             request=copy.deepcopy(task),
@@ -1085,6 +1122,9 @@ class StationSessionWorker(SessionWorker):
                 video.start()
 
             self.sm.set_action_sequence([workflow])
+            from bridge.station_liquid import stop_liquid_before_retract  # noqa: PLC0415 (Isaac runtime)
+            stop_liquid_before_retract(self.sm.actions)
+            align_bottle_fixture(self.sm.actions, EXPORT_ASSET_DIR)
             self.sm.reset()
             observations = self.env.observation_manager.compute()
             self.sm.update_scene_data_from_obs(observations)

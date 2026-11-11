@@ -17,6 +17,7 @@ export interface ScenePreset {
   group: string;
   device_slot?: string;
   parameter_specs?: Record<string, CapabilityParameter>;
+  bindings?: Array<Record<string, string>>;
   task: Omit<TaskNode, 'name' | 'position'>;
 }
 
@@ -90,11 +91,64 @@ export function withPresetParameterValues(task: TaskNode, values: Record<string,
   return task.type === 'Matterix Capability' ? { ...task.parameters, parameters: values } : values;
 }
 
+/** Selectors are ordered: tool, then source/consumable, then target. */
+export function presetChoices(
+  preset: ScenePreset,
+  key: string,
+  values: Record<string, unknown> = {}
+): string[] | undefined {
+  const bindings = preset.bindings;
+  if (!bindings?.length || !(key in bindings[0])) return preset.parameter_specs?.[key]?.choices?.map(String);
+  const selectors = Object.keys(bindings[0]);
+  const earlier = selectors.slice(0, selectors.indexOf(key));
+  return [
+    ...new Set(
+      bindings
+        .filter((row) =>
+          earlier.every((name) => row[name] === (values[name] ?? preset.parameter_specs?.[name]?.default))
+        )
+        .map((row) => row[key])
+    ),
+  ];
+}
+
+export function updatePresetParameters(
+  preset: ScenePreset,
+  values: Record<string, unknown>,
+  key: string,
+  value: unknown
+): Record<string, unknown> {
+  const next = { ...values, [key]: value };
+  const bindings = preset.bindings;
+  if (!bindings?.length || !(key in bindings[0])) return next;
+  const selectors = Object.keys(bindings[0]);
+  const earlier = selectors.slice(0, selectors.indexOf(key));
+  const candidates = bindings.filter(
+    (row) =>
+      row[key] === value &&
+      earlier.every((name) => row[name] === (values[name] ?? preset.parameter_specs?.[name]?.default))
+  );
+  const score = (row: Record<string, string>) =>
+    selectors.filter((name) => row[name] === (values[name] ?? preset.parameter_specs?.[name]?.default)).length;
+  const best = candidates.reduce<Record<string, string> | undefined>(
+    (best, row) => (!best || score(row) > score(best) ? row : best),
+    undefined
+  );
+  return best ? { ...next, ...best } : next;
+}
+
 export function sceneTaskLabel(task: TaskNode, preset: BoundPreset | undefined): string | undefined {
   if (!preset) return undefined;
   const spec = preset.parameter_specs?.volume_ul;
-  const volume = presetParameterValues(task)?.volume_ul ?? spec?.default;
-  return spec && typeof volume === 'number' ? `${preset.label} · ${volume} µL` : preset.label;
+  const values = presetParameterValues(task);
+  const volume = values?.volume_ul ?? spec?.default;
+  const objects = preset.bindings?.length
+    ? Object.keys(preset.bindings[0])
+        .map((name) => values?.[name] ?? preset.parameter_specs?.[name]?.default)
+        .join('，')
+    : '';
+  const label = objects ? `${preset.label}（${objects}）` : preset.label;
+  return spec && typeof volume === 'number' ? `${label} · ${volume} µL` : label;
 }
 
 export function createPresetTask(
