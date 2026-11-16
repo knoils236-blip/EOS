@@ -3,7 +3,7 @@ import traceback
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.configuration.entities.lab_def import LabDeviceDef
 from eos.configuration.entities.protocol_def import ProtocolDef
-from eos.configuration.entities.task_def import DeviceAssignmentDef, TaskDef
+from eos.configuration.entities.task_def import DeviceAssignmentDef, DynamicDeviceAssignmentDef, TaskDef
 from eos.devices.device_manager import DeviceManager
 from eos.logging.logger import log
 from eos.utils.di.di_container import inject
@@ -75,6 +75,38 @@ class LabService:
             device_class = cm.devices.plugin_types.get(device.type) if device else None
             if device_class is not None:
                 errors.extend(device_class.check_plan(device.init_parameters, steps))
+        return errors + self._check_dynamic_devices(protocol)
+
+    def _check_dynamic_devices(self, protocol: ProtocolDef) -> list[dict[str, str]]:
+        """A dynamically assigned step must be runnable by at least one device the scheduler may choose. Which one
+        it chooses is unknown here, so each candidate checks the step on its own; the task executor rechecks the
+        chosen device before dispatch."""
+        cm = self._configuration_manager
+        errors = []
+        for task in protocol.tasks:
+            step = [{"task": task.name, "type": task.type, "parameters": task.parameters, "ordered": False}]
+            for assignment in task.devices.values():
+                if not isinstance(assignment, DynamicDeviceAssignmentDef):
+                    continue
+                allowed = {(d.lab_name, d.name) for d in assignment.allowed_devices or []}
+                candidates = [
+                    (f"{lab_name}.{device_name}", device)
+                    for lab_name in assignment.allowed_labs or protocol.labs
+                    for device_name, device in cm.package_manager.read_lab(lab_name).devices.items()
+                    if device.type == assignment.device_type and (not allowed or (lab_name, device_name) in allowed)
+                ]
+                device_class = cm.devices.plugin_types.get(assignment.device_type)
+                if device_class is None or not candidates:
+                    continue
+                results = [(name, device_class.check_plan(device.init_parameters, step)) for name, device in candidates]
+                if all(found for _, found in results):
+                    reasons = "; ".join(f"{name}: {error['message']}" for name, found in results for error in found)
+                    errors.append(
+                        {
+                            "task": task.name,
+                            "message": f"No allowed '{assignment.device_type}' device can run this step: {reasons}",
+                        }
+                    )
         return errors
 
     async def get_lab_devices(

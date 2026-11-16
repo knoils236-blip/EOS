@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import ray
 from ray import ObjectRef
+from sqlalchemy import select
 
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.configuration.entities.task_def import TaskDef
@@ -17,18 +18,30 @@ from eos.devices.entities.device import DeviceStatus
 from eos.database.file_db_interface import FileDbInterface
 from eos.resources.entities.resource import Resource
 from eos.resources.inventory import apply_inventory_events
+from eos.resources.materials import apply_material_events
 from eos.resources.resource_manager import ResourceManager
 from eos.logging.logger import log
 from eos.database.abstract_sql_db_interface import AsyncDbSession, AbstractSqlDbInterface
 from eos.orchestration.work_signal import WorkSignal
+from eos.protocols.entities.protocol_run import ProtocolRunModel
+from eos.protocols.manifest import load_manifest
 from eos.scheduling.abstract_scheduler import AbstractScheduler
 from eos.scheduling.entities.scheduled_task import ScheduledTask
+from eos.tasks.attempts import (
+    AttemptOutcome,
+    TaskAttemptModel,
+    end_attempt,
+    other_attempts,
+    record_finalization,
+    start_attempt,
+)
 from eos.tasks.entities.task import TaskStatus, TaskSubmission
 from eos.tasks.exceptions import (
     EosTaskCancellationError,
     EosTaskExecutionError,
     EosTaskExistsError,
     EosTaskStateError,
+    EosTaskTimeoutError,
 )
 from eos.tasks.task_runner import run_task
 from eos.tasks.task_definition import build_task_output_file_path
@@ -55,11 +68,16 @@ class TaskExecutionContext:
     execution_started: bool = False
     started_at: float = 0.0  # time.monotonic() of the current attempt
     attempt: int = 0
+    attempt_id: str | None = None  # the persisted attempt of the current launch
     devices_finalized: bool = False
 
     @property
     def task_key(self) -> tuple[str | None, str]:
         return self.protocol_run_name, self.task_name
+
+
+def _outcome_of(error: Exception) -> AttemptOutcome:
+    return "timed_out" if isinstance(error, EosTaskTimeoutError) else "failed"
 
 
 class TaskExecutor:
@@ -98,6 +116,8 @@ class TaskExecutor:
 
         # Task definitions stored once in the Ray object store per plugin version
         self._definition_refs: dict[str, tuple[TaskDefinition, ObjectRef]] = {}
+        # Manifests are immutable, so their content is cached by hash
+        self._manifests: dict[str, dict[str, Any]] = {}
 
         log.debug("Task executor initialized.")
 
@@ -139,6 +159,7 @@ class TaskExecutor:
                 # Tasks still waiting for admission or initialization have no DB row yet
                 with contextlib.suppress(EosTaskStateError):
                     await self._task_manager.cancel_task(db, context.protocol_run_name, context.task_name)
+                await self._end_attempt(db, context, "cancelled")
                 await self._scheduler.release_task(db, task_name, protocol_run_name)
 
             if future and not future.done():
@@ -207,6 +228,7 @@ class TaskExecutor:
             return  # Cancelled meanwhile
 
         if not context.execution_started:
+            context.attempt_id = await self._start_attempt(db, context.task_submission)
             context.task_ref = await self._execute_task(db, context.task_submission)
             context.execution_started = True
             context.started_at = time.monotonic()
@@ -222,18 +244,20 @@ class TaskExecutor:
                 if timeout is not None and time.monotonic() - context.started_at > timeout:
                     await self._finalize_devices(db, context, stop=True)
                     ray.cancel(context.task_ref, force=True)
-                    raise EosTaskExecutionError(f"Task '{context.task_name}' timed out after {timeout} s")
+                    raise EosTaskTimeoutError(f"Task '{context.task_name}' timed out after {timeout} s")
                 return
 
             result = await context.task_ref
         except Exception as error:
-            if context.attempt >= context.task_submission.retries:
+            # A manual-retry task may have done something irreversible, so `retries` never relaunches it
+            if context.attempt >= context.task_submission.retries or self._retry_policy(context) == "manual":
                 raise
             await self._finalize_devices(db, context, stop=True)
             for device in context.task_submission.devices.values():
                 status = await self._device_manager.get_device(db, device.lab_name, device.name)
                 if status.status == DeviceStatus.INACTIVE:
                     raise
+            await self._end_attempt(db, context, _outcome_of(error), error)
             self._schedule_retry(context, error)
             return
 
@@ -257,6 +281,7 @@ class TaskExecutor:
         await self._finalize_devices(db, context, stop=False)
 
         await self._task_manager.complete_task(db, context.protocol_run_name, context.task_name)
+        await self._end_attempt(db, context, "succeeded")
 
         if context.protocol_run_name:
             log.info(f"RUN '{context.protocol_run_name}' - Completed task '{context.task_name}'.")
@@ -294,6 +319,7 @@ class TaskExecutor:
             await self._finalize_devices(db, context, stop=True)
             if (future := self._task_futures.get(context.task_key)) and not future.done():
                 future.set_exception(error)
+            await self._end_attempt(db, context, _outcome_of(error), error)
             await self._task_manager.fail_task(
                 db, context.protocol_run_name, context.task_name, error_message=error_msg
             )
@@ -360,6 +386,13 @@ class TaskExecutor:
                     db, context.protocol_run_name, context.task_name, parameters, row.output_resources or {}, names
                 )
                 await apply_inventory_events(db, report.get("inventory_events", []))
+                await apply_material_events(
+                    db,
+                    report.get("material_events", []),
+                    actor=f"device:{device.lab_name}.{device.name}",
+                    attempt_id=context.attempt_id,
+                )
+                await record_finalization(db, context.attempt_id, slot, stop, report)
                 if not report["available"]:
                     if not stop:
                         raise EosTaskExecutionError(f"Device '{slot}' is unavailable after its operation")
@@ -367,6 +400,7 @@ class TaskExecutor:
                         db, device.lab_name, device.name, DeviceStatus.INACTIVE
                     )
             except Exception as exc:
+                await record_finalization(db, context.attempt_id, slot, stop, None, exc)
                 await self._device_manager.set_device_status(db, device.lab_name, device.name, DeviceStatus.INACTIVE)
                 row = await self._task_manager.get_task(db, context.protocol_run_name, context.task_name)
                 if row is not None:
@@ -385,6 +419,98 @@ class TaskExecutor:
         if failure is not None:
             slot, error = failure
             raise EosTaskExecutionError(f"Device '{slot}' finalization failed: {error}") from error
+
+    def _retry_policy(self, context: TaskExecutionContext) -> str:
+        return self._task_plugin_registry.get_plugin_class_type(context.task_submission.type).spec.retry
+
+    async def _require_planned_plugins(self, db: AsyncDbSession, task_submission: TaskSubmission) -> None:
+        """Run only the plugin code the run's manifest planned, so a hot reload never silently changes a run."""
+        if task_submission.protocol_run_name is None:
+            return
+        manifest_hash = await db.scalar(
+            select(ProtocolRunModel.manifest_hash).where(ProtocolRunModel.name == task_submission.protocol_run_name)
+        )
+        if manifest_hash is None:
+            return  # Run from before manifests: its planned versions are unknown
+        if manifest_hash not in self._manifests:
+            self._manifests[manifest_hash] = await load_manifest(db, manifest_hash)
+        planned = self._manifests[manifest_hash]
+        labs = self._configuration_manager.labs
+        needed = [("task", "task_plugins", task_submission.type, self._task_plugin_registry)] + [
+            ("device", "device_plugins", labs[d.lab_name].devices[d.name].type, self._configuration_manager.devices)
+            for d in task_submission.devices.values()
+        ]
+        for kind, section, plugin_type, registry in needed:
+            if planned[section].get(plugin_type) != registry.fingerprints.get(plugin_type):
+                raise EosTaskExecutionError(
+                    f"The {kind} plugin '{plugin_type}' is not the version planned for protocol run "
+                    f"'{task_submission.protocol_run_name}' (manifest {manifest_hash[:12]}); it was changed or "
+                    "reloaded since. Submit a new protocol run to use the current code."
+                )
+
+    def _require_devices_can_run(self, task_submission: TaskSubmission) -> None:
+        """Check the step on the devices actually assigned, with its resolved inputs. Dynamic allocation picks the
+        device after protocol validation, so this is where its specification limits are enforced for it."""
+        step = [
+            {
+                "task": task_submission.name,
+                "type": task_submission.type,
+                "parameters": task_submission.input_parameters or {},
+                "ordered": False,
+            }
+        ]
+        for device in task_submission.devices.values():
+            lab_device = self._configuration_manager.labs[device.lab_name].devices[device.name]
+            device_class = self._configuration_manager.devices.get_plugin_class_type(lab_device.type)
+            if errors := device_class.check_plan(lab_device.init_parameters, step):
+                raise EosTaskExecutionError(
+                    f"Device '{device.lab_name}.{device.name}' cannot run task '{task_submission.name}': "
+                    + "; ".join(error["message"] for error in errors)
+                )
+
+    async def _start_attempt(self, db: AsyncDbSession, task_submission: TaskSubmission) -> str:
+        await self._require_planned_plugins(db, task_submission)
+        self._require_devices_can_run(task_submission)
+        retry = self._task_plugin_registry.get_plugin_class_type(task_submission.type).spec.retry
+        devices = {slot: device.model_dump() for slot, device in task_submission.devices.items()}
+        attempt = await start_attempt(db, task_submission.protocol_run_name, task_submission.name, retry, devices)
+        await self._keep_earlier_attempt_files(db, attempt)
+        await db.commit()  # Durable before any device is commanded, so a crash cannot hide that it was launched
+        return attempt.id
+
+    async def _keep_earlier_attempt_files(self, db: AsyncDbSession, attempt: TaskAttemptModel) -> None:
+        """A new attempt writes the same output keys, so copy each earlier attempt's files to keys of its own."""
+        prefix = build_task_output_file_path(attempt.protocol_run_name, attempt.task_name, "")
+        file_db = None
+        for previous in await other_attempts(db, attempt):
+            own_prefix = f"{prefix}attempts/{previous.attempt_number}/"
+            kept = []
+            for key in previous.evidence.get("files", []):
+                if key.startswith(own_prefix):
+                    kept.append(key)
+                    continue
+                file_db = file_db or FileDbInterface(self._file_db_config)
+                new_key = own_prefix + key.removeprefix(prefix)
+                # shortcut: copies through memory; switch to a server-side copy if evidence files grow large
+                await file_db.store_file(new_key, await file_db.get_file(key))
+                kept.append(new_key)
+            previous.evidence["files"] = kept
+
+    async def _end_attempt(
+        self, db: AsyncDbSession, context: TaskExecutionContext, outcome: AttemptOutcome, error: Exception | None = None
+    ) -> None:
+        if context.attempt_id is None:
+            return  # Never launched
+        row = await self._task_manager.get_task(db, context.protocol_run_name, context.task_name)
+        names = (row.output_file_names or []) if row is not None else []
+        await end_attempt(
+            db,
+            context.attempt_id,
+            outcome,
+            error=None if error is None else f"{type(error).__name__}: {error}",
+            files=[build_task_output_file_path(context.protocol_run_name, context.task_name, n) for n in names],
+            needs_manual_recovery=outcome != "succeeded" and self._retry_policy(context) == "manual",
+        )
 
     def _is_active(self, context: TaskExecutionContext) -> bool:
         return self._pending_tasks.get(context.task_key) is context

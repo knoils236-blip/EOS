@@ -67,6 +67,14 @@ class ProtocolRunManager:
             update(ProtocolRunModel).where(ProtocolRunModel.name == protocol_run_name).values(parameters=parameters)
         )
 
+    async def set_manifest_hash(self, db: AsyncDbSession, protocol_run_name: str, manifest_hash: str) -> None:
+        """Bind a run to the manifest of the plan it starts with."""
+        await db.execute(
+            update(ProtocolRunModel)
+            .where(ProtocolRunModel.name == protocol_run_name)
+            .values(manifest_hash=manifest_hash)
+        )
+
     async def set_sampling_decision(self, db: AsyncDbSession, protocol_run_name: str, decision: dict) -> None:
         """Attach selection provenance before the sampled protocol begins execution."""
         row = await db.scalar(select(ProtocolRunModel).where(ProtocolRunModel.name == protocol_run_name))

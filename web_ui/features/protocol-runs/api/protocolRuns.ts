@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { submitThroughAdmission } from '@/lib/api/admission';
 import type { ProtocolRun, ProtocolRunDefinition, ActionResult } from '@/lib/types/api';
 import { DEFAULT_PAGE_SIZE, type TableQueryOptions } from '@/lib/types/table';
 import { getAllProtocolRuns, type PaginatedResult } from '@/lib/db/queries';
@@ -58,7 +59,8 @@ export async function getProtocolRuns(options: TableQueryOptions = {}): Promise<
 
 export async function submitProtocolRun(definition: ProtocolRunDefinition): Promise<ActionResult> {
   try {
-    await orchestratorPost('/protocols/', definition);
+    const result = await submitThroughAdmission('protocol-runs', definition);
+    if (!result.success) return result;
     revalidatePath('/protocol-runs');
     return createSuccessResult();
   } catch (error) {

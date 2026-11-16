@@ -91,12 +91,15 @@ class _Input:
 class TaskDefinition:
     """A task function together with the spec EOS derives from its signature."""
 
-    def __init__(self, task_type: str, fn: Callable[..., Awaitable[BaseModel | None]]):
+    def __init__(
+        self, task_type: str, fn: Callable[..., Awaitable[BaseModel | None]], retry: Literal["safe", "manual"] = "safe"
+    ):
         if not inspect.iscoroutinefunction(fn):
             raise TypeError(f"Task '{task_type}' must be an async function.")
 
         self.type = task_type
         self.fn = fn
+        self._retry = retry
         self._inputs: list[_Input] = []
         self._resource_classes: dict[str, type[Resource]] = {}
         self._outputs: dict[str, tuple[_OutputKind, str]] = {}
@@ -215,6 +218,7 @@ class TaskDefinition:
         spec: dict[str, Any] = {
             "type": self.type,
             "desc": inspect.getdoc(self.fn),
+            "retry": self._retry,
             "devices": {},
             "input_resources": {},
             "input_parameters": {},
@@ -314,11 +318,14 @@ class TaskDefinition:
                 self._outputs[name] = (_OutputKind.PARAMETER, name)
 
 
-def task(task_type: str) -> Callable[[Callable[..., Awaitable[BaseModel | None]]], TaskDefinition]:
-    """Declare an async function as an EOS task of the given type. Its signature and docstring form the task spec."""
+def task(
+    task_type: str, retry: Literal["safe", "manual"] = "safe"
+) -> Callable[[Callable[..., Awaitable[BaseModel | None]]], TaskDefinition]:
+    """Declare an async function as an EOS task of the given type. Its signature and docstring form the task spec.
+    Use ``retry="manual"`` when relaunching after a failed or uncertain attempt could repeat an irreversible effect."""
 
     def decorator(fn: Callable[..., Awaitable[BaseModel | None]]) -> TaskDefinition:
-        return TaskDefinition(task_type, fn)
+        return TaskDefinition(task_type, fn, retry)
 
     return decorator
 

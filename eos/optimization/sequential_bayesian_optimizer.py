@@ -142,6 +142,9 @@ class BayesianSequentialOptimizer(AbstractSequentialOptimizer):
         self._clear_reported_pending(inputs_df)
         self._num_samples_reported += len(results_df)
 
+    def discard(self, inputs_df: pd.DataFrame) -> None:
+        self._clear_reported_pending(inputs_df)
+
     def _clear_reported_pending(self, inputs_df: pd.DataFrame) -> None:
         """
         Remove reported inputs from BoFire's pending candidates.

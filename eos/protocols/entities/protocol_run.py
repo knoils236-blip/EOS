@@ -44,6 +44,8 @@ class ProtocolRun(ProtocolRunSubmission):
 
     status: ProtocolRunStatus = ProtocolRunStatus.CREATED
     error_message: str | None = None
+    # Hash of the run's manifest (eos.protocols.manifest); None for runs from before manifests, whose plan is unknown
+    manifest_hash: str | None = None
 
     start_time: datetime | None = None
     end_time: datetime | None = None
@@ -84,6 +86,7 @@ class ProtocolRunModel(Base):
         sa_Enum(ProtocolRunStatus), nullable=False, default=ProtocolRunStatus.CREATED, index=True
     )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    manifest_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

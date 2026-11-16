@@ -1,3 +1,4 @@
+import hashlib
 import importlib
 import importlib.machinery
 import importlib.util
@@ -57,6 +58,16 @@ ENTITY_INFO: dict[EntityType, EntityInfo] = {
     EntityType.TASK: EntityInfo(TASKS_DIR, TASK_FILE_NAME),
     EntityType.DEVICE: EntityInfo(DEVICES_DIR, DEVICE_FILE_NAME),
 }
+
+
+def source_fingerprint(package_path: Path) -> str:
+    """Hash of every Python source file of a package: the code its plugins and their helpers import."""
+    digest = hashlib.sha256()
+    for file in sorted(package_path.rglob("*.py")):
+        if "__pycache__" in file.parts:
+            continue
+        digest.update(file.relative_to(package_path).as_posix().encode() + b"\0" + file.read_bytes() + b"\0")
+    return digest.hexdigest()
 
 
 @dataclass

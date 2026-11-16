@@ -33,6 +33,7 @@ from eos.web_api.controllers.package_controller import PackageController
 from eos.web_api.controllers.protocol_controller import ProtocolController
 from eos.web_api.controllers.refresh_controller import RefreshController
 from eos.web_api.controllers.resource_controller import ResourceController
+from eos.web_api.controllers.material_controller import MaterialController
 from eos.web_api.controllers.rpc_controller import RPCController
 from eos.web_api.controllers.simulator_controller import SimulatorController
 from eos.web_api.controllers.task_controller import TaskController
@@ -61,6 +62,7 @@ CONTROLLERS: list[type[Controller]] = [
     PackageController,
     RefreshController,
     ResourceController,
+    MaterialController,
     RPCController,
     SimulatorController,
     TaskController,

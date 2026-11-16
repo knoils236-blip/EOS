@@ -13,6 +13,7 @@ import {
   boolean,
   serial,
   primaryKey,
+  doublePrecision,
 } from 'drizzle-orm/pg-core';
 
 // ============================================================================
@@ -64,6 +65,7 @@ export const protocolRuns = pgTable(
     resume: boolean('resume').notNull().default(false),
     status: text('status').notNull().default('CREATED'),
     errorMessage: text('error_message'),
+    manifestHash: text('manifest_hash'),
     startTime: timestamp('start_time', { withTimezone: true }),
     endTime: timestamp('end_time', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -352,3 +354,45 @@ export const allocationRequestResources = pgTable(
     labNameIdx: index('idx_alloc_req_resources_lab_name').on(table.labName),
   })
 );
+
+// ============================================================================
+// Task Attempts Table (each real launch of a task; outlives resumed task rows)
+// ============================================================================
+export const taskAttempts = pgTable('task_attempts', {
+  id: text('id').primaryKey(),
+  protocolRunName: text('protocol_run_name').references(() => protocolRuns.name, { onDelete: 'cascade' }),
+  taskName: text('task_name').notNull(),
+  attemptNumber: integer('attempt_number').notNull(),
+  retry: text('retry').notNull(),
+  devices: json('devices').notNull(),
+  externalRequestId: text('external_request_id'),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  outcome: text('outcome').notNull(),
+  error: text('error'),
+  stopConfirmed: boolean('stop_confirmed'),
+  deviceAvailable: boolean('device_available'),
+  needsManualRecovery: boolean('needs_manual_recovery').notNull(),
+  evidence: json('evidence').notNull(),
+});
+
+// ============================================================================
+// Material Tracking Tables (containers at positions, samples in containers)
+// ============================================================================
+export const materialContainers = pgTable('material_containers', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  capacityUl: doublePrecision('capacity_ul'),
+  position: text('position').unique(),
+  positionKnown: boolean('position_known').notNull(),
+  reservedPosition: text('reserved_position').unique(),
+});
+
+export const materialSamples = pgTable('material_samples', {
+  id: text('id').primaryKey(),
+  containerId: text('container_id'),
+  parentId: text('parent_id'),
+  volumeUl: doublePrecision('volume_ul'),
+  removed: boolean('removed').notNull(),
+  details: json('details').notNull(),
+});

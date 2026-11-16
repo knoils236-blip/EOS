@@ -2,6 +2,7 @@ name: multiplication_lab_twin
 desc: Digital twin of multiplication_lab, used to preflight protocols before they run on the real lab
 
 simulated: true
+fidelity: L1  # mock devices: execution order, resources and scheduling only
 devices:
   multiplier:
     type: multiplier

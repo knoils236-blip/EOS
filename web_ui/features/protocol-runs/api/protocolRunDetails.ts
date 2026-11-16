@@ -32,6 +32,7 @@ function transformDbProtocolRun(exp: ProtocolRunRow): ProtocolRun {
     resume: exp.resume,
     status: exp.status as ProtocolRun['status'],
     error_message: exp.errorMessage ?? null,
+    manifest_hash: exp.manifestHash ?? null,
     created_at: exp.createdAt.toISOString(),
     start_time: exp.startTime?.toISOString() ?? null,
     end_time: exp.endTime?.toISOString() ?? null,

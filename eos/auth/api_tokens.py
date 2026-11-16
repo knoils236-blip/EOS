@@ -32,4 +32,4 @@ async def resolve_api_token(db: AsyncDbSession, token: str) -> AuthenticatedUser
     row = result.first()
     if row is None:
         return None
-    return AuthenticatedUser(sub=row.owner_sub, email=row.email, name=row.name)
+    return AuthenticatedUser(sub=row.owner_sub, email=row.email, name=row.name, automation=True)

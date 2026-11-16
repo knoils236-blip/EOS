@@ -108,10 +108,24 @@ export function DecisionPanel({ campaignName, refreshKey }: { campaignName: stri
           </h2>
           <p className="mt-1 text-sm text-gray-500">把实验条件、测量与质控放在一起，核对每轮实验依据。</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setRefresh((value) => value + 1)} aria-label="刷新实验决策">
-          <RefreshCw className="mr-1 h-4 w-4" />
-          刷新
-        </Button>
+        <div className="flex gap-2">
+          <a
+            className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-800"
+            href={`/api/campaigns/${encodeURIComponent(campaignName)}/export`}
+            title="全部轮次、执行计划、执行尝试、质量判定、推荐来源与文件校验"
+          >
+            导出完整记录
+          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRefresh((value) => value + 1)}
+            aria-label="刷新实验决策"
+          >
+            <RefreshCw className="mr-1 h-4 w-4" />
+            刷新
+          </Button>
+        </div>
       </div>
       {error && (
         <p role="alert" className="mt-3 text-sm text-red-600">
@@ -256,6 +270,13 @@ export function DecisionPanel({ campaignName, refreshKey }: { campaignName: stri
                             {QUALITY_LABELS[reason] ?? reason}
                           </p>
                         ))}
+                        <p className="mt-1 text-xs text-gray-500" title={row.gate_reasons.join(', ')}>
+                          {row.policy_version === null
+                            ? '未按质量政策评估'
+                            : row.eligible
+                              ? `已用于优化（${row.policy_version}）`
+                              : `未用于优化（${row.policy_version}）`}
+                        </p>
                       </td>
                       <td className="px-2 py-3">
                         {Object.entries(row.objectives).map(([key, value]) => (

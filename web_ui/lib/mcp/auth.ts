@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { getApiTokenOwner, getUserRoles } from '@/lib/db/queries';
 import { env } from '@/lib/env';
+import { rolesSatisfy, type RoleName } from '@/lib/auth/roles';
 
 const INTROSPECTION_CACHE_TTL_MS = 60_000;
 const MAX_INTROSPECTION_CACHE = 1024;
@@ -93,10 +94,10 @@ export async function verifyToken(_req: Request, bearerToken?: string): Promise<
   return introspect(bearerToken);
 }
 
-/** True when the MCP caller has the local superuser role, or when auth is disabled. */
-export async function isSuperuserCaller(authInfo: AuthInfo | undefined): Promise<boolean> {
+/** True when the MCP caller holds at least `minimum` locally (or auth is disabled). Mirrors the EOS API require_role. */
+export async function callerHasRole(authInfo: AuthInfo | undefined, minimum: RoleName): Promise<boolean> {
   if (!env.AUTH_ENABLED) return true;
   const sub = authInfo?.extra?.sub as string | undefined;
   if (!sub) return false;
-  return (await getUserRoles(sub)).some((r) => r.role === 'SUPERUSER');
+  return rolesSatisfy((await getUserRoles(sub)).map((r) => r.role as RoleName), minimum);
 }

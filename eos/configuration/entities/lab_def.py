@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class _LabModel(BaseModel):
@@ -38,7 +38,18 @@ class LabDef(_LabModel):
     desc: str
     # A digital twin or mock: agents may run protocols here without a person approving each submission
     simulated: bool = False
+    # Who must wait for approval: "automation" (API tokens and MCP agents on a lab that is not simulated) or "always"
+    approval: Literal["automation", "always"] = "automation"
+    # For simulated labs: what a run here shows about the real lab it stands in for. L1 resources and scheduling
+    # with mock devices, L2 layout and reachability, L3 contact physics and device semantics. Real labs have none.
+    fidelity: Literal["L1", "L2", "L3"] | None = None
     devices: dict[str, LabDeviceDef]
     computers: dict[str, LabComputerDef] = Field(default_factory=dict)
     resource_types: dict[str, ResourceTypeDef] = Field(default_factory=dict)
     resources: dict[str, ResourceDef] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _fidelity_only_for_simulations(self) -> "LabDef":
+        if self.fidelity and not self.simulated:
+            raise ValueError("Only simulated labs declare a fidelity; a real lab is the real thing")
+        return self

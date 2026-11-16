@@ -2,19 +2,42 @@ from eos.configuration.eos_config import DbConfig
 
 from pathlib import Path
 import sqlite3
+import sys
 from sqlite3 import Connection
+from typing import IO
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from eos.logging.logger import log
 from eos.database.abstract_sql_db_interface import AbstractSqlDbInterface
+from eos.database.exceptions import EosControlLockError
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
+
+
+def _open_locked(path: Path) -> IO:
+    """Open ``path`` holding a non-blocking exclusive OS lock; raises OSError if another process holds it."""
+    handle = path.open("a+")
+    try:
+        if sys.platform == "win32":
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        raise
+    return handle
 
 
 class SqliteDbInterface(AbstractSqlDbInterface):
     """SQLite-specific database interface implementation."""
 
     DB_FILE_EXTENSION = ".db"
+    _control_lock_file: IO | None = None
     IN_MEMORY_PATH = ":memory:"
 
     def __init__(self, db_config: DbConfig):
@@ -124,6 +147,24 @@ class SqliteDbInterface(AbstractSqlDbInterface):
         except Exception as e:
             log.error(f"Failed to drop SQLite database: {e!s}")
             raise
+
+    async def acquire_control_lock(self) -> None:
+        if self._is_in_memory:
+            return  # No other process can open this database
+        try:
+            self._control_lock_file = _open_locked(Path(f"{self._get_db_path()}.control.lock"))
+        except OSError as e:
+            raise EosControlLockError(
+                f"Another EOS orchestrator controls '{self._get_db_path()}'. Stop it before starting this one."
+            ) from e
+
+    async def check_control_lock(self) -> None:
+        """The OS keeps the file lock for as long as this process holds the file open, so it cannot be lost."""
+
+    async def release_control_lock(self) -> None:
+        if self._control_lock_file is not None:
+            self._control_lock_file.close()
+            self._control_lock_file = None
 
     async def _database_exists(self) -> bool:
         if self._is_in_memory:

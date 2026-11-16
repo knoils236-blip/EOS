@@ -4,7 +4,7 @@ from matterix_sim.capability import CapabilityOutputs, run_capability
 from matterix_sim.devices.matterix_workstation.device import MatterixWorkstation
 
 
-@task("Matterix Capability")
+@task("Matterix Capability", retry="manual")
 async def matterix_capability(
     matterix: MatterixWorkstation,
     context: Context,

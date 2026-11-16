@@ -168,7 +168,12 @@ class CampaignManager:
         self, db: AsyncDbSession, campaign_name: str, status: ProtocolRunStatus | None = None
     ) -> list[str]:
         """Get all protocol run names of a campaign with an optional status filter."""
-        stmt = select(ProtocolRunModel.name).where(ProtocolRunModel.campaign == campaign_name)
+        # Creation order, so restoring an optimizer replays results in the same order every time
+        stmt = (
+            select(ProtocolRunModel.name)
+            .where(ProtocolRunModel.campaign == campaign_name)
+            .order_by(ProtocolRunModel.id)
+        )
         if status:
             stmt = stmt.where(ProtocolRunModel.status == status)
 

@@ -33,7 +33,9 @@ class MixtureBeaconOptimizer(BeaconOptimizer):
         )
 
 
-def optimizer_definition() -> tuple[dict, type[MixtureBeaconOptimizer]]:
+def optimizer_definition(backend: str) -> tuple[dict, type[MixtureBeaconOptimizer]]:
+    """``backend`` is where this protocol's observations come from (mock or simulation); results from any other
+    backend never train its optimizer."""
     return {
         "inputs": [ContinuousInput(key="prepare.stock_volume_ul", bounds=(20, 180))],
         "outputs": [ContinuousOutput(key="score.loss", objective=MinimizeObjective(w=1))],
@@ -49,4 +51,17 @@ def optimizer_definition() -> tuple[dict, type[MixtureBeaconOptimizer]]:
         "Choose stock volume in the registered domain. "
         "Use measured observations and their quality verdicts. "
         "Never infer chemical infeasibility from missing results.",
+        "observation_policy": {
+            "version": "mixture_qc_v1",
+            "units": {"score.loss": "mM^2"},
+            "quality": "quality.quality",
+            "source": "measure.observation.backend",
+            "allowed_sources": [backend],
+            # The verdict, the measured record and the score must all be about one observation
+            "same_observation": [
+                "measure.observation.observation_id",
+                "quality.quality.observation_id",
+                "score.observation_id",
+            ],
+        },
     }, MixtureBeaconOptimizer

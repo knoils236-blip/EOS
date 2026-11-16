@@ -10,8 +10,12 @@ import { registerDeviceTools } from './devices';
 import { registerFilesystemTools } from './filesystem';
 import { registerSimulatorTools } from './simulator';
 import { registerSdlTools } from './sdl';
+import { callerHasRole } from '../auth';
+import { gateTools } from '../role-gate';
 
 export function registerAllTools(server: McpServer) {
+  // Viewer is the floor; tools calling the EOS API are additionally checked there with the forwarded token
+  gateTools(server, (authInfo) => callerHasRole(authInfo, 'VIEWER'), 'EOS tools require at least the viewer role');
   registerTaskTools(server);
   registerProtocolTools(server);
   registerCampaignTools(server);

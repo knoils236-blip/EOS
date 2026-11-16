@@ -5,7 +5,7 @@
  * Implements server-side pagination, filtering, sorting, and search.
  */
 
-import { desc, count, eq, and, asc, or, ilike, inArray } from 'drizzle-orm';
+import { desc, count, eq, and, asc, or, ilike, inArray, isNull } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { db } from './client';
 import {
@@ -17,6 +17,9 @@ import {
   resources,
   userRoles,
   apiTokens,
+  taskAttempts,
+  materialContainers,
+  materialSamples,
 } from './schema';
 import { DEFAULT_PAGE_SIZE, type TableQueryOptions, type ColumnFilterOption } from '@/lib/types/table';
 
@@ -176,6 +179,7 @@ export interface ProtocolRunRow {
   resume: boolean;
   status: string;
   errorMessage: string | null;
+  manifestHash: string | null;
   createdAt: Date;
   startTime: Date | null;
   endTime: Date | null;
@@ -241,6 +245,7 @@ function mapProtocolRunRow(row: typeof protocolRuns.$inferSelect): ProtocolRunRo
     resume: row.resume,
     status: row.status,
     errorMessage: row.errorMessage ?? null,
+    manifestHash: row.manifestHash ?? null,
     createdAt: row.createdAt,
     startTime: row.startTime,
     endTime: row.endTime,
@@ -474,4 +479,25 @@ export async function getApiTokenOwner(tokenHash: string): Promise<string | null
 
 export async function getAllUserRoles(): Promise<UserRoleRow[]> {
   return db.select().from(userRoles).orderBy(asc(userRoles.sub));
+}
+
+export type TaskAttemptRow = typeof taskAttempts.$inferSelect;
+
+/** Every launch of a task, oldest first, including those of earlier runs before a resume. */
+export async function getTaskAttempts(protocolRunName: string | null, taskName: string): Promise<TaskAttemptRow[]> {
+  const run =
+    protocolRunName === null ? isNull(taskAttempts.protocolRunName) : eq(taskAttempts.protocolRunName, protocolRunName);
+  return db
+    .select()
+    .from(taskAttempts)
+    .where(and(run, eq(taskAttempts.taskName, taskName)))
+    .orderBy(asc(taskAttempts.attemptNumber));
+}
+
+export async function getMaterials() {
+  const [containers, samples] = await Promise.all([
+    db.select().from(materialContainers).orderBy(asc(materialContainers.id)),
+    db.select().from(materialSamples).orderBy(asc(materialSamples.id)),
+  ]);
+  return { containers, samples };
 }

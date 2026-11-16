@@ -18,6 +18,32 @@ PREFLIGHT_KEY = "preflight"  # on the real run: {real lab: twin lab}
 LAB_MAP_KEY = "lab_map"  # on the preflight run: the same mapping, applied to its devices
 PREFLIGHT_FOR_KEY = "preflight_for"  # on the preflight run: the real run it guards
 PREFLIGHT_RUN_KEY = "preflight_run"  # on the real run, once its preflight passed
+PREFLIGHT_EVIDENCE_KEY = "preflight_evidence"  # on the real run: what its passed preflight checked, and at which level
+# Only EOS sets these; a client sending one could make a run look preflighted
+RESERVED_META_KEYS = (PREFLIGHT_FOR_KEY, PREFLIGHT_RUN_KEY, PREFLIGHT_EVIDENCE_KEY)
+
+
+def reject_reserved_meta(submission: ProtocolRunSubmission) -> None:
+    if reserved := sorted(set(submission.meta or {}) & set(RESERVED_META_KEYS)):
+        raise EosProtocolRunExecutionError(f"Metadata keys {reserved} are set by EOS and cannot be submitted")
+
+
+def preflight_evidence(
+    preflight_run: str, plan_hash: str, lab_map: dict[str, str], labs: dict[str, LabDef]
+) -> dict[str, Any]:
+    """What a passed preflight shows about the real run's plan. Levels come from the twin labs' declared fidelity;
+    an undeclared fidelity stays undeclared rather than being read as physics, and a twin never counts as hardware."""
+    checks = [{"name": "definitions_validated_at_load", "level": "L0", "result": "passed"}]
+    checks += [
+        {
+            "name": f"twin_run:{twin}",
+            "level": labs[twin].fidelity or "undeclared",
+            "result": "passed",
+            "run": preflight_run,
+        }
+        for twin in sorted(set(lab_map.values()))
+    ]
+    return {"run": preflight_run, "plan": plan_hash, "checks": checks, "levels": sorted({c["level"] for c in checks})}
 
 
 def preflight_name(protocol_run_name: str) -> str:
@@ -41,8 +67,10 @@ def remap_protocol_labs(protocol: ProtocolDef, lab_map: dict[str, str], labs: di
     Return the protocol with every device of a mapped lab moved to its twin lab. Every resulting lab must be
     loaded and simulated; twin devices must have the same names and types.
     """
-    if not isinstance(lab_map, dict) or not lab_map or any(
-        not isinstance(source, str) or not isinstance(target, str) for source, target in lab_map.items()
+    if (
+        not isinstance(lab_map, dict)
+        or not lab_map
+        or any(not isinstance(source, str) or not isinstance(target, str) for source, target in lab_map.items())
     ):
         raise EosProtocolRunExecutionError("Preflight requires a non-empty mapping of lab names to twin lab names")
     unknown = set(lab_map) - set(protocol.labs)

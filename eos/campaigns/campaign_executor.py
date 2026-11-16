@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum, auto
@@ -11,7 +12,9 @@ from eos.campaigns.campaign_manager import CampaignManager
 from eos.campaigns.campaign_optimizer_manager import CampaignOptimizerManager
 from eos.campaigns.entities.campaign import OPTIMIZER_META_KEY, CampaignStatus, Campaign, CampaignSubmission
 from eos.campaigns.exceptions import EosCampaignExecutionError
+from eos.campaigns.observations import Assessment, ObservationPolicy, assess
 from eos.protocols.entities.protocol_run import ProtocolRunStatus, ProtocolRunSubmission
+from eos.protocols.manifest import content_hash
 from eos.protocols.exceptions import EosProtocolRunCancellationError, EosProtocolRunExecutionError
 from eos.protocols.protocol_executor_factory import ProtocolExecutorFactory
 from eos.protocols.protocol_run_manager import ProtocolRunManager
@@ -56,6 +59,10 @@ def _merge_protocol_run_params(base: dict[str, Any], overrides: dict[str, Any] |
                 base[task_name] = task_params
 
 
+def _assessment_meta(assessment: Assessment) -> dict[str, Any]:
+    return {"quality_assessments": {assessment.policy_version: assessment.model_dump()}}
+
+
 class CampaignExecutor:
     def __init__(
         self,
@@ -89,12 +96,18 @@ class CampaignExecutor:
         self._optimizer_output_names: list[str] = []
         self._optimizer_additional_parameters: list[str] = []
         self._optimizer_state: OptimizerState = OptimizerState.UNINITIALIZED
+        self._observation_policy: ObservationPolicy | None = None
 
         # Pending async optimizer operations
         self._pending_samples: list[_PendingOptimizerSample] = []
         self._pending_report: asyncio.Task | None = None
         self._pending_pareto: asyncio.Task | None = None
-        self._queued_reports: list[tuple[pd.DataFrame, pd.DataFrame]] = []
+        # (protocol run names, inputs, outputs) per queued report
+        self._queued_reports: list[tuple[list[str], pd.DataFrame, pd.DataFrame]] = []
+        # Runs whose results the current optimizer instance has received, so a result arriving twice trains it once
+        self._reported_runs: set[str] = set()
+        self._optimizer_config_id: str | None = None
+        self._queued_discards: list[pd.DataFrame] = []  # inputs whose runs yielded no usable observation
 
     async def start_campaign(self, db: AsyncDbSession) -> None:
         """Initialize and start a new campaign or resume an existing one."""
@@ -217,6 +230,11 @@ class CampaignExecutor:
             protocol_run_parameters=self._campaign_submission.protocol_run_parameters,
         )
 
+        self._reported_runs = set()  # a new optimizer instance has received nothing yet
+        self._optimizer_config_id = content_hash(config_snapshot)
+        if policy := optimizer_descriptor.get("observation_policy"):
+            self._observation_policy = ObservationPolicy.model_validate(policy)
+
         # Persist optimizer config to campaign meta
         optimizer_config = {
             **optimizer_descriptor,
@@ -308,7 +326,12 @@ class CampaignExecutor:
                 await self._process_results_for_optimization(db, completed_protocol_runs)
             if failed_protocol_runs and self._campaign_submission.optimize:
                 await self._ensure_optimizer_initialized(db)
-                self._queued_reports.append(await self._collect_failed_protocol_run_results(db, failed_protocol_runs))
+                inputs_df, nan_outputs_df = await self._collect_failed_protocol_run_results(db, failed_protocol_runs)
+                if self._observation_policy is None:
+                    self._queued_reports.append((failed_protocol_runs, inputs_df, nan_outputs_df))
+                else:
+                    # A failed run has no observation; it says nothing about whether its conditions are feasible
+                    self._queued_discards.append(inputs_df)
 
             for _ in completed_protocol_runs:
                 await self._campaign_manager.increment_iteration(db, self._campaign_name)
@@ -554,9 +577,20 @@ class CampaignExecutor:
             "method": "optimizer",
             "reason": "由已配置的优化器提出；未记录本轮的具体解释。",
         }
+        # Which suggestion batch, from which optimizer configuration, proposed exactly which values for each run
+        suggestion_id = str(uuid.uuid4())
         async with self._db_interface.get_async_session() as db:
-            for protocol_run_name, _ in pending.protocol_runs:
-                await self._protocol_run_manager.set_sampling_decision(db, protocol_run_name, decision)
+            for index, ((protocol_run_name, _), record) in enumerate(zip(pending.protocol_runs, records, strict=True)):
+                suggestion = {
+                    "id": suggestion_id,
+                    "index": index,
+                    "batch_size": len(records),
+                    "optimizer_config_id": self._optimizer_config_id,
+                    "values": record,
+                }
+                await self._protocol_run_manager.set_sampling_decision(
+                    db, protocol_run_name, {**decision, "suggestion": suggestion}
+                )
         for (protocol_run_name, base_params), record in zip(pending.protocol_runs, records, strict=True):
             run_params = dict_utils.unflatten_dict(record)
             _merge_protocol_run_params(base_params, run_params)
@@ -675,9 +709,22 @@ class CampaignExecutor:
 
             # Restore settings before replay so the configured history limit applies to every result.
             report_df = pd.concat([outputs_df, pd.DataFrame(additional)], axis=1) if additional else outputs_df
-            await self._optimizer.report.remote(inputs_df, report_df)
+            assessments = await self._assess(db, completed_protocol_run_names, outputs_df)
+            if assessments is not None:
+                # The same decision as when the results first arrived, under the current policy version
+                await self._campaign_optimizer_manager.record_assessments(
+                    db, self._campaign_name, dict(zip(completed_protocol_run_names, assessments, strict=True))
+                )
+                accepted = [a.accepted for a in assessments]
+                inputs_df, report_df = inputs_df[accepted], report_df[accepted]
+                completed_protocol_run_names = [
+                    name for name, a in zip(completed_protocol_run_names, assessments, strict=True) if a.accepted
+                ]
+            if not inputs_df.empty:
+                await self._optimizer.report.remote(inputs_df, report_df)
+                self._reported_runs.update(completed_protocol_run_names)
 
-        if self._failed_protocol_runs:
+        if self._failed_protocol_runs and self._observation_policy is None:
             await self._optimizer.report.remote(
                 *await self._collect_failed_protocol_run_results(db, self._failed_protocol_runs)
             )
@@ -752,18 +799,50 @@ class CampaignExecutor:
                 {OPTIMIZER_META_KEY: {"additional_parameters": dict(zip(additional.keys(), vals, strict=True))}}
                 for vals in zip(*additional.values(), strict=True)
             ]
+        assessments = await self._assess(db, completed_protocol_runs, outputs_df)
+        if assessments is not None:
+            meta_list = [
+                {**(meta_list[i] if meta_list else {}), **_assessment_meta(a)} for i, a in enumerate(assessments)
+            ]
 
+        # Every result is recorded, rejected ones included, so they stay available for diagnosis
         await self._campaign_optimizer_manager.record_campaign_samples(
             db, self._campaign_name, completed_protocol_runs, inputs_df, outputs_df, meta_list=meta_list
         )
 
         # Queue results for reporting — flushed when actor is free
         report_df = pd.concat([outputs_df, pd.DataFrame(additional)], axis=1) if additional else outputs_df
-        self._queued_reports.append((inputs_df, report_df))
+        names = list(completed_protocol_runs)
+        if assessments is not None:
+            accepted = pd.Series([a.accepted for a in assessments], index=inputs_df.index)
+            if (~accepted).any():
+                self._queued_discards.append(inputs_df[~accepted])
+            inputs_df, report_df = inputs_df[accepted], report_df[accepted]
+            names = [name for name, a in zip(names, assessments, strict=True) if a.accepted]
+        if not inputs_df.empty:
+            self._queued_reports.append((names, inputs_df, report_df))
+
+    async def _assess(
+        self, db: AsyncDbSession, protocol_run_names: list[str], outputs_df: pd.DataFrame
+    ) -> list[Assessment] | None:
+        """Judge each completed run under the campaign's observation policy; None when it has no policy."""
+        policy = self._observation_policy
+        if policy is None:
+            return None
+        tasks = await self._task_manager.get_tasks_by_protocol_runs(db, protocol_run_names, policy.task_names())
+        objectives = outputs_df.to_dict(orient="records")
+        return [
+            assess(
+                policy,
+                {name: task.output_parameters or {} for (run, name), task in tasks.items() if run == run_name},
+                objectives[i],
+            )
+            for i, run_name in enumerate(protocol_run_names)
+        ]
 
     async def _try_flush_reports(self) -> None:
         """Non-blocking: submit queued reports to optimizer if actor is free."""
-        if not self._queued_reports:
+        if not self._queued_reports and not self._queued_discards:
             return
 
         # Resolve existing report first
@@ -772,10 +851,23 @@ class CampaignExecutor:
                 return  # Actor busy, try next cycle
             await self._resolve_report_result()
 
-        # Merge all queued results into one report
-        all_inputs = pd.concat([r[0] for r in self._queued_reports], ignore_index=True)
-        all_reports = pd.concat([r[1] for r in self._queued_reports], ignore_index=True)
+        if self._queued_discards:
+            discarded = pd.concat(self._queued_discards, ignore_index=True)
+            self._queued_discards.clear()
+            await self._optimizer.discard.remote(discarded)
+        if not self._queued_reports:
+            return
+
+        # Merge all queued results into one report, leaving out runs this optimizer instance already received
+        names = [name for queued in self._queued_reports for name in queued[0]]
+        all_inputs = pd.concat([r[1] for r in self._queued_reports], ignore_index=True)
+        all_reports = pd.concat([r[2] for r in self._queued_reports], ignore_index=True)
         self._queued_reports.clear()
+        fresh = [name not in self._reported_runs and name not in names[:i] for i, name in enumerate(names)]
+        all_inputs, all_reports = all_inputs[fresh], all_reports[fresh]
+        self._reported_runs.update(names)
+        if all_inputs.empty:
+            return
 
         self._pending_report = asyncio.create_task(
             _await_ray_ref(self._optimizer.report_and_get_meta.remote(all_inputs, all_reports))

@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { DetailField, TimelineSection, ConditionalJsonSection } from './shared';
 import { TaskOutputFiles } from '@/features/files/components/TaskOutputFiles';
+import { TaskAttempts } from '@/features/tasks/components/TaskAttempts';
 import { SECTION_DIVIDER } from '../styles';
 import { ErrorBox } from '@/components/ui/ErrorBox';
 import type { Task } from '@/lib/types/api';
@@ -53,9 +54,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
         const next = await getMatterixExecutionDetail(task.protocol_run_name!, task.name);
         if (cancelled) return;
         setMatterixDetail((current) =>
-          current
-            ? { ...next, samples: mergeMatterixSamples(current.samples, next.samples) }
-            : next
+          current ? { ...next, samples: mergeMatterixSamples(current.samples, next.samples) } : next
         );
         setMatterixError(null);
         active = isActiveMatterixStatus(next.status);
@@ -96,9 +95,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
     { label: '开始时间', timestamp: task.start_time ?? null },
     { label: '结束时间', timestamp: task.end_time ?? null },
   ];
-  const displayName = isMatterixTask
-    ? matterixTaskLabel(task.type, task.input_parameters ?? {})
-    : task.name;
+  const displayName = isMatterixTask ? matterixTaskLabel(task.type, task.input_parameters ?? {}) : task.name;
 
   return (
     <div
@@ -110,9 +107,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{displayName}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {isMatterixTask ? task.name : task.type}
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{isMatterixTask ? task.name : task.type}</p>
           </div>
           <button
             onClick={onClose}
@@ -177,6 +172,9 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
                 />
               </div>
             )}
+            <div className={SECTION_DIVIDER}>
+              <TaskAttempts protocolRunName={task.protocol_run_name ?? null} taskName={task.name} />
+            </div>
             <ConditionalJsonSection data={task.meta} label="元数据" />
           </>
         )}

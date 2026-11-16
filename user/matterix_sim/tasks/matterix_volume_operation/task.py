@@ -4,7 +4,7 @@ from matterix_sim.capability import TIMEOUT_SPEC, VOLUME_SPEC, CapabilityOutputs
 from matterix_sim.devices.matterix_workstation.device import MatterixWorkstation
 
 
-@task("Matterix Volume Operation")
+@task("Matterix Volume Operation", retry="manual")
 async def matterix_volume_operation(
     matterix: MatterixWorkstation,
     context: Context,

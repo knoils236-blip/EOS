@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator, Callable
+from dataclasses import replace
 
 from litestar import Request
 from litestar.di import Provide
@@ -20,11 +21,17 @@ def get_orchestrator_provider(orchestrator: Orchestrator) -> Callable[[], Orches
     return lambda: orchestrator
 
 
+# Set by the web UI's MCP server on every call it makes for an agent. It only ever adds restrictions, so a client
+# sending it on its own gains nothing; that is why trusting it is safe.
+AUTOMATION_ORIGIN_HEADER = "X-EOS-Origin"
+
+
 def provide_current_user(request: Request) -> AuthenticatedUser:
-    """Provide the authenticated user, or a dev superuser when auth is disabled."""
-    if is_auth_disabled(request):
-        return DEV_SUPERUSER
-    return request.user
+    """Provide the authenticated user (a dev superuser when auth is disabled), marked as automation for MCP calls."""
+    user = DEV_SUPERUSER if is_auth_disabled(request) else request.user
+    if request.headers.get(AUTOMATION_ORIGIN_HEADER) == "mcp" and not user.automation:
+        return replace(user, automation=True)
+    return user
 
 
 def get_common_dependencies(orchestrator: Orchestrator) -> dict:

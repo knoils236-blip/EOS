@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { JsonDisplay } from '@/components/ui/JsonDisplay';
 import { TaskOutputFiles } from '@/features/files/components/TaskOutputFiles';
+import { TaskAttempts } from './TaskAttempts';
 import type { Task } from '@/lib/types/api';
 
 interface TaskDetailPanelProps {
@@ -154,6 +155,10 @@ export function TaskDetailPanel({ task, open, onOpenChange }: TaskDetailPanelPro
                 />
               </div>
             )}
+
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+              <TaskAttempts protocolRunName={task.protocol_run_name ?? null} taskName={task.name} />
+            </div>
 
             {/* Metadata */}
             {task.meta && Object.keys(task.meta).length > 0 && (

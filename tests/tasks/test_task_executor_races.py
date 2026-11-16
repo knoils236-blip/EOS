@@ -55,6 +55,9 @@ async def test_cancellation_during_launch_stops_the_task_before_releasing_resour
     executor._task_manager = SimpleNamespace(cancel_task=AsyncMock())
     executor._scheduler = SimpleNamespace(release_task=release)
     executor._execute_task = launch
+    # Attempt persistence is covered in test_task_executor; this test is about launch/cancel ordering
+    executor._start_attempt = AsyncMock(return_value="attempt-1")
+    executor._end_attempt = AsyncMock()
     monkeypatch.setattr(task_executor_module.ray, "cancel", stop)
 
     processing = asyncio.create_task(getattr(executor, process_method)())

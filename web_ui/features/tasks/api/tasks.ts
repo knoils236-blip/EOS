@@ -8,7 +8,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { submitThroughAdmission } from '@/lib/api/admission';
 import type { Task, TaskDefinition, ActionResult } from '@/lib/types/api';
+import { getTaskAttempts as queryTaskAttempts, type TaskAttemptRow } from '@/lib/db/queries';
 import { DEFAULT_PAGE_SIZE, type TableQueryOptions } from '@/lib/types/table';
 import { getAllTasks, type PaginatedResult } from '@/lib/db/queries';
 import { requireRole } from '@/lib/auth/authz';
@@ -49,9 +51,9 @@ export async function getTasks(options: TableQueryOptions = {}): Promise<Paginat
 
 export async function submitTask(definition: TaskDefinition): Promise<ActionResult> {
   try {
-    await orchestratorPost('/tasks/', definition);
-    revalidatePath('/tasks');
-    return { success: true };
+    const result = await submitThroughAdmission('tasks', definition);
+    if (result.success) revalidatePath('/tasks');
+    return result;
   } catch (error) {
     console.error('提交任务失败：', error);
     return {
@@ -74,4 +76,9 @@ export async function cancelTask(taskName: string, protocolRunName?: string | nu
       error: error instanceof Error ? error.message : '取消任务失败',
     };
   }
+}
+
+export async function getTaskAttempts(protocolRunName: string | null, taskName: string): Promise<TaskAttemptRow[]> {
+  await requireRole('VIEWER');
+  return queryTaskAttempts(protocolRunName, taskName);
 }

@@ -3,18 +3,25 @@ from functools import partial
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
     AsyncEngine,
     create_async_engine,
 )
 
 from eos.database.abstract_sql_db_interface import AbstractSqlDbInterface, Base
 from eos.database.alembic_commands import alembic_upgrade, alembic_downgrade
-from eos.database.exceptions import DbConnectionError
+from eos.database.exceptions import DbConnectionError, EosControlLockError
 from eos.logging.logger import log
+
+
+# Advisory locks are scoped to one database, so one constant key means one controller per lab state ("EOS")
+CONTROL_LOCK_KEY = 0x454F53
 
 
 class PostgresqlDbInterface(AbstractSqlDbInterface):
     """PostgreSQL-specific database interface implementation."""
+
+    _control_connection: AsyncConnection | None = None
 
     def __init__(self, db_config):
         self._db_name = db_config.postgres.name
@@ -165,6 +172,32 @@ class PostgresqlDbInterface(AbstractSqlDbInterface):
                 log.info(f"Dropped PostgreSQL database '{self._db_name}'")
         finally:
             await system_engine.dispose()
+
+    async def acquire_control_lock(self) -> None:
+        # A dedicated autocommit connection holds the session-level lock; it is never returned to the pool
+        connection = await (await self._async_engine.connect()).execution_options(isolation_level="AUTOCOMMIT")
+        acquired = (
+            await connection.execute(text("SELECT pg_try_advisory_lock(:key)"), {"key": CONTROL_LOCK_KEY})
+        ).scalar_one()
+        if not acquired:
+            await connection.close()
+            raise EosControlLockError(
+                f"Another EOS orchestrator controls database '{self._db_name}'. Stop it before starting this one."
+            )
+        self._control_connection = connection
+
+    async def check_control_lock(self) -> None:
+        # The session lock lives exactly as long as its connection, so a live connection means the lock is held
+        try:
+            await self._control_connection.execute(text("SELECT 1"))
+        except Exception as e:
+            raise EosControlLockError(f"Lost the control lock on database '{self._db_name}': {e}") from e
+
+    async def release_control_lock(self) -> None:
+        if self._control_connection is not None:
+            # Discard the connection instead of pooling it, which ends the session and so frees the lock
+            await self._control_connection.invalidate()
+            self._control_connection = None
 
     async def run_migrations(self) -> None:
         """Run any pending database migrations."""

@@ -31,6 +31,12 @@ class AbstractSequentialOptimizer(ABC):
         :param outputs_df: A DataFrame with the output parameters for the protocols.
         """
 
+    def discard(self, inputs_df: pd.DataFrame) -> None:  # noqa: B027 (optional hook, most optimizers keep no state)
+        """
+        Forget sampled inputs whose protocol runs produced no usable observation (failed, or rejected by the
+        campaign's observation policy). They are not results: neither good, bad nor infeasible.
+        """
+
     @abstractmethod
     def get_optimal_solutions(self) -> pd.DataFrame:
         """

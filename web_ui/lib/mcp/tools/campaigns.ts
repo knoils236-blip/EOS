@@ -133,7 +133,7 @@ export function registerCampaignTools(server: McpServer) {
     {
       title: 'Submit Campaign',
       description:
-        'Submit a new campaign. It starts at once when all its labs are simulated; otherwise it waits for a person to approve it in the web UI (see list_approval_requests).',
+        'Submit a new campaign. It starts at once unless a lab requires approval (agents always need it on labs that are not simulated; labs declaring approval: always need it for everyone); then it waits for a lab admin in the web UI (see list_approval_requests).',
       inputSchema: {
         name: z.string().describe('Unique campaign name'),
         protocol: z.string().describe('ProtocolRun type to run'),

@@ -60,7 +60,18 @@ export function DevicesTab({ initialDevices }: DevicesTabProps) {
       header: '状态',
       cell: ({ row }) => {
         const status = row.getValue('status') as string;
-        return <Badge variant={status === 'ACTIVE' ? 'success' : 'default'}>{statusLabel(status)}</Badge>;
+        // Set by the orchestrator's restart reconciliation when it could not confirm the device is safe to use
+        const recovery = row.original.meta.eos_recovery as { reason?: string | null } | undefined;
+        return (
+          <div className="space-y-1">
+            <Badge variant={status === 'ACTIVE' ? 'success' : 'default'}>{statusLabel(status)}</Badge>
+            {status === 'INACTIVE' && recovery?.reason && (
+              <p className="max-w-xs text-xs text-amber-700 dark:text-amber-400">
+                重启后未恢复：{recovery.reason}。确认安全后点“重新加载”。
+              </p>
+            )}
+          </div>
+        );
       },
       enableColumnFilter: true,
       filterType: 'multiselect',

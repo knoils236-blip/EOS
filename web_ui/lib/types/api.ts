@@ -59,6 +59,8 @@ export interface ProtocolRun extends ProtocolRunDefinition {
   campaign?: string | null;
   status: ProtocolRunStatus;
   error_message?: string | null;
+  /** Hash of the run's immutable plan; null for runs from before plans were recorded */
+  manifest_hash?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   created_at: string;

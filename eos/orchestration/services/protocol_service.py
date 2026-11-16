@@ -4,7 +4,8 @@ import traceback
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.protocols.entities.protocol_run import ProtocolRun, ProtocolRunStatus, ProtocolRunSubmission
 from eos.protocols.exceptions import EosProtocolRunExecutionError
-from eos.protocols.preflight import PREFLIGHT_KEY, split_preflight
+from eos.protocols.manifest import manifest_for, plan_hash
+from eos.protocols.preflight import PREFLIGHT_EVIDENCE_KEY, PREFLIGHT_KEY, preflight_evidence, split_preflight
 from eos.protocols.protocol_executor_factory import ProtocolExecutorFactory
 from eos.protocols.protocol_run_manager import ProtocolRunManager
 from eos.logging.logger import log
@@ -41,6 +42,8 @@ class ProtocolService:
         self._protocol_run_cancellation_queue = asyncio.Queue(maxsize=100)
         # Real runs waiting for their simulation preflight to complete, keyed by preflight run name
         self._awaiting_preflight: dict[str, ProtocolRunSubmission] = {}
+        # (manifest hash, lab map) each awaiting real run had when its preflight was submitted, by real run name
+        self._preflighted_plans: dict[str, tuple[str, dict[str, str]]] = {}
 
     async def get_protocol_run(self, db: AsyncDbSession, protocol_run_name: str) -> ProtocolRun | None:
         """Get a protocol run by its unique identifier."""
@@ -56,6 +59,8 @@ class ProtocolService:
             preflight, real = split_preflight(protocol_run_submission)
             await self.submit_protocol_run(db, preflight)
             self._awaiting_preflight[preflight.name] = real
+            plan = manifest_for(self._configuration_manager, real).hash
+            self._preflighted_plans[real.name] = (plan, protocol_run_submission.meta[PREFLIGHT_KEY])
             log.info(f"ProtocolRun '{real.name}' starts after its preflight '{preflight.name}' completes.")
             return
 
@@ -82,6 +87,10 @@ class ProtocolService:
                 raise EosProtocolRunExecutionError(f"Failed to submit protocol run '{protocol_run_name}'") from e
             self._submitted_protocol_runs[protocol_run_name] = protocol_executor
             self._work_signal.signal()
+
+    def plan_hash(self, kind: str, submission) -> str:
+        """Hash of what an approval request for this submission approves (see eos.protocols.manifest.plan_hash)."""
+        return plan_hash(self._configuration_manager, kind, submission)
 
     async def cancel_protocol_run(self, protocol_run_name: str) -> None:
         """
@@ -152,10 +161,21 @@ class ProtocolService:
         """Start real runs whose preflight completed; drop those whose preflight failed."""
         for preflight_name in failed:
             if real := self._awaiting_preflight.pop(preflight_name, None):
+                self._preflighted_plans.pop(real.name, None)
                 log.error(f"Preflight '{preflight_name}' failed. Protocol run '{real.name}' was not started.")
         for preflight_name in completed:
             if real := self._awaiting_preflight.pop(preflight_name, None):
+                # The preflight checked one plan; definitions or code changed meanwhile make it a different plan
+                plan, lab_map = self._preflighted_plans.pop(real.name)
+                if manifest_for(self._configuration_manager, real).hash != plan:
+                    log.error(
+                        f"Preflight '{preflight_name}' passed, but the plan of protocol run '{real.name}' changed "
+                        "since it was submitted, so it was not started. Submit it again to preflight the new plan."
+                    )
+                    continue
                 log.info(f"Preflight '{preflight_name}' passed. Starting protocol run '{real.name}'.")
+                evidence = preflight_evidence(preflight_name, plan, lab_map, self._configuration_manager.labs)
+                real = real.model_copy(update={"meta": {**(real.meta or {}), PREFLIGHT_EVIDENCE_KEY: evidence}})
                 async with self._db_interface.get_async_session() as db:
                     try:
                         await self.submit_protocol_run(db, real)
@@ -182,6 +202,7 @@ class ProtocolService:
         for preflight_name, real in list(self._awaiting_preflight.items()):
             if preflight_name in protocol_run_names or real.name in protocol_run_names:
                 del self._awaiting_preflight[preflight_name]
+                self._preflighted_plans.pop(real.name, None)
                 protocol_run_names.append(preflight_name)
 
         log.warning(f"Attempting to cancel protocols: {protocol_run_names}")
