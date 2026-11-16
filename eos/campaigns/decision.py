@@ -50,9 +50,12 @@ def best_by_source(rounds: list[dict], objectives: list[dict]) -> list[dict]:
     return best
 
 
-def build_decision(campaign: Any, runs: list, tasks: list, samples: list, total: int) -> dict:
+def build_decision(
+    campaign: Any, runs: list, tasks: list, samples: list, total: int, window: int | None = WINDOW
+) -> dict:
     config = ((campaign.meta or {}).get("optimizer") or {}).get("optimizer_config") or {}
     args = config.get("constructor_args") or {}
+    policy = config.get("observation_policy")
     objectives = []
     for output in args.get("outputs", []):
         kind = (output.get("objective") or {}).get("type")
@@ -96,6 +99,12 @@ def build_decision(campaign: Any, runs: list, tasks: list, samples: list, total:
             else "unknown"
         )
         eligibility = quality.get("eligible") if quality else None
+        # With a policy, what the optimizer was fed is the gate's judgment, not the task's own verdict
+        judged = (
+            ((recorded.meta or {}).get("quality_assessments") or {}).get(policy["version"])
+            if (policy and recorded)
+            else None
+        )
         target = next((out["target_mm"] for out in outputs if "target_mm" in out), None)
         decision = (run.meta or {}).get("decision") or {"method": "unknown", "reason": "此历史运行未保存逐轮选择依据。"}
         rounds.append(
@@ -115,7 +124,10 @@ def build_decision(campaign: Any, runs: list, tasks: list, samples: list, total:
                 | ({"target_mm": target} if target is not None else {}),
                 "quality": verdict,
                 "quality_reasons": quality.get("reasons", []),
-                "eligible": status == "COMPLETED" and eligibility is True,
+                "eligible": judged["accepted"] if judged else status == "COMPLETED" and eligibility is True,
+                # None: no policy, so nothing was assessed (legacy campaigns are not shown as quality-approved)
+                "policy_version": policy["version"] if policy else None,
+                "gate_reasons": judged["reasons"] if judged else [],
                 "failure_kind": quality.get("failure_kind") if verdict == "rejected" else None,
                 "files": [
                     {"task_name": row.name, "name": name} for row in rows for name in (row.output_file_names or [])
@@ -137,36 +149,32 @@ def build_decision(campaign: Any, runs: list, tasks: list, samples: list, total:
         "protocol": campaign.protocol,
         "generated_at": datetime.now(UTC).isoformat(),
         "total_runs": total,
-        "window": WINDOW,
+        "window": window,
         "max_runs": campaign.max_protocol_runs,
         "stop_reason": stop_reason,
         "objectives": objectives,
         "best": best_by_source(rounds, objectives),
         "rounds": rounds,
         "constraints": args.get("constraints", []),
+        "observation_policy": policy,
     }
     content = {key: value for key, value in result.items() if key != "generated_at"}
     result["snapshot_id"] = hashlib.sha256(json.dumps(content, sort_keys=True, allow_nan=False).encode()).hexdigest()
     return result
 
 
-async def load_decision(db: Any, campaign_name: str) -> dict | None:
+async def load_decision(db: Any, campaign_name: str, window: int | None = WINDOW) -> dict | None:
+    """Decision evidence for the latest ``window`` runs, or for every run with ``window=None``."""
     campaign = await db.scalar(select(CampaignModel).where(CampaignModel.name == campaign_name))
     if campaign is None:
         return None
     total = await db.scalar(
         select(func.count()).select_from(ProtocolRunModel).where(ProtocolRunModel.campaign == campaign_name)
     )
-    runs = list(
-        (
-            await db.scalars(
-                select(ProtocolRunModel)
-                .where(ProtocolRunModel.campaign == campaign_name)
-                .order_by(ProtocolRunModel.id.desc())
-                .limit(WINDOW)
-            )
-        ).all()
-    )[::-1]
+    query = (
+        select(ProtocolRunModel).where(ProtocolRunModel.campaign == campaign_name).order_by(ProtocolRunModel.id.desc())
+    )
+    runs = list((await db.scalars(query if window is None else query.limit(window))).all())[::-1]
     names = [run.name for run in runs]
     tasks = (
         list((await db.scalars(select(TaskModel).where(TaskModel.protocol_run_name.in_(names)))).all()) if names else []
@@ -180,4 +188,4 @@ async def load_decision(db: Any, campaign_name: str) -> dict | None:
         if names
         else []
     )
-    return build_decision(campaign, runs, tasks, samples, total)
+    return build_decision(campaign, runs, tasks, samples, total, window)

@@ -1,5 +1,7 @@
 import asyncio
 import contextlib
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 import ray
@@ -11,6 +13,7 @@ from eos.configuration.constants import EOS_COMPUTER_NAME
 from eos.allocation.entities.device_allocation import DeviceAllocationModel
 from eos.devices.entities.device import Device, DeviceStatus, DeviceModel
 from eos.devices.exceptions import EosDeviceStateError, EosDeviceInitializationError
+from eos.tasks.entities.task import TaskModel, TaskStatus
 from eos.logging.batch_error_logger import BatchErrorLogger
 from eos.logging.logger import log
 
@@ -18,6 +21,17 @@ from eos.database.abstract_sql_db_interface import AsyncDbSession
 from eos.utils.di.di_container import inject
 
 HEALTH_CHECK_TIMEOUT = 5  # seconds
+RECOVERY_CONFIRM_TIMEOUT = 30  # seconds for a device to confirm that work interrupted by a restart has stopped
+RECOVERY_META_KEY = "eos_recovery"
+
+
+@dataclass
+class _InterruptedState:
+    """What a device may still have been doing when the previous orchestrator stopped."""
+
+    inactive_reason: str | None = None  # set when the device was already inactive
+    allocated_to: str | None = None
+    tasks: list[tuple[str | None, str]] = field(default_factory=list)  # (protocol run, task) that were running
 
 
 class DeviceManager:
@@ -32,6 +46,8 @@ class DeviceManager:
         self._device_actor_handles: dict[str, ActorHandle] = {}
         self._device_actor_computer_ips: dict[str, str] = {}
         self._error_collector = BatchErrorLogger()
+        # Devices to reconcile when next created, keyed by (lab, device)
+        self._interrupted: dict[tuple[str, str], _InterruptedState] = {}
 
         log.debug("Device manager initialized.")
 
@@ -137,6 +153,70 @@ class DeviceManager:
 
         await self._raise_on_errors([f"{lab_name}.{name}" for name in device_names])
         log.info(f"Reloaded devices {device_names} in lab '{lab_name}'")
+
+    # --- Restart reconciliation ---
+
+    async def record_interrupted_state(self, db: AsyncDbSession) -> None:
+        """Remember, before startup clears device and allocation records, which devices were inactive, allocated or
+        running tasks. Each is reconciled when its actor is next created; until confirmed it is not made available."""
+
+        def state(lab_name: str, device_name: str) -> _InterruptedState:
+            return self._interrupted.setdefault((lab_name, device_name), _InterruptedState())
+
+        for device in (await db.execute(select(DeviceModel))).scalars():
+            if device.status == DeviceStatus.INACTIVE:
+                previous = (device.meta or {}).get(RECOVERY_META_KEY) or {}
+                state(device.lab_name, device.name).inactive_reason = (
+                    previous.get("reason") or "it was inactive before the restart"
+                )
+        for allocation in (await db.execute(select(DeviceAllocationModel))).scalars():
+            state(allocation.lab_name, allocation.name).allocated_to = allocation.owner
+        running = await db.execute(select(TaskModel).where(TaskModel.status == TaskStatus.RUNNING))
+        for task in running.scalars():
+            for device in task.devices.values():
+                state(device["lab_name"], device["name"]).tasks.append((task.protocol_run_name, task.name))
+
+    async def _reconcile(self, model: DeviceModel) -> None:
+        """Decide whether a device created after a restart may be used, and record the conclusion on it."""
+        state = self._interrupted.pop((model.lab_name, model.name))
+        actor = self._device_actor_handles[f"{model.lab_name}.{model.name}"]
+        reason = state.inactive_reason or await self._unconfirmed_stop_reason(actor, state.tasks)
+        model.meta = {
+            **(model.meta or {}),
+            RECOVERY_META_KEY: {
+                "checked_at": datetime.now(UTC).isoformat(),
+                "by": "startup reconciliation",
+                "allocated_to": state.allocated_to,
+                "interrupted_tasks": [{"protocol_run_name": run, "task_name": task} for run, task in state.tasks],
+                "available": reason is None,
+                "reason": reason,
+            },
+        }
+        if reason is None:
+            log.info(f"Device '{model.lab_name}.{model.name}' reconciled after restart and is available.")
+        else:
+            model.status = DeviceStatus.INACTIVE
+            log.warning(
+                f"Device '{model.lab_name}.{model.name}' stays inactive after restart because {reason}. "
+                "Check it, then reload it to make it available."
+            )
+
+    @staticmethod
+    async def _unconfirmed_stop_reason(actor: ActorHandle, tasks: list[tuple[str | None, str]]) -> str | None:
+        """Ask the device to confirm each interrupted task has stopped; returns why availability is unconfirmed."""
+        for protocol_run_name, task_name in tasks:
+            try:
+                report = await asyncio.wait_for(
+                    actor.finalize_task.remote(protocol_run_name, task_name, stop=True), RECOVERY_CONFIRM_TIMEOUT
+                )
+            except TimeoutError:
+                return f"it did not confirm within {RECOVERY_CONFIRM_TIMEOUT} s that task '{task_name}' stopped"
+            except Exception as e:
+                return f"confirming that task '{task_name}' stopped failed: {e}"
+            # None: an ordinary device whose work ran in its (now gone) Ray caller, so nothing is left running
+            if report is not None and report.get("available") is not True:
+                return f"it reports being unavailable after stopping task '{task_name}'"
+        return None
 
     # --- Cleanup ---
 
@@ -292,6 +372,9 @@ class DeviceManager:
         successful = [
             model for model in devices_to_upsert if f"{model.lab_name}.{model.name}" in self._device_actor_handles
         ]
+        await asyncio.gather(
+            *(self._reconcile(model) for model in successful if (model.lab_name, model.name) in self._interrupted)
+        )
         if successful:
             db.add_all(successful)
 

@@ -26,6 +26,7 @@ from eos.orchestration.services.task_service import TaskService
 from eos.orchestration.work_signal import WorkSignal
 
 from eos.database.abstract_sql_db_interface import AbstractSqlDbInterface
+from eos.database.exceptions import EosControlLockError
 from eos.database.file_db_interface import FileDbInterface
 from eos.database.postgresql_db_interface import PostgresqlDbInterface
 from eos.database.sqlite_db_interface import SqliteDbInterface
@@ -33,11 +34,15 @@ from eos.allocation.allocation_manager import AllocationManager
 from eos.scheduling.abstract_scheduler import AbstractScheduler
 from eos.scheduling.duration_estimator import TaskDurationEstimator
 from eos.scheduling.scheduler_factory import SchedulerFactory
+from eos.tasks.attempts import interrupt_running_attempts
 from eos.tasks.task_executor import TaskExecutor
 from eos.tasks.task_manager import TaskManager
 from eos.utils.di.di_container import get_di_container
 from eos.utils.di.di_deps import get_device_manager, get_db_interface
 from eos.utils.singleton import Singleton
+
+
+CONTROL_LOCK_CHECK_INTERVAL = 5.0  # seconds; bounds how long a lost lock goes unnoticed
 
 
 class Orchestrator(metaclass=Singleton):
@@ -70,6 +75,7 @@ class Orchestrator(metaclass=Singleton):
         self._campaigns: CampaignService | None = None
 
         self._work_signal: WorkSignal | None = None
+        self._control_lost = False
 
     async def initialize(self) -> None:
         """
@@ -96,6 +102,8 @@ class Orchestrator(metaclass=Singleton):
         di.register(AbstractSqlDbInterface, db_interface)
 
         await db_interface.initialize_database()
+        # Before anything rewrites definitions, allocations or devices, so a second orchestrator changes nothing
+        await db_interface.acquire_control_lock()
 
         async with db_interface.get_async_session() as db:
             await configuration_manager.def_sync.sync_all_defs(db)
@@ -114,13 +122,17 @@ class Orchestrator(metaclass=Singleton):
         di.register(WorkSignal, self._work_signal)
 
         # State management ########################################
+        device_manager = DeviceManager()
+        async with db_interface.get_async_session() as db:
+            # Clearing allocations and device records below would lose what each device may still be doing
+            await device_manager.record_interrupted_state(db)
+
         allocation_manager = AllocationManager()
         async with db_interface.get_async_session() as db:
             await allocation_manager.initialize(db)
         di.register(AllocationManager, allocation_manager)
         self._allocation_manager = allocation_manager
 
-        device_manager = DeviceManager()
         async with db_interface.get_async_session() as db:
             await device_manager.cleanup_device_db_records(db)
         di.register(DeviceManager, device_manager)
@@ -209,10 +221,13 @@ class Orchestrator(metaclass=Singleton):
         """
         if not self._initialized:
             return
-        log.info("Cleaning up devices...")
-
-        async with get_db_interface().get_async_session() as db:
-            await get_device_manager().cleanup_device_actors(db)
+        if self._control_lost:
+            log.warning("Control of the lab state was lost; leaving devices to the orchestrator that controls them.")
+        else:
+            log.info("Cleaning up devices...")
+            async with get_db_interface().get_async_session() as db:
+                await get_device_manager().cleanup_device_actors(db)
+        await get_db_interface().release_control_lock()
 
         log.info("Shutting down Ray node...")
         ray.shutdown()
@@ -226,9 +241,13 @@ class Orchestrator(metaclass=Singleton):
         :param maintenance_interval: Timeout for maintenance wake-ups when idle.
         """
         cycle_time = 1 / rate_hz
+        next_lock_check = 0.0
 
         while True:
             start = time.time()
+            if time.monotonic() >= next_lock_check:
+                await self._check_control_lock()
+                next_lock_check = time.monotonic() + CONTROL_LOCK_CHECK_INTERVAL
 
             has_work = (
                 bool(self._protocols.submitted_protocol_runs)
@@ -237,7 +256,7 @@ class Orchestrator(metaclass=Singleton):
             )
 
             if not has_work:
-                await self._work_signal.wait(max_wait=maintenance_interval)
+                await self._work_signal.wait(max_wait=min(maintenance_interval, CONTROL_LOCK_CHECK_INTERVAL))
             self._work_signal.clear()
 
             try:
@@ -275,6 +294,15 @@ class Orchestrator(metaclass=Singleton):
         await asyncio.sleep(0)
         await self._task_executor.process_new_tasks()
 
+    async def _check_control_lock(self) -> None:
+        """Stop the loop, and with it every new device command, once this orchestrator no longer controls the lab."""
+        try:
+            await get_db_interface().check_control_lock()
+        except EosControlLockError:
+            self._control_lost = True
+            log.critical("Lost control of the lab state. Stopping before issuing any further device commands.")
+            raise
+
     async def _fail_running_work(self) -> None:
         """
         When the orchestrator starts, fail all running tasks, protocols, and campaigns.
@@ -284,6 +312,7 @@ class Orchestrator(metaclass=Singleton):
         """
         async with get_db_interface().get_async_session() as db:
             await self._tasks.fail_running_tasks(db)
+            await interrupt_running_attempts(db)
             await self._protocols.fail_running_protocol_runs(db)
             await self._campaigns.fail_running_campaigns(db)
 

@@ -16,10 +16,13 @@ from eos.configuration.validation import ProtocolValidator
 from eos.database.abstract_sql_db_interface import AsyncDbSession
 from eos.protocols.drafting import ProtocolDrafter
 from eos.protocols.entities.protocol_run import ProtocolRunSubmission, ProtocolRun
+from eos.protocols.exceptions import EosProtocolRunExecutionError
 from eos.orchestration.exceptions import EosProtocolInUseError
 from eos.orchestration.orchestrator import Orchestrator
 from eos.orchestration.services.lab_service import LabService
+from eos.web_api.admission import protocol_labs, require_no_approval
 from eos.web_api.exception_handling import APIError
+from eos.protocols.preflight import reject_reserved_meta
 
 # Pattern to extract task names from validation error messages
 _TASK_NAME_PATTERN = re.compile(r"[Tt]ask '([^']+)'")
@@ -120,6 +123,8 @@ class ProtocolController(Controller):
     ) -> dict[str, str]:
         """Submit a new protocol run for execution."""
         stamp_owner(data, user)
+        _reject_reserved_meta(data)
+        await require_no_approval(db, await protocol_labs(db, data.type), user, "protocol-runs")
         await orchestrator.protocols.submit_protocol_run(db, data)
         return {"message": "ProtocolRun submitted"}
 
@@ -240,3 +245,10 @@ class ProtocolController(Controller):
             scenes,
         )
         return draft.model_dump()
+
+
+def _reject_reserved_meta(submission: ProtocolRunSubmission) -> None:
+    try:
+        reject_reserved_meta(submission)
+    except EosProtocolRunExecutionError as e:
+        raise APIError(status_code=400, detail=str(e)) from e

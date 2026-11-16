@@ -12,6 +12,12 @@ const KIND_LABELS: Record<string, string> = {
   note: '备注',
 };
 
+const APPROVAL_KIND_LABELS: Record<ApprovalRequest['kind'], string> = {
+  protocol_run: '协议运行',
+  campaign: '实验计划',
+  task: '任务',
+};
+
 const STATUS_LABELS: Record<ApprovalRequest['status'], string> = {
   pending: '待审批',
   approved: '已批准',
@@ -32,13 +38,13 @@ function PendingRequest({ request }: { request: ApprovalRequest }) {
     <li className="rounded-xl border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-800 p-4 space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="font-medium text-gray-900 dark:text-white">
-          #{request.id} {request.kind === 'campaign' ? '实验计划' : '协议运行'} {request.name}
+          #{request.id} {APPROVAL_KIND_LABELS[request.kind]} {request.name}
         </span>
         <span className="text-xs text-gray-500">
           {request.requested_by} · {new Date(request.created_at).toLocaleString()}
         </span>
       </div>
-      <p className="text-sm text-gray-700 dark:text-gray-300">真实实验室：{request.labs.join('、')}</p>
+      <p className="text-sm text-gray-700 dark:text-gray-300">涉及实验室：{request.labs.join('、')}</p>
       {request.reason && (
         <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">理由：{request.reason}</p>
       )}

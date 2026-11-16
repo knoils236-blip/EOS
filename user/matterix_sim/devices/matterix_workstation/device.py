@@ -554,6 +554,7 @@ class MatterixWorkstation(SilaDevice, type="matterix_workstation"):
                 semantics, getattr(self, "_consumable_map", {}), self._session_id, session.get("generation", 0)
             ),
             "available": not self._blocked,
+            "request_id": parameters["request_id"],
         }
 
     async def _call(self, command: str, argument: Any) -> dict[str, Any]:

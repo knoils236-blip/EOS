@@ -9,7 +9,7 @@ registerHooks({
     if (url === 'eos:test-auth') {
       return {
         format: 'commonjs',
-        source: 'module.exports = { getAccessToken: async () => null };',
+        source: 'module.exports = { getAccessToken: async () => null, inMcpRequest: () => false };',
         shortCircuit: true,
       };
     }

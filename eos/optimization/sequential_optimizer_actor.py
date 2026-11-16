@@ -36,6 +36,9 @@ class SequentialOptimizerActor(AbstractSequentialOptimizer):
         await self.report(input_df, output_df)
         return self.get_optimizer_meta()
 
+    async def discard(self, input_df: pd.DataFrame) -> None:
+        await _maybe_await(self.optimizer.discard(input_df))
+
     def get_optimal_solutions(self) -> pd.DataFrame:
         return self.optimizer.get_optimal_solutions()
 

@@ -2,6 +2,7 @@ name: matterix_lab
 desc: Matterix (Isaac Sim) digital-twin laboratory reached through the Matterix SiLA 2 bridge
 
 simulated: true
+fidelity: L3  # Isaac Sim contact physics and device semantics
 devices:
   matterix:
     type: matterix_workstation

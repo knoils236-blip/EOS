@@ -15,9 +15,9 @@ export function formatErrors(errors: Array<{ task: string | null; message: strin
 }
 
 export function submissionMessage(what: string, result: unknown): string {
-  const r = result as { status?: string; approval_id?: number; real_labs?: string[] };
+  const r = result as { status?: string; approval_id?: number; approval_labs?: string[] };
   if (r.status === 'pending_approval') {
-    return `${what} is waiting for human approval (request #${r.approval_id}) because it uses labs that are not simulated: ${r.real_labs?.join(', ')}. Check it later with list_approval_requests.`;
+    return `${what} is waiting for human approval (request #${r.approval_id}) because these labs require approval for it: ${r.approval_labs?.join(', ')}. Check it later with list_approval_requests.`;
   }
   return `${what} submitted.\n${JSON.stringify(result, null, 2)}`;
 }
@@ -159,7 +159,7 @@ export function registerSdlTools(server: McpServer) {
     {
       title: 'List Approval Requests',
       description:
-        'Submissions to labs that are not simulated wait for a person to approve them in the web UI. List them to see whether yours was approved (and started), rejected with a note, or is still pending.',
+        'Submissions that a lab requires approval for (agent submissions to labs that are not simulated, or any submission to a lab declaring approval: always) wait for a lab admin to approve them in the web UI. List them to see whether yours was approved (and started), rejected with a note, or is still pending.',
       inputSchema: {
         status: z.enum(['pending', 'approved', 'rejected']).optional(),
       },

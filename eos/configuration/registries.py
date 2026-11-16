@@ -20,7 +20,7 @@ from eos.configuration.exceptions import (
     EosDevicePluginError,
     EosTaskPluginError,
 )
-from eos.configuration.packages import ENTITY_INFO, EntityType, Package, PackageManager
+from eos.configuration.packages import ENTITY_INFO, EntityType, Package, PackageManager, source_fingerprint
 from eos.devices.base_device import BaseDevice, build_device_spec
 from eos.logging.batch_error_logger import batch_error, raise_batched_errors
 from eos.logging.logger import log
@@ -117,14 +117,19 @@ class PluginRegistry(Generic[T, S]):
         self._spec_registry = spec_registry
         self._config = config
         self.plugin_types: dict[str, T] = {}
+        # Source fingerprint of each plugin's package as it was when the plugin was imported, i.e. of the code
+        # that runs, which can differ from disk until the plugin is reloaded
+        self.fingerprints: dict[str, str] = {}
 
     def load_all(self) -> None:
         """Import every plugin of every package and replace the registered plugins and specs."""
         plugins: dict[str, T] = {}
         specs: dict[str, S] = {}
         dirs_to_types: dict[Path, str] = {}
+        fingerprints: dict[str, str] = {}
 
         for package in self._package_manager.get_all_packages():
+            fingerprint = source_fingerprint(package.path)
             for relative_dir in self._package_manager.find_entity_dirs(package, self._config.entity_type):
                 loaded = self._load(package, relative_dir)
                 if loaded is None:
@@ -138,10 +143,12 @@ class PluginRegistry(Generic[T, S]):
                     continue
                 plugins[type_name] = plugin
                 specs[type_name] = spec
+                fingerprints[type_name] = fingerprint
                 dirs_to_types[Path(package.name) / relative_dir] = type_name
 
         raise_batched_errors(root_exception_type=self._config.exception_class)
         self.plugin_types = plugins
+        self.fingerprints = fingerprints
         self._spec_registry.update_specs(specs, dirs_to_types)
 
     def get_plugin_class_type(self, type_name: str) -> T:
@@ -161,6 +168,7 @@ class PluginRegistry(Generic[T, S]):
             raise self._config.exception_class(f"Package '{package_name}' of '{type_name}' is not loaded.")
 
         self._package_manager.purge_modules(package)
+        fingerprint = source_fingerprint(package.path)
         loaded = self._load(package, Path(*relative_parts))
         raise_batched_errors(root_exception_type=self._config.exception_class)
 
@@ -171,7 +179,9 @@ class PluginRegistry(Generic[T, S]):
                     f"Cannot rename {self._entity_name} '{type_name}' to '{new_type}', which already exists."
                 )
             self.plugin_types.pop(type_name, None)
+            self.fingerprints.pop(type_name, None)
         self.plugin_types[new_type] = plugin
+        self.fingerprints[new_type] = fingerprint
         self._spec_registry.set_spec(new_type, spec, dir_key)
         log.debug(f"Reloaded {self._entity_name} '{new_type}'")
         return new_type

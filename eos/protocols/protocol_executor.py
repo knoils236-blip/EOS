@@ -12,6 +12,7 @@ from eos.protocols.exceptions import (
     EosProtocolRunTaskExecutionError,
     EosProtocolRunCancellationError,
 )
+from eos.protocols.manifest import RunManifest, differences, load_manifest, save_manifest
 from eos.protocols.protocol_run_manager import ProtocolRunManager
 from eos.logging.logger import log
 from eos.database.abstract_sql_db_interface import AsyncDbSession, AbstractSqlDbInterface
@@ -44,8 +45,11 @@ class ProtocolExecutor:
         scheduler: AbstractScheduler,
         db_interface: AbstractSqlDbInterface,
         campaign: str | None = None,
+        manifest: RunManifest | None = None,
     ):
         self._protocol_run_submission = protocol_run_submission
+        # The plan this run executes; the factory always builds one, tests that construct executors may not
+        self._manifest = manifest
         self._protocol_run_name = protocol_run_submission.name
         self._protocol = protocol_run_submission.type
         self._protocol_graph = protocol_graph
@@ -117,6 +121,9 @@ class ProtocolExecutor:
         self._protocol_run_status = protocol_run.status
 
         if not self._protocol_run_submission.resume:
+            if self._protocol_run_status == ProtocolRunStatus.CREATED:
+                # Created ahead of time (campaign samples) and only now given its final parameters
+                await self._bind_manifest(db)
             if self._protocol_run_status in (
                 ProtocolRunStatus.COMPLETED,
                 ProtocolRunStatus.SUSPENDED,
@@ -129,6 +136,7 @@ class ProtocolExecutor:
                     f"'resume=True'."
                 )
         else:
+            await self._check_resume_manifest(db, protocol_run)
             await self._resume_protocol_run(db)
 
     async def cancel_protocol_run(self) -> None:
@@ -197,6 +205,31 @@ class ProtocolExecutor:
         parameters = self._protocol_run_submission.parameters or {}
         self._validate_parameters(parameters)
         await self._protocol_run_manager.create_protocol_run(db, self._protocol_run_submission, campaign=self._campaign)
+        await self._bind_manifest(db)
+
+    async def _bind_manifest(self, db: AsyncDbSession) -> None:
+        if self._manifest is None:
+            return
+        await save_manifest(db, self._manifest)
+        await self._protocol_run_manager.set_manifest_hash(db, self._protocol_run_name, self._manifest.hash)
+
+    async def _check_resume_manifest(self, db: AsyncDbSession, protocol_run: ProtocolRun) -> None:
+        """Resume only with the plan the run started with; a changed plan is a new run, not a continuation."""
+        if self._manifest is None:
+            return
+        if protocol_run.manifest_hash is None:
+            log.warning(
+                f"Protocol run '{self._protocol_run_name}' predates run manifests, so whether its plan changed is "
+                "unknown. Resuming it with the current definitions."
+            )
+            await self._bind_manifest(db)
+            return
+        if protocol_run.manifest_hash != self._manifest.hash:
+            changed = differences(await load_manifest(db, protocol_run.manifest_hash), self._manifest.content)
+            raise EosProtocolRunExecutionError(
+                f"Cannot resume protocol run '{self._protocol_run_name}': its plan changed since it started "
+                f"({', '.join(changed)}). Submit a new protocol run to use the current definitions."
+            )
 
     async def _cancel_running_tasks(self) -> None:
         """Cancel all running tasks in the protocol run."""

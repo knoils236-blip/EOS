@@ -130,9 +130,10 @@ class BaseDevice:
 
         Override for devices with work outside their Ray caller. Return parameters, files (bytes),
         resource_updates (metadata by resource name), and available. Optional inventory_events carry
-        resource_name, stable event_id, integer delta, source (simulation/hardware), and note.
-        With stop=True, first confirm
-        the operation has stopped. Ordinary devices need no additional finalization.
+        resource_name, stable event_id, integer delta, source (simulation/hardware), and note. An optional
+        request_id names the device-side request, recorded on the task attempt. Optional material_events
+        (eos.resources.materials) report confirmed container moves, unknown positions, splits and removals.
+        With stop=True, first confirm the operation has stopped. Ordinary devices need no additional finalization.
         """
         return None
 

@@ -81,6 +81,19 @@ class AbstractSqlDbInterface(ABC):
             expire_on_commit=False,
         )
 
+    @abstractmethod
+    async def acquire_control_lock(self) -> None:
+        """Take exclusive control of the lab state in this database, or raise EosControlLockError if another
+        orchestrator holds it. Held until release_control_lock or process exit."""
+
+    @abstractmethod
+    async def check_control_lock(self) -> None:
+        """Raise EosControlLockError if the control lock taken by acquire_control_lock has been lost."""
+
+    @abstractmethod
+    async def release_control_lock(self) -> None:
+        """Release the control lock if held."""
+
     async def initialize_database(self) -> None:
         """Initialize database and create all tables."""
         try:

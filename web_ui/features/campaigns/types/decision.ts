@@ -13,6 +13,9 @@ export interface DecisionRound {
   quality_reasons: string[];
   eligible: boolean;
   failure_kind: string | null;
+  /** Observation policy that gated what reached the optimizer; null when the campaign has none (not assessed) */
+  policy_version: string | null;
+  gate_reasons: string[];
   files: { task_name: string; name: string }[];
 }
 

@@ -86,6 +86,12 @@ async def executor(monkeypatch):
         get_task=AsyncMock(return_value=row), add_task_output=AsyncMock(side_effect=add_output), cancel_task=AsyncMock()
     )
     executor._scheduler = SimpleNamespace(release_task=release)
+    # Attempt persistence is covered in test_task_executor; these tests are about device finalization
+    executor._task_plugin_registry = SimpleNamespace(
+        get_plugin_class_type=lambda _: SimpleNamespace(spec=SimpleNamespace(retry="safe"))
+    )
+    executor._end_attempt = AsyncMock()
+    monkeypatch.setattr(module, "record_finalization", AsyncMock())
     monkeypatch.setattr(module, "FileDbInterface", lambda _: SimpleNamespace(store_file=AsyncMock(side_effect=upload)))
     monkeypatch.setattr(module.ray, "cancel", lambda *args, **kwargs: events.append("ray_cancelled"))
     return executor, context, future, events, finalize, row

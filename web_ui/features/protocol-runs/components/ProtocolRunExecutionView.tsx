@@ -88,6 +88,10 @@ export function ProtocolRunExecutionView({
 
   const selectedTaskDetails = selectedTaskName ? taskDetailsCache[selectedTaskName] : null;
   const canCancel = currentProtocolRun.status === 'RUNNING' || currentProtocolRun.status === 'CREATED';
+  const preflightEvidence = currentProtocolRun.meta?.preflight_evidence as { levels?: string[] } | undefined;
+  const preflightLevels = preflightEvidence?.levels
+    ?.map((level) => (level === 'undeclared' ? '未声明' : level))
+    .join('+');
 
   React.useEffect(() => {
     if (usesMatterix) setMainView('overview');
@@ -232,7 +236,18 @@ export function ProtocolRunExecutionView({
                 </Badge>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {currentProtocolRun.type} • {currentProtocolRun.owner}
+                {currentProtocolRun.type} • {currentProtocolRun.owner} •{' '}
+                <span title={currentProtocolRun.manifest_hash ?? '此运行早于计划快照，执行计划未记录'}>
+                  {currentProtocolRun.manifest_hash
+                    ? `计划 ${currentProtocolRun.manifest_hash.slice(0, 12)}`
+                    : '计划未版本化'}
+                </span>
+                {preflightLevels && (
+                  <span title="预检只证明所列层级；未声明保真度的孪生实验室不代表物理验证，孪生实验室也不代表实机">
+                    {' '}
+                    • 预检 {preflightLevels}
+                  </span>
+                )}
               </p>
             </div>
           </div>

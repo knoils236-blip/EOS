@@ -1,7 +1,7 @@
 import { z } from 'zod/v3';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readonlyClient } from '@/lib/db/client';
-import { isSuperuserCaller } from '../auth';
+import { callerHasRole } from '../auth';
 import { formatTable, textResult, errorResult } from '../helpers/format';
 
 const FORBIDDEN_KEYWORDS = [
@@ -89,7 +89,7 @@ export function registerSqlTools(server: McpServer) {
       },
     },
     async ({ sql }, extra) => {
-      if (!(await isSuperuserCaller(extra.authInfo))) {
+      if (!(await callerHasRole(extra.authInfo, 'SUPERUSER'))) {
         return errorResult('The query_database tool requires the superuser role');
       }
 

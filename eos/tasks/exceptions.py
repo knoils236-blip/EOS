@@ -22,6 +22,10 @@ class EosTaskExecutionError(EosTaskError):
     pass
 
 
+class EosTaskTimeoutError(EosTaskExecutionError):
+    """The task did not finish in time; whether its operation failed is a separate question."""
+
+
 class EosTaskCancellationError(EosTaskError):
     pass
 

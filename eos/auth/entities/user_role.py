@@ -26,6 +26,8 @@ class AuthenticatedUser:
     sub: str
     email: str | None = None
     name: str | None = None
+    # Automation (an EOS API token, or an agent calling through the MCP server) rather than a person signed in
+    automation: bool = False
 
 
 class UserRole(BaseModel):

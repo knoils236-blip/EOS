@@ -1,6 +1,7 @@
 name: mixture_mock_lab
 desc: Fast mixture execution mock; all observations are synthetic
 simulated: true
+fidelity: L1  # mock devices: execution order, resources and scheduling only
 devices:
   workstation:
     type: mixture_workstation

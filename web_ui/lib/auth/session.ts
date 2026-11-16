@@ -13,6 +13,11 @@ function mcpBearerToken(): string | undefined {
   return (globalThis as { __eosMcpBearerStore?: BearerStore }).__eosMcpBearerStore?.getStore();
 }
 
+/** True while handling a call made through the MCP server, i.e. on behalf of an agent. */
+export function inMcpRequest(): boolean {
+  return mcpBearerToken() !== undefined;
+}
+
 export interface SessionUser {
   sub: string;
   name?: string | null;

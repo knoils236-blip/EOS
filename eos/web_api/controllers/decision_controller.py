@@ -14,8 +14,10 @@ from pydantic import BaseModel, Field
 from eos.auth.authorization import require_role
 from eos.auth.entities.user_role import Role
 from eos.campaigns.decision import load_decision
+from eos.campaigns.export import export_campaign
 from eos.database.abstract_sql_db_interface import AsyncDbSession
 from eos.optimization.openai_connection import OpenAIConnection
+from eos.utils.di.di_deps import get_file_db_interface
 from eos.web_api.exception_handling import APIError
 
 _REVIEW_SYSTEM_PROMPT = (
@@ -74,6 +76,14 @@ async def _review_with_ai(connection: OpenAIConnection, payload: dict) -> str:
 class DecisionController(Controller):
     path = "/campaigns"
     guards: ClassVar = [require_role(Role.VIEWER)]
+
+    @get("/{campaign_name:str}/export")
+    async def export(self, campaign_name: str, db: AsyncDbSession) -> dict:
+        """Every round with its plan, attempts, quality judgments, suggestions, approvals and file checks."""
+        exported = await export_campaign(db, get_file_db_interface(), campaign_name)
+        if exported is None:
+            raise APIError(status_code=404, detail="Campaign not found")
+        return exported
 
     @get("/{campaign_name:str}/decision")
     async def get_decision(self, campaign_name: str, db: AsyncDbSession) -> dict:

@@ -1,7 +1,7 @@
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.configuration.protocol_graph import ProtocolGraph
 from eos.protocols.entities.protocol_run import ProtocolRunSubmission
-from eos.protocols.preflight import LAB_MAP_KEY, remap_protocol_labs
+from eos.protocols.manifest import build_manifest, resolve_protocol
 from eos.protocols.protocol_executor import ProtocolExecutor
 from eos.protocols.protocol_run_manager import ProtocolRunManager
 from eos.database.abstract_sql_db_interface import AbstractSqlDbInterface
@@ -34,10 +34,8 @@ class ProtocolExecutorFactory:
         self._db_interface = db_interface
 
     def create(self, protocol_run_submission: ProtocolRunSubmission, campaign: str | None = None) -> ProtocolExecutor:
-        protocol = self._configuration_manager.protocols.get(protocol_run_submission.type)
-        meta = protocol_run_submission.meta or {}
-        if LAB_MAP_KEY in meta:
-            protocol = remap_protocol_labs(protocol, meta[LAB_MAP_KEY], self._configuration_manager.labs)
+        protocol = resolve_protocol(self._configuration_manager, protocol_run_submission)
+        manifest = build_manifest(self._configuration_manager, protocol, protocol_run_submission.parameters)
         protocol_graph = ProtocolGraph(protocol)
 
         return ProtocolExecutor(
@@ -49,4 +47,5 @@ class ProtocolExecutorFactory:
             scheduler=self._scheduler,
             db_interface=self._db_interface,
             campaign=campaign,
+            manifest=manifest,
         )

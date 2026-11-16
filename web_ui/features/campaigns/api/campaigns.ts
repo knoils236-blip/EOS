@@ -8,6 +8,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { submitThroughAdmission } from '@/lib/api/admission';
 import type { Campaign, CampaignDefinition, ActionResult } from '@/lib/types/api';
 import { DEFAULT_PAGE_SIZE, type TableQueryOptions } from '@/lib/types/table';
 import { getAllCampaigns, type PaginatedResult } from '@/lib/db/queries';
@@ -52,9 +53,9 @@ export async function getCampaigns(options: TableQueryOptions = {}): Promise<Pag
 
 export async function submitCampaign(definition: CampaignDefinition): Promise<ActionResult> {
   try {
-    await orchestratorPost('/campaigns/', definition);
-    revalidatePath('/campaigns');
-    return { success: true };
+    const result = await submitThroughAdmission('campaigns', definition);
+    if (result.success) revalidatePath('/campaigns');
+    return result;
   } catch (error) {
     console.error('提交实验计划失败：', error);
     return {

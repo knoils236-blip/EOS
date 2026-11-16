@@ -1,6 +1,7 @@
 name: mixture_matterix_lab
 desc: Two-source Matterix mixture; physics execution (whole-station acceptance pending) and synthetic measurement
 simulated: true
+fidelity: L3  # Isaac Sim contact physics and device semantics
 devices:
   workstation:
     type: mixture_workstation

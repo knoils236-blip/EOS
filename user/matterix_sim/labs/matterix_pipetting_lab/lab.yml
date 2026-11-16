@@ -1,6 +1,7 @@
 name: matterix_pipetting_lab
 desc: 250 Hz physics station (whole-station acceptance pending); semantic volumes are simulated, not hardware measurements
 simulated: true
+fidelity: L3  # Isaac Sim contact physics and device semantics
 devices:
   matterix:
     type: matterix_workstation

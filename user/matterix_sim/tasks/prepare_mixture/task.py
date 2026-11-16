@@ -11,7 +11,7 @@ class PreparationOutputs(BaseModel):
     sample_record: bytes = Param(file_name="sample.json", desc="Immutable preparation record.")
 
 
-@task("Prepare Mixture")
+@task("Prepare Mixture", retry="manual")
 async def prepare_mixture(
     workstation: MixtureWorkstation,
     context: Context,

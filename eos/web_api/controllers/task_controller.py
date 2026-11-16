@@ -8,6 +8,7 @@ from eos.auth.entities.user_role import AuthenticatedUser, Role
 from eos.database.abstract_sql_db_interface import AsyncDbSession
 from eos.orchestration.orchestrator import Orchestrator
 from eos.tasks.entities.task import TaskSubmission, Task
+from eos.web_api.admission import require_no_approval
 from eos.web_api.exception_handling import APIError
 
 
@@ -47,6 +48,7 @@ class TaskController(Controller):
         """Submit a new task for execution."""
         if user is not DEV_SUPERUSER:
             data.meta["submitted_by"] = user.sub
+        await require_no_approval(db, {d.lab_name for d in data.devices.values()}, user, "tasks")
         await orchestrator.tasks.submit_task(db, data)
         return {"message": "Task submitted"}
 

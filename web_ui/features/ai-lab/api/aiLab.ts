@@ -6,7 +6,7 @@ import { requireRole } from '@/lib/auth/authz';
 
 export interface ApprovalRequest {
   id: number;
-  kind: 'protocol_run' | 'campaign';
+  kind: 'protocol_run' | 'campaign' | 'task';
   name: string;
   labs: string[];
   payload: Record<string, unknown>;
@@ -43,7 +43,7 @@ export async function decideApproval(
   note: string
 ): Promise<{ error?: string }> {
   try {
-    await requireRole('SUBMITTER');
+    await requireRole('LAB_ADMIN');
     await orchestratorPost(`/approvals/${id}/${decision}`, { note: note || null });
     revalidatePath('/ai-lab');
     return {};

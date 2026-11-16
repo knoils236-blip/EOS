@@ -11,7 +11,8 @@ const bearerTokenStore = new AsyncLocalStorage<string>();
 const authedHandler = withMcpAuth(mcpHandler, verifyToken, { required: true });
 
 function handler(req: Request): Promise<Response> | Response {
-  if (!env.AUTH_ENABLED) return mcpHandler(req);
+  // The store also marks the request as MCP-originated (an empty token when auth is disabled)
+  if (!env.AUTH_ENABLED) return bearerTokenStore.run('', () => mcpHandler(req));
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
   return bearerTokenStore.run(token, () => authedHandler(req));
 }

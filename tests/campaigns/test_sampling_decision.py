@@ -12,6 +12,7 @@ async def test_batch_provenance_is_attached_to_named_runs_before_execution():
     executor = object.__new__(CampaignExecutor)
     executor._campaign_name = "campaign"
     executor._save_optimizer_meta_dict = AsyncMock()
+    executor._optimizer_config_id = "config-1"
     saved = []
 
     async def save(db, name, decision):
@@ -28,7 +29,15 @@ async def test_batch_provenance_is_attached_to_named_runs_before_execution():
     future.set_result((pd.DataFrame({"prepare.stock_volume_ul": [74, 80]}), {"sampling_decision": reason}))
     pending = _PendingOptimizerSample(future, [("run_2", {}), ("run_1", {})])
     resolved = await executor._resolve_pending_sample(pending)
-    assert saved == [("run_2", reason), ("run_1", reason)]
+    # Each run keeps the stated reason plus the exact suggestion it was given
+    assert [(name, {k: v for k, v in d.items() if k != "suggestion"}) for name, d in saved] == [
+        ("run_2", reason),
+        ("run_1", reason),
+    ]
+    assert [d["suggestion"]["values"] for _, d in saved] == [
+        {"prepare.stock_volume_ul": 74},
+        {"prepare.stock_volume_ul": 80},
+    ]
     assert resolved == [
         ("run_2", {"prepare": {"stock_volume_ul": 74}}),
         ("run_1", {"prepare": {"stock_volume_ul": 80}}),

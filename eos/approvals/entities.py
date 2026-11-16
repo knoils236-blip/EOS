@@ -7,12 +7,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from eos.database.abstract_sql_db_interface import Base
 
-ApprovalKind = Literal["protocol_run", "campaign"]
+ApprovalKind = Literal["protocol_run", "campaign", "task"]
 ApprovalStatus = Literal["pending", "approved", "rejected"]
 
 
 class ApprovalRequest(BaseModel):
-    """An agent's submission to a lab that is not simulated, held until a person approves it."""
+    """A submission held by the execution admission policy until a lab admin approves it."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -24,6 +24,8 @@ class ApprovalRequest(BaseModel):
     reason: str | None
     status: ApprovalStatus
     requested_by: str
+    # Plan hash at request time (eos.protocols.manifest.plan_hash); None for requests from before plan binding
+    manifest_hash: str | None = None
     decided_by: str | None
     note: str | None
     created_at: datetime
@@ -41,6 +43,7 @@ class ApprovalRequestModel(Base):
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending", index=True)
     requested_by: Mapped[str] = mapped_column(String(255), nullable=False)
+    manifest_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     decided_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

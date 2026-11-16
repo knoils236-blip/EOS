@@ -10,6 +10,7 @@ from sqlalchemy import delete, select
 
 from eos.campaigns.entities.campaign import CampaignSample, CampaignSampleModel
 from eos.campaigns.exceptions import EosCampaignExecutionError
+from eos.campaigns.observations import ObservationPolicy, check_objective_units
 from eos.configuration.configuration_manager import ConfigurationManager
 from eos.configuration.eos_config import ExecutionConfig
 from eos.configuration.packages import EntityType
@@ -151,6 +152,17 @@ class CampaignOptimizerManager:
 
         _apply_ai_connection(constructor_args, optimizer_overrides)
 
+        # The observation policy belongs to the campaign, not the optimizer; checked before any run is sampled
+        policy = constructor_args.pop("observation_policy", None)
+        if policy is not None:
+            policy = ObservationPolicy.model_validate(policy)
+            check_objective_units(
+                policy,
+                [output.key for output in constructor_args["outputs"]],
+                self._configuration_manager.protocols[protocol],
+                self._configuration_manager.task_specs,
+            )
+
         protocol_yaml = self._read_protocol_yaml(protocol)
         if protocol_yaml:
             if global_parameters:
@@ -163,6 +175,7 @@ class CampaignOptimizerManager:
             "optimizer_type": optimizer_type.__name__,
             "is_beacon": optimizer_type.is_beacon,
             "param_schema": optimizer_type.eos_param_schema(),
+            "observation_policy": policy.model_dump() if policy else None,
         }
 
         # Build config snapshot (strip sensitive keys, serialize BoFire objects for JSON persistence)
@@ -228,6 +241,21 @@ class CampaignOptimizerManager:
         )
 
         return input_names, output_names, additional_parameters
+
+    async def record_assessments(self, db: AsyncDbSession, campaign_name: str, assessments: dict[str, Any]) -> None:
+        """Add each run's assessment under its policy version, keeping judgments made under earlier versions."""
+        rows = await db.scalars(
+            select(CampaignSampleModel).where(
+                CampaignSampleModel.campaign_name == campaign_name,
+                CampaignSampleModel.protocol_run_name.in_(list(assessments)),
+            )
+        )
+        for row in rows:
+            assessment = assessments[row.protocol_run_name]
+            judged = dict((row.meta or {}).get("quality_assessments", {}))
+            judged.setdefault(assessment.policy_version, assessment.model_dump())
+            row.meta = {**(row.meta or {}), "quality_assessments": judged}
+        await db.flush()
 
     async def record_campaign_samples(
         self,

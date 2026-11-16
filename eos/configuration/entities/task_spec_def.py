@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 from typing import Self
@@ -71,6 +71,9 @@ class DeviceRequirementDef(BaseModel):
 class TaskSpecDef(BaseModel):
     type: str
     desc: str | None = None
+    # "manual" for tasks with irreversible effects (e.g. dispensing): a failed or uncertain attempt is never relaunched
+    # automatically, whatever `retries` says, and waits for a person
+    retry: Literal["safe", "manual"] = "safe"
     devices: dict[ValidName, DeviceRequirementDef] = Field(default_factory=dict)
 
     input_resources: dict[ValidName, ResourceRequirement] = Field(default_factory=dict)

@@ -246,6 +246,9 @@ class BeaconOptimizer(AbstractSequentialOptimizer):
             if len(self._history) > self._ai_history_size:
                 self._history = self._history[-self._ai_history_size :]
 
+    def discard(self, inputs_df: pd.DataFrame) -> None:
+        self._optimizer.discard(inputs_df)
+
     def get_optimal_solutions(self) -> pd.DataFrame:
         return self._optimizer.get_optimal_solutions()
 

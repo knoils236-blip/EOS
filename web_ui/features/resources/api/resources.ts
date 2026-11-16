@@ -3,7 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { orchestratorPost } from '@/lib/api/orchestrator';
 import { DEFAULT_PAGE_SIZE, type TableQueryOptions } from '@/lib/types/table';
-import { getAllResources, type PaginatedResult, type ResourceRow } from '@/lib/db/queries';
+import {
+  getAllResources,
+  getMaterials as queryMaterials,
+  type PaginatedResult,
+  type ResourceRow,
+} from '@/lib/db/queries';
 import type { ActionResult } from '@/lib/types/management';
 import { requireRole } from '@/lib/auth/authz';
 
@@ -44,4 +49,11 @@ export async function adjustConsumable(resourceName: string, amount: number, eve
       error: error instanceof Error ? error.message : '补充耗材失败',
     };
   }
+}
+
+export type Materials = Awaited<ReturnType<typeof queryMaterials>>;
+
+export async function getMaterials(): Promise<Materials> {
+  await requireRole('VIEWER');
+  return queryMaterials();
 }

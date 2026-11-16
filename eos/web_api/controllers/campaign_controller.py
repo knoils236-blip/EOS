@@ -7,6 +7,7 @@ from eos.auth.entities.user_role import AuthenticatedUser, Role
 from eos.campaigns.entities.campaign import CampaignSubmission, Campaign
 from eos.database.abstract_sql_db_interface import AsyncDbSession
 from eos.orchestration.orchestrator import Orchestrator
+from eos.web_api.admission import protocol_labs, require_no_approval
 from eos.web_api.exception_handling import APIError
 
 
@@ -32,6 +33,7 @@ class CampaignController(Controller):
     ) -> dict[str, str]:
         """Submit a new campaign for execution."""
         stamp_owner(data, user)
+        await require_no_approval(db, await protocol_labs(db, data.protocol), user, "campaigns")
         await orchestrator.campaigns.submit_campaign(db, data)
         return {"message": "Campaign submitted"}
 

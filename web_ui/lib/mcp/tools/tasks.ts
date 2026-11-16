@@ -1,7 +1,8 @@
 import { z } from 'zod/v3';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getAllTasks, getTaskByName, getTasksByProtocolRun } from '@/lib/db/queries';
+import { getAllTasks, getTaskAttempts, getTaskByName, getTasksByProtocolRun } from '@/lib/db/queries';
 import { orchestratorPost } from '@/lib/api/orchestrator';
+import { submissionMessage } from './sdl';
 import { formatDate, formatDuration, formatPagination, textResult, errorResult } from '../helpers/format';
 
 export function registerTaskTools(server: McpServer) {
@@ -57,6 +58,12 @@ export function registerTaskTools(server: McpServer) {
       if (task.inputResources) lines.push(`Input Resources: ${JSON.stringify(task.inputResources)}`);
       if (task.outputResources) lines.push(`Output Resources: ${JSON.stringify(task.outputResources)}`);
       if (task.outputFileNames?.length) lines.push(`Output Files: ${task.outputFileNames.join(', ')}`);
+      for (const a of await getTaskAttempts(protocol_run_name, task_name)) {
+        const recovery = a.needsManualRecovery ? ' NEEDS MANUAL RECOVERY (not relaunched automatically)' : '';
+        lines.push(
+          `Attempt ${a.attemptNumber}: ${a.outcome} stop_confirmed=${a.stopConfirmed} device_available=${a.deviceAvailable}${recovery}${a.error ? ` error=${a.error}` : ''}`
+        );
+      }
 
       return textResult(lines.join('\n'));
     }
@@ -87,29 +94,32 @@ export function registerTaskTools(server: McpServer) {
     'submit_task',
     {
       title: 'Submit Task',
-      description: 'Submit a new task to the orchestrator for execution.',
+      description:
+        'Submit a standalone task. It starts at once unless a lab of its devices requires approval; then it waits for a lab admin in the web UI (see list_approval_requests).',
       inputSchema: {
         name: z.string().describe('Unique task name'),
         type: z.string().describe('Task type (e.g. "Noop", "GoToAbsolutePosition")'),
         devices: z
           .record(
             z.object({
-              lab: z.string(),
-              type: z.string(),
+              lab_name: z.string(),
+              name: z.string().describe('Device name in the lab'),
+              hold: z.boolean().optional().describe('Keep the device allocated after the task'),
             })
           )
-          .describe('Device assignments: { device_role: { lab, type } }'),
+          .describe('Device assignments: { device_role: { lab_name, name, hold? } }'),
         parameters: z.record(z.unknown()).optional().describe('Task input parameters'),
         protocol_run_name: z.string().optional().describe('Parent protocol run name'),
+        reason: z.string().optional().describe('Why this task is worth running; shown to the approver'),
       },
     },
-    async ({ name, type, devices, parameters, protocol_run_name }) => {
+    async ({ name, type, devices, parameters, protocol_run_name, reason }) => {
       try {
         const body: Record<string, unknown> = { name, type, devices };
         if (parameters) body.input_parameters = parameters;
         if (protocol_run_name) body.protocol_run_name = protocol_run_name;
-        const result = await orchestratorPost('/tasks/', body);
-        return textResult(`Task submitted successfully.\n${JSON.stringify(result, null, 2)}`);
+        const result = await orchestratorPost('/approvals/tasks', { submission: body, reason });
+        return textResult(submissionMessage('Task', result));
       } catch (e) {
         return errorResult(`Failed to submit task: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -120,15 +130,17 @@ export function registerTaskTools(server: McpServer) {
     'cancel_task',
     {
       title: 'Cancel Task',
-      description: 'Cancel a running task.',
+      description: 'Cancel a running task. Give protocol_run_name for a task inside a protocol run.',
       inputSchema: {
         task_name: z.string().describe('Name of the task to cancel'),
+        protocol_run_name: z.string().optional().describe('ProtocolRun the task belongs to; omit for standalone tasks'),
       },
     },
-    async ({ task_name }) => {
+    async ({ task_name, protocol_run_name }) => {
       try {
-        await orchestratorPost(`/tasks/${encodeURIComponent(task_name)}/cancel`);
-        return textResult(`Task "${task_name}" cancelled.`);
+        const query = protocol_run_name ? `?protocol_run_name=${encodeURIComponent(protocol_run_name)}` : '';
+        await orchestratorPost(`/tasks/${encodeURIComponent(task_name)}/cancel${query}`);
+        return textResult(`Cancellation requested for task "${task_name}".`);
       } catch (e) {
         return errorResult(`Failed to cancel task: ${e instanceof Error ? e.message : String(e)}`);
       }

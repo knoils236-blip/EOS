@@ -4,7 +4,7 @@
  * Handles communication with the EOS orchestrator backend API.
  */
 
-import { getAccessToken } from '@/lib/auth/session';
+import { getAccessToken, inMcpRequest } from '@/lib/auth/session';
 
 export const ORCHESTRATOR_BASE_URL = process.env.ORCHESTRATOR_API_URL || 'http://localhost:8070/api';
 
@@ -22,6 +22,8 @@ async function buildHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = await getAccessToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  // Lets the EOS API apply the automation admission policy to agents whatever credential they signed in with
+  if (inMcpRequest()) headers['X-EOS-Origin'] = 'mcp';
   return headers;
 }
 
